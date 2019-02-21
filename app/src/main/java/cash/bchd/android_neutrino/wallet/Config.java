@@ -3,6 +3,8 @@ package cash.bchd.android_neutrino.wallet;
 import android.content.Context;
 
 import java.io.FileOutputStream;
+import java.security.SecureRandom;
+import com.google.common.io.BaseEncoding;
 
 /**
  * Config represents the bchwallet config options to be set on startup.
@@ -31,6 +33,9 @@ public class Config {
     // The app data directory
     private String dataDir;
 
+    // The authentication token to use with the gRPC API
+    private String authToken;
+
     /**
      * Construct the config file.
      */
@@ -44,6 +49,12 @@ public class Config {
         this.bchdUsername = bchdUsername;
         this.bchdPassword = bchdPassword;
         this.caFilePath = caFilePath;
+
+        SecureRandom random = new SecureRandom();
+        byte randomBytes[] = new byte[32];
+        random.nextBytes(randomBytes);
+
+        this.authToken = BaseEncoding.base32Hex().lowerCase().encode(randomBytes);
     }
 
     /**
@@ -51,7 +62,7 @@ public class Config {
      */
     public String getConfigData() {
         String configFileContents = "[Application Options]\n\nappdata="+this.dataDir+"\nlogdir="+ this.dataDir+
-                "/logs\nexperimentalrpclisten=127.0.0.1\nnoinitialload=1\n";
+                "/logs\nexperimentalrpclisten=127.0.0.1\nnoinitialload=1\nnoservertls=1\nauthtoken="+ this.authToken+ "\n";
         if (this.useSPV) {
             configFileContents += "usespv=1\n";
         }
@@ -84,12 +95,16 @@ public class Config {
      * Save the config file to the data directory
      */
     public void save(Context context) throws Exception {
-        FileOutputStream outputStream = context.openFileOutput(this.dataDir + "/" + this.CONFIG_FILE_NAME, Context.MODE_PRIVATE);
+        FileOutputStream outputStream = context.openFileOutput(this.CONFIG_FILE_NAME, Context.MODE_PRIVATE);
         outputStream.write(this.getConfigData().getBytes());
         outputStream.close();
     }
 
     public String getConfigFilePath() {
-        return this.dataDir + "/" + this.CONFIG_FILE_NAME;
+        return this.dataDir + "/files/" + this.CONFIG_FILE_NAME;
+    }
+
+    public String getAuthToken() {
+        return this.authToken;
     }
 }

@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.google.protobuf'
 
 android {
     compileSdkVersion 28
@@ -16,6 +17,29 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+def grpcVersion = '1.18.0' // CURRENT_GRPC_VERSION
+
+protobuf {
+    protoc { artifact = 'com.google.protobuf:protoc:3.6.1' }
+    plugins {
+        javalite { artifact = "com.google.protobuf:protoc-gen-javalite:3.0.0" }
+        grpc { artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"}
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.plugins {
+                javalite {}
+                grpc { // Options added to --grpc_out
+                    option 'lite' }
+            }
+        }
+    }
 }
 
 dependencies {
@@ -27,4 +51,8 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     implementation project(':bchwallet')
+    implementation "io.grpc:grpc-okhttp:${grpcVersion}"
+    implementation "io.grpc:grpc-protobuf-lite:${grpcVersion}"
+    implementation 'javax.annotation:javax.annotation-api:1.2'
+    implementation "io.grpc:grpc-stub:${grpcVersion}"
 }
