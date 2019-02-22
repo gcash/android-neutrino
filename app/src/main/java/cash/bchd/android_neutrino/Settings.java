@@ -7,6 +7,9 @@ public class Settings {
     private static final String INITIALIZED_KEY = "Initialized";
     private static final String MNEMONIC_KEY = "Mnemonic";
     private static final String BLOCKS_ONLY_KEY = "BlocksOnly";
+    private static final String LAST_BALANCE_KEY = "LastBalance";
+    private static final String LAST_FIAT_BALANCE_KEY = "LastFiatBalance";
+    private static final String FIAT_CURRENCY_KEY = "FiatCurrency";
 
     SharedPreferences prefs;
 
@@ -45,5 +48,38 @@ public class Settings {
     public Boolean getBlocksOnly() {
         boolean blocksOnly = prefs.getBoolean(BLOCKS_ONLY_KEY, false);
         return blocksOnly;
+    }
+
+    public void setLastBalance(long balance) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putLong(LAST_BALANCE_KEY, balance);
+        editor.apply();
+    }
+
+    public long getLastBalance() {
+        long balance = prefs.getLong(LAST_BALANCE_KEY, 0);
+        return balance;
+    }
+
+    public void setLastFiatBalance(float balance) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putFloat(LAST_FIAT_BALANCE_KEY, balance);
+        editor.apply();
+    }
+
+    public float getLastFiatBalance() {
+        float balance = prefs.getFloat(LAST_FIAT_BALANCE_KEY, 0);
+        return balance;
+    }
+
+    public void setFiatCurrency(String currency) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putString(FIAT_CURRENCY_KEY, currency);
+        editor.apply();
+    }
+
+    public String getFiatCurrency() {
+        String currency = prefs.getString(FIAT_CURRENCY_KEY, "usd");
+        return currency;
     }
 }

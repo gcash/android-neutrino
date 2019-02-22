@@ -12,20 +12,24 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
+import android.widget.TextView;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.net.URL;
+import java.util.Currency;
 
+import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Config;
+import cash.bchd.android_neutrino.wallet.ExchangeRates;
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletReadyListener;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends CloseActivity {
 
-    Wallet wallet;
     Settings settings;
+    ExchangeRates exchangeRates;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,12 +47,23 @@ public class MainActivity extends AppCompatActivity {
 
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
         this.settings = new Settings(sharedPref);
+        this.exchangeRates = new ExchangeRates();
+
+        TextView bchBalanceView = (TextView)findViewById(R.id.bchBalanceView);
+        bchBalanceView.setText(new Amount(this.settings.getLastBalance()).toString() + " BCH");
+
+        String fiatCurrency = this.settings.getFiatCurrency();
+        float lastFiatBalance = this.settings.getLastFiatBalance();
+
+        String formattedFiatBalance = Currency.getInstance(fiatCurrency).getSymbol() + ExchangeRates.round(lastFiatBalance, 2);
+        TextView fiatBalanceView = (TextView)findViewById(R.id.fiatBalanceView);
+        fiatBalanceView.setText(formattedFiatBalance);
 
         String[] addrs = new String[0];
         Config cfg = new Config(getDataDir().getPath(), !settings.getWalletInitialized(),
                 true, settings.getBlocksOnly(), addrs, "", "",
                 "", "");
-        this.wallet = new Wallet(this, cfg);
+        wallet = new Wallet(this, cfg);
 
         new StartWalletTask().execute(wallet);
     }
@@ -91,7 +106,11 @@ public class MainActivity extends AppCompatActivity {
                         settings.setWalletInitialized(true);
                         try {
                             long bal = wallet.balance();
-                            System.out.println(bal);
+                            settings.setLastBalance(bal);
+                            Amount amt = new Amount(bal);
+                            TextView bchBalanceView = (TextView)findViewById(R.id.bchBalanceView);
+                            bchBalanceView.setText(amt.toString() + " BCH");
+                            exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(settings.getFiatCurrency()));
                         } catch (Exception e) {}
                     }
 

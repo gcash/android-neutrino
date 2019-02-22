@@ -24,32 +24,34 @@
         android:layout_height="244dp"
         android:background="@drawable/gradient"/>
 
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingLeft="16dp"
         android:paddingRight="16dp" >
-    <TextView
-        android:id="@+id/bchBalanceView"
-        android:layout_width="match_parent"
-        android:layout_height="58dp"
-        android:layout_marginTop="80dp"
-        android:text="1.12345678 BCH"
-        android:textAlignment="center"
-        android:textColor="@android:color/white"
-        android:textSize="40sp"
-        app:layout_anchorGravity="center_horizontal" />
 
-    <TextView
-        android:id="@+id/fiatBalanceView"
-        android:layout_width="match_parent"
-        android:layout_height="58dp"
-        android:layout_below="@+id/bchBalanceView"
-        android:text="$162.90"
-        android:textAlignment="center"
-        android:textColor="@color/liteGrey"
-        android:textSize="25sp"
-        app:layout_anchorGravity="center_horizontal" />
+        <TextView
+            android:id="@+id/bchBalanceView"
+            android:layout_width="match_parent"
+            android:layout_height="58dp"
+            android:layout_marginTop="80dp"
+            android:text=""
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            android:textSize="40sp"
+            app:layout_anchorGravity="center_horizontal" />
+
+        <TextView
+            android:id="@+id/fiatBalanceView"
+            android:layout_width="match_parent"
+            android:layout_height="58dp"
+            android:layout_below="@+id/bchBalanceView"
+            android:text=""
+            android:textAlignment="center"
+            android:textColor="@color/liteGrey"
+            android:textSize="25sp"
+            app:layout_anchorGravity="center_horizontal" />
+
     </RelativeLayout>
 
 
