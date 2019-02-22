@@ -2,12 +2,14 @@ package cash.bchd.android_neutrino.wallet;
 
 import android.content.Context;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import walletrpc.Api;
 import walletrpc.WalletLoaderServiceGrpc;
+import walletrpc.WalletServiceGrpc;
 
 /**
  * Wallet represents an instance of a bchwallet. It will load and start the
@@ -15,7 +17,7 @@ import walletrpc.WalletLoaderServiceGrpc;
  */
 public class Wallet {
 
-    private String configFilePath;
+    private String getConfigFilePath;
     private final String host = "127.0.0.1";
     private final int port = 8332;
     private ManagedChannel channel;
@@ -29,7 +31,7 @@ public class Wallet {
      * path and appdatadir.
      */
     public Wallet(Context context, Config config) {
-        this.configFilePath = config.getConfigFilePath();
+        this.getConfigFilePath = config.getConfigFilePath();
         this.creds = new AuthCredentials(config.getAuthToken());
         this.channel = ManagedChannelBuilder.forAddress(this.host, this.port).usePlaintext().build();
         try {
@@ -39,21 +41,46 @@ public class Wallet {
         }
     }
 
-    public boolean walletExists() throws Exception {
+    public void loadWallet(WalletReadyListener listener) throws Exception {
+        if (!walletExists()) {
+            String mnemonic = generateMnemonic();
+            WalletLoaderServiceGrpc.WalletLoaderServiceFutureStub stub = WalletLoaderServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
+            ByteString pw = ByteString.copyFromUtf8(DEFAULT_PASSPHRASE);
+
+            Api.CreateWalletRequest request = Api.CreateWalletRequest.newBuilder().setPrivatePassphrase(pw).setMnemonicSeed(mnemonic).build();
+            stub.createWallet(request);
+            listener.setMnemonicSeed(mnemonic);
+        }
+
+        Thread thread = new Thread(){
+            public void run(){
+                while (true) {
+                    try {
+                        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(channel).withCallCredentials(creds);
+                        Api.PingRequest request = Api.PingRequest.newBuilder().build();
+                        stub.ping(request);
+                        listener.walletReady();
+                        break;
+                    } catch (Exception e) {}
+                }
+            }
+        };
+        thread.start();
+
+    }
+
+    public long balance() throws Exception {
+        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
+        Api.BalanceRequest request = Api.BalanceRequest.newBuilder().setAccountNumber(0).setRequiredConfirmations(0).build();
+        Api.BalanceResponse reply = stub.balance(request);
+        return reply.getSpendable();
+    }
+
+    private boolean walletExists() throws Exception {
         WalletLoaderServiceGrpc.WalletLoaderServiceBlockingStub stub = WalletLoaderServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
         Api.WalletExistsRequest request = Api.WalletExistsRequest.newBuilder().build();
         Api.WalletExistsResponse reply = stub.walletExists(request);
         return reply.getExists();
-    }
-
-    public String createWallet() throws Exception {
-        String mnemonic = generateMnemonic();
-
-        WalletLoaderServiceGrpc.WalletLoaderServiceBlockingStub stub = WalletLoaderServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
-        ByteString pw = ByteString.copyFromUtf8(DEFAULT_PASSPHRASE);
-        Api.CreateWalletRequest request = Api.CreateWalletRequest.newBuilder().setPrivatePassphrase(pw).setMnemonicSeed(mnemonic).build();
-        Api.CreateWalletResponse reply = stub.createWallet(request);
-        return mnemonic;
     }
 
     private String generateMnemonic() throws Exception {
@@ -67,7 +94,7 @@ public class Wallet {
      * Start will start the bchwallet daemon with the requested config options
      */
     public void start() {
-        mobile.Mobile.startWallet(this.configFilePath);
+        mobile.Mobile.startWallet(this.getConfigFilePath);
     }
 
     /**

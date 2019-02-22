@@ -1,5 +1,7 @@
 package cash.bchd.android_neutrino;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -9,6 +11,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -17,15 +20,17 @@ import java.net.URL;
 
 import cash.bchd.android_neutrino.wallet.Config;
 import cash.bchd.android_neutrino.wallet.Wallet;
+import cash.bchd.android_neutrino.wallet.WalletReadyListener;
 
 public class MainActivity extends AppCompatActivity {
+
+    Wallet wallet;
+    Settings settings;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -36,15 +41,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        String[] addrs = new String[0];
-        Config cfg = new Config(getDataDir().getPath(), true, false, addrs, "", "", "", "");
-        final Wallet wallet = new Wallet(this, cfg);
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        this.settings = new Settings(sharedPref);
 
-        new Thread(new Runnable() {
-            public void run() {
-                new StartWalletTask().execute(wallet);
-            }
-        }).start();
+        String[] addrs = new String[0];
+        Config cfg = new Config(getDataDir().getPath(), !settings.getWalletInitialized(),
+                true, settings.getBlocksOnly(), addrs, "", "",
+                "", "");
+        this.wallet = new Wallet(this, cfg);
+
+        new StartWalletTask().execute(wallet);
     }
 
     @Override
@@ -78,11 +84,22 @@ public class MainActivity extends AppCompatActivity {
         }
         protected void onPostExecute(String result) {
             try {
-                boolean exists = wallet.walletExists();
-                if (!exists) {
-                    String createdMnemonic = wallet.createWallet();
-                    System.out.println(createdMnemonic);
-                }
+                wallet.loadWallet(new WalletReadyListener() {
+                    @Override
+                    public void walletReady() {
+                        System.out.println("Wallet ready");
+                        settings.setWalletInitialized(true);
+                        try {
+                            long bal = wallet.balance();
+                            System.out.println(bal);
+                        } catch (Exception e) {}
+                    }
+
+                    @Override
+                    public void setMnemonicSeed(String seed) {
+                        settings.setMnemonic(seed);
+                    }
+                });
             } catch (Exception e){
                 e.printStackTrace();
             }

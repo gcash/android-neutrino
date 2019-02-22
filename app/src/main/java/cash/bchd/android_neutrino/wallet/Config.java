@@ -14,6 +14,10 @@ public class Config {
     // The filename for the config file
     private static final String CONFIG_FILE_NAME = "bchwallet.conf";
 
+    // This is to determine whether or not we should start the wallet or block startup so we can
+    // create the wallet.
+    private Boolean noInitialLoad;
+
     // Enables the experimental use of SPV rather than RPC for chain synchronization
     private Boolean useSPV;
 
@@ -39,7 +43,7 @@ public class Config {
     /**
      * Construct the config file.
      */
-    public Config(String dataDir, Boolean useSPV, Boolean blocksOnly, String[] connect, String rpcConnect,
+    public Config(String dataDir, Boolean noInitialLoad, Boolean useSPV, Boolean blocksOnly, String[] connect, String rpcConnect,
                   String bchdUsername, String bchdPassword, String caFilePath) {
         this.dataDir = dataDir;
         this.useSPV = useSPV;
@@ -49,6 +53,7 @@ public class Config {
         this.bchdUsername = bchdUsername;
         this.bchdPassword = bchdPassword;
         this.caFilePath = caFilePath;
+        this.noInitialLoad = noInitialLoad;
 
         SecureRandom random = new SecureRandom();
         byte randomBytes[] = new byte[32];
@@ -62,7 +67,11 @@ public class Config {
      */
     public String getConfigData() {
         String configFileContents = "[Application Options]\n\nappdata="+this.dataDir+"\nlogdir="+ this.dataDir+
-                "/logs\nexperimentalrpclisten=127.0.0.1\nnoinitialload=1\nnoservertls=1\nauthtoken="+ this.authToken+ "\n";
+                "/logs\nexperimentalrpclisten=127.0.0.1\nnoservertls=1\nauthtoken="+ this.authToken+ "\n";
+
+        if (this.noInitialLoad) {
+            configFileContents += "noinitialload=1\n";
+        }
         if (this.useSPV) {
             configFileContents += "usespv=1\n";
         }

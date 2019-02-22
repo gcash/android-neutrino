@@ -6,19 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <android.support.design.widget.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:theme="@style/AppTheme.AppBarOverlay">
 
-        <android.support.v7.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
-            app:popupTheme="@style/AppTheme.PopupOverlay" />
-
-    </android.support.design.widget.AppBarLayout>
 
     <include layout="@layout/content_main" />
 
@@ -28,6 +16,41 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
-        app:srcCompat="@android:drawable/ic_dialog_email" />
+        app:srcCompat="@android:drawable/ic_input_add" />
+
+    <View
+        android:id="@+id/view2"
+        android:layout_width="wrap_content"
+        android:layout_height="244dp"
+        android:background="@drawable/gradient"/>
+
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp" >
+    <TextView
+        android:id="@+id/bchBalanceView"
+        android:layout_width="match_parent"
+        android:layout_height="58dp"
+        android:layout_marginTop="80dp"
+        android:text="1.12345678 BCH"
+        android:textAlignment="center"
+        android:textColor="@android:color/white"
+        android:textSize="40sp"
+        app:layout_anchorGravity="center_horizontal" />
+
+    <TextView
+        android:id="@+id/fiatBalanceView"
+        android:layout_width="match_parent"
+        android:layout_height="58dp"
+        android:layout_below="@+id/bchBalanceView"
+        android:text="$162.90"
+        android:textAlignment="center"
+        android:textColor="@color/liteGrey"
+        android:textSize="25sp"
+        app:layout_anchorGravity="center_horizontal" />
+    </RelativeLayout>
+
 
 </android.support.design.widget.CoordinatorLayout>
