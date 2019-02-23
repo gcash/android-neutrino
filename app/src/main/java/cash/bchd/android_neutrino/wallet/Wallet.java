@@ -2,14 +2,20 @@ package cash.bchd.android_neutrino.wallet;
 
 import android.content.Context;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
+
+import javax.annotation.Nullable;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import walletrpc.Api;
 import walletrpc.WalletLoaderServiceGrpc;
 import walletrpc.WalletServiceGrpc;
+
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
 /**
  * Wallet represents an instance of a bchwallet. It will load and start the
@@ -25,6 +31,8 @@ public class Wallet {
     private AuthCredentials creds;
 
     private final String DEFAULT_PASSPHRASE = "LETMEIN";
+
+    private boolean running;
 
     /**
      * The wallet constructor takes in a context which it uses to derive the config file
@@ -60,13 +68,28 @@ public class Wallet {
                         Api.PingRequest request = Api.PingRequest.newBuilder().build();
                         stub.ping(request);
                         listener.walletReady();
+                        running = true;
                         break;
                     } catch (Exception e) {}
                 }
             }
         };
         thread.start();
+    }
 
+    public boolean isRunning() {
+        return running;
+    }
+
+    public void listenAddress(String address, AddressListener listener) {
+        // TODO
+    }
+
+    public String currentAddress() throws Exception {
+        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
+        Api.CurrentAddressRequest request = Api.CurrentAddressRequest.newBuilder().build();
+        Api.CurrentAddressResponse reply = stub.currentAddress(request);
+        return reply.getAddress();
     }
 
     public long balance() throws Exception {
@@ -102,6 +125,7 @@ public class Wallet {
      * no data is corrupted.
      */
     public void stop() {
+        channel.shutdown();
         mobile.Mobile.stopWallet();
     }
 }

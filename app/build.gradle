@@ -55,4 +55,7 @@ dependencies {
     implementation "io.grpc:grpc-protobuf-lite:${grpcVersion}"
     implementation 'javax.annotation:javax.annotation-api:1.2'
     implementation "io.grpc:grpc-stub:${grpcVersion}"
+    implementation 'com.github.clans:fab:1.6.4'
+    implementation 'androidmads.library.qrgenearator:QRGenearator:1.0.3'
+    implementation 'com.google.android.gms:play-services-vision:17.0.2'
 }

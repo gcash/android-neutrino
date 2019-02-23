@@ -11,5 +11,6 @@ public class CloseActivity extends AppCompatActivity {
     protected void onDestroy() {
         wallet.stop();
         super.onDestroy();
+        wallet = null;
     }
 }

@@ -2,6 +2,8 @@
 <android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:fab="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/coordinator_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
@@ -9,6 +11,56 @@
 
 
     <include layout="@layout/content_main" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/speakNowFab"
+        app:fabCustomSize="40dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="25dp"
+        android:tint="@color/liteGrey"
+        app:srcCompat="@drawable/settings" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/speakNowFab1"
+        app:fabCustomSize="40dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="25dp"
+        android:tint="@color/liteGrey"
+        app:srcCompat="@drawable/receive" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/speakNowFab2"
+        app:fabCustomSize="40dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="25dp"
+        android:tint="@color/liteGrey"
+        app:srcCompat="@drawable/send" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/btnScan"
+        app:fabCustomSize="40dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="25dp"
+        android:tint="@color/liteGrey"
+        app:srcCompat="@drawable/scan" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/btnQR"
+        app:fabCustomSize="40dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="25dp"
+        android:tint="@color/liteGrey"
+        app:srcCompat="@drawable/qrcode" />
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"

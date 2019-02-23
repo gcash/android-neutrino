@@ -59,7 +59,7 @@ public class Config {
         byte randomBytes[] = new byte[32];
         random.nextBytes(randomBytes);
 
-        this.authToken = BaseEncoding.base32Hex().lowerCase().encode(randomBytes);
+        this.authToken = BaseEncoding.base16().lowerCase().encode(randomBytes);
     }
 
     /**
