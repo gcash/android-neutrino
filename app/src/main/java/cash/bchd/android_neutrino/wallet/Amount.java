@@ -16,6 +16,10 @@ public class Amount {
 
     public String toString() {
         Long sats = new Long(this.satoshis);
-        return String.valueOf(sats.doubleValue() / SATOSHIS_PER_BCH);
+        return removeTrailingZeros(sats.doubleValue() / SATOSHIS_PER_BCH);
+    }
+
+    private static String removeTrailingZeros(double d) {
+        return String.format("%.12f", d).replaceAll("[0]*$", "").replaceAll(".$", "");
     }
 }

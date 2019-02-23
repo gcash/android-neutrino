@@ -2,20 +2,17 @@ package cash.bchd.android_neutrino.wallet;
 
 import android.content.Context;
 
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 
-import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.List;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.stub.StreamObserver;
 import walletrpc.Api;
 import walletrpc.WalletLoaderServiceGrpc;
 import walletrpc.WalletServiceGrpc;
-
-import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
 /**
  * Wallet represents an instance of a bchwallet. It will load and start the
@@ -31,6 +28,10 @@ public class Wallet {
     private AuthCredentials creds;
 
     private final String DEFAULT_PASSPHRASE = "LETMEIN";
+
+    private final String MAINNET_URI_PREFIX = "bitcoincash:";
+
+    private HashMap addressListeners = new HashMap();
 
     private boolean running;
 
@@ -49,7 +50,7 @@ public class Wallet {
         }
     }
 
-    public void loadWallet(WalletReadyListener listener) throws Exception {
+    public void loadWallet(WalletEventListener listener) throws Exception {
         if (!walletExists()) {
             String mnemonic = generateMnemonic();
             WalletLoaderServiceGrpc.WalletLoaderServiceFutureStub stub = WalletLoaderServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
@@ -57,7 +58,7 @@ public class Wallet {
 
             Api.CreateWalletRequest request = Api.CreateWalletRequest.newBuilder().setPrivatePassphrase(pw).setMnemonicSeed(mnemonic).build();
             stub.createWallet(request);
-            listener.setMnemonicSeed(mnemonic);
+            listener.onWalletCreated(mnemonic);
         }
 
         Thread thread = new Thread(){
@@ -67,7 +68,9 @@ public class Wallet {
                         WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(channel).withCallCredentials(creds);
                         Api.PingRequest request = Api.PingRequest.newBuilder().build();
                         stub.ping(request);
-                        listener.walletReady();
+                        listener.onWalletReady();
+                        listener.onBalanceChange(balance());
+                        listenTransactions(listener);
                         running = true;
                         break;
                     } catch (Exception e) {}
@@ -81,8 +84,64 @@ public class Wallet {
         return running;
     }
 
+    public String uriPrefix() {
+        return MAINNET_URI_PREFIX;
+    }
+
+    public void listenTransactions(WalletEventListener listener) {
+        WalletServiceGrpc.WalletServiceStub stub = WalletServiceGrpc.newStub(channel).withCallCredentials(creds);
+        Api.TransactionNotificationsRequest request = Api.TransactionNotificationsRequest.newBuilder().build();
+        stub.transactionNotifications(request, new StreamObserver<Api.TransactionNotificationsResponse>() {
+            @Override
+            public void onNext(Api.TransactionNotificationsResponse value) {
+                List<Api.BlockDetails> blocks = value.getAttachedBlocksList();
+                boolean hasMinedTransactions = false;
+                for (Api.BlockDetails block : blocks) {
+                    if (block.getTransactionsCount() > 0) {
+                        hasMinedTransactions = true;
+                        for (Api.TransactionDetails tx : block.getTransactionsList()) {
+                            for (Api.TransactionDetails.Output output : tx.getCreditsList()) {
+                                AddressListener addrListener = (AddressListener) addressListeners.get(output.getAddress());
+                                if (addrListener != null) {
+                                    addrListener.onPaymentReceived();
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (value.getUnminedTransactionsCount() > 0 || hasMinedTransactions) {
+                    for (Api.TransactionDetails tx : value.getUnminedTransactionsList()) {
+                        for (Api.TransactionDetails.Output output : tx.getCreditsList()) {
+                            AddressListener addrListener = (AddressListener) addressListeners.get(output.getAddress());
+                            if (addrListener != null) {
+                                addrListener.onPaymentReceived();
+                            }
+                        }
+                    }
+                    try {
+                        long bal = balance();
+                        listener.onBalanceChange(bal);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void onError(Throwable t) {
+
+            }
+
+            @Override
+            public void onCompleted() {
+
+            }
+        });
+    }
+
     public void listenAddress(String address, AddressListener listener) {
-        // TODO
+        addressListeners.put(address, listener);
     }
 
     public String currentAddress() throws Exception {

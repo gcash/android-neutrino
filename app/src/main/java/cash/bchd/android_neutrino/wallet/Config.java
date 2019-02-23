@@ -67,7 +67,7 @@ public class Config {
      */
     public String getConfigData() {
         String configFileContents = "[Application Options]\n\nappdata="+this.dataDir+"\nlogdir="+ this.dataDir+
-                "/logs\nexperimentalrpclisten=127.0.0.1\nnoservertls=1\nauthtoken="+ this.authToken+ "\n";
+                "/logs\nexperimentalrpclisten=127.0.0.1\nnoservertls=1\nauthtoken="+ this.authToken+ "\naddpeer=68.183.38.143\n";
 
         if (this.noInitialLoad) {
             configFileContents += "noinitialload=1\n";

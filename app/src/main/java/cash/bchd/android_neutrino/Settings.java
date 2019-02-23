@@ -61,17 +61,6 @@ public class Settings {
         return balance;
     }
 
-    public void setLastFiatBalance(float balance) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putFloat(LAST_FIAT_BALANCE_KEY, balance);
-        editor.apply();
-    }
-
-    public float getLastFiatBalance() {
-        float balance = prefs.getFloat(LAST_FIAT_BALANCE_KEY, 0);
-        return balance;
-    }
-
     public void setFiatCurrency(String currency) {
         SharedPreferences.Editor editor = this.prefs.edit();
         editor.putString(FIAT_CURRENCY_KEY, currency);

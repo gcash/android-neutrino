@@ -37,7 +37,7 @@ public class ExchangeRates {
         };
 
         final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleAtFixedRate(service, 0, 5, TimeUnit.MINUTES);
+        scheduler.scheduleAtFixedRate(service, 5, 5, TimeUnit.MINUTES);
     }
 
     private static String readAll(Reader rd) throws IOException {
@@ -72,12 +72,29 @@ public class ExchangeRates {
         return currencyCode.getSymbol() + String.valueOf(fiat);
     }
 
-    public static double round(double value, int places) {
+    public void fetchFormattedAmountInFiat(Amount bchAmount, Currency currencyCode, Callback cb) throws Exception {
+        rates = readJsonFromUrl(EXCHANGE_RATE_ENDPOINT);
+        JSONObject btcObj = rates.getJSONObject(currencyCode.getCurrencyCode());
+        double btcRate = btcObj.getDouble("last");
+
+        JSONObject bchObj = rates.getJSONObject("BCH");
+        double bchBtcRate = bchObj.getDouble("last");
+
+        double fiat = round((btcRate/bchBtcRate) * bchAmount.toBCH(), 2);
+        String formatted = currencyCode.getSymbol() + String.valueOf(fiat);
+        cb.onRateFetched(formatted);
+    }
+
+    private static double round(double value, int places) {
         if (places < 0) throw new IllegalArgumentException();
 
         long factor = (long) Math.pow(10, places);
         value = value * factor;
         long tmp = Math.round(value);
         return (double) tmp / factor;
+    }
+
+    public static class Callback {
+        public void onRateFetched(String formatted) {}
     }
 }

@@ -1,6 +1,5 @@
 package cash.bchd.android_neutrino;
 
-import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -40,7 +39,7 @@ import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Config;
 import cash.bchd.android_neutrino.wallet.ExchangeRates;
 import cash.bchd.android_neutrino.wallet.Wallet;
-import cash.bchd.android_neutrino.wallet.WalletReadyListener;
+import cash.bchd.android_neutrino.wallet.WalletEventListener;
 
 public class MainActivity extends CloseActivity {
 
@@ -55,6 +54,8 @@ public class MainActivity extends CloseActivity {
     boolean isFabOpen;
     long lastDown;
     CoordinatorLayout mCLayout;
+    ImageView qrImage;
+    TextView addrText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,14 +67,28 @@ public class MainActivity extends CloseActivity {
         this.exchangeRates = new ExchangeRates();
 
         TextView bchBalanceView = (TextView)findViewById(R.id.bchBalanceView);
-        bchBalanceView.setText(new Amount(this.settings.getLastBalance()).toString() + " BCH");
+        Amount lastBal = new Amount(this.settings.getLastBalance());
+        bchBalanceView.setText(lastBal.toString() + " BCH");
 
-        String fiatCurrency = this.settings.getFiatCurrency();
-        float lastFiatBalance = this.settings.getLastFiatBalance();
+        Thread thread = new Thread() {
+            public void run() {
+                String fiatCurrency = settings.getFiatCurrency();
+                try {
+                    exchangeRates.fetchFormattedAmountInFiat(lastBal, Currency.getInstance(fiatCurrency), new ExchangeRates.Callback() {
+                        @Override
+                        public void onRateFetched(String formatted) {
+                            TextView fiatBalanceView = (TextView) findViewById(R.id.fiatBalanceView);
+                            fiatBalanceView.setText(formatted);
+                        }
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        thread.start();
 
-        String formattedFiatBalance = Currency.getInstance(fiatCurrency).getSymbol() + ExchangeRates.round(lastFiatBalance, 2);
-        TextView fiatBalanceView = (TextView)findViewById(R.id.fiatBalanceView);
-        fiatBalanceView.setText(formattedFiatBalance);
+
 
         if (wallet == null) {
             String[] addrs = new String[0];
@@ -188,12 +203,13 @@ public class MainActivity extends CloseActivity {
             int smallerDimension = width < height ? width : height;
             smallerDimension = smallerDimension;
 
+            String addrURI = wallet.uriPrefix() + addr;
             QRGEncoder qrgEncoder = new QRGEncoder(
-                    addr, null,
+                    addrURI, null,
                     QRGContents.Type.TEXT,
                     smallerDimension);
             Bitmap bitmap = qrgEncoder.encodeAsBitmap();
-            ImageView qrImage = (ImageView) customView.findViewById(R.id.qrCodeView);
+            qrImage = (ImageView) customView.findViewById(R.id.qrCodeView);
             qrImage.setImageBitmap(bitmap);
 
             qrImage.setOnClickListener(new View.OnClickListener() {
@@ -203,7 +219,7 @@ public class MainActivity extends CloseActivity {
                 }
             });
 
-            TextView addrText = (TextView) customView.findViewById(R.id.address);
+            addrText = (TextView) customView.findViewById(R.id.address);
             addrText.setText(addr);
             addrText.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -215,21 +231,29 @@ public class MainActivity extends CloseActivity {
             wallet.listenAddress(addr, new AddressListener() {
                 @Override
                 public void onPaymentReceived() {
-                    LinearLayout qrLayout = (LinearLayout) customView.findViewById(R.id.qrCodeLayout);
-                    int h = qrLayout.getHeight();
+                    runOnUiThread(new Runnable() {
 
-                    qrImage.setVisibility(View.GONE);
-                    addrText.setVisibility(View.GONE);
-                    final GifView showGifView = new GifView(getApplicationContext());
-                    showGifView.setGifImageDrawableId(R.drawable.coinflip);
-                    showGifView.drawGif();
+                        @Override
+                        public void run() {
+                            LinearLayout qrLayout = (LinearLayout) customView.findViewById(R.id.qrCodeLayout);
+                            int h = qrLayout.getHeight();
 
-                    ViewGroup.LayoutParams params = qrLayout.getLayoutParams();
-                    params.height = h;
-                    params.width = h;
-                    qrLayout.requestLayout();
-                    qrLayout.addView(showGifView);
-                    qrLayout.setGravity(Gravity.CENTER);
+                            qrImage.setVisibility(View.GONE);
+                            addrText.setVisibility(View.GONE);
+                            final GifView showGifView = new GifView(getApplicationContext());
+                            showGifView.setGifImageDrawableId(R.drawable.coinflip);
+                            showGifView.drawGif();
+
+                            ViewGroup.LayoutParams params = qrLayout.getLayoutParams();
+                            Double dh = new Double(h);
+                            Double truncated = dh * 0.8;
+                            params.height = truncated.intValue();
+                            params.width = h;
+                            qrLayout.requestLayout();
+                            qrLayout.addView(showGifView);
+                            qrLayout.setGravity(Gravity.CENTER);
+                        }
+                    });
                 }
             });
         } catch (Exception e) {
@@ -290,23 +314,31 @@ public class MainActivity extends CloseActivity {
         }
         protected void onPostExecute(String result) {
             try {
-                wallet.loadWallet(new WalletReadyListener() {
+                wallet.loadWallet(new WalletEventListener() {
                     @Override
-                    public void walletReady() {
+                    public void onWalletReady() {
                         System.out.println("Wallet ready");
-                        settings.setWalletInitialized(true);
-                        try {
-                            long bal = wallet.balance();
-                            settings.setLastBalance(bal);
-                            Amount amt = new Amount(bal);
-                            TextView bchBalanceView = (TextView)findViewById(R.id.bchBalanceView);
-                            bchBalanceView.setText(amt.toString() + " BCH");
-                            exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(settings.getFiatCurrency()));
-                        } catch (Exception e) {}
                     }
 
                     @Override
-                    public void setMnemonicSeed(String seed) {
+                    public void onBalanceChange(long bal) {
+                        try {
+                            System.out.println("Updating balance");
+                            Amount amt = new Amount(bal);
+                            TextView bchBalanceView = (TextView) findViewById(R.id.bchBalanceView);
+                            bchBalanceView.setText(amt.toString() + " BCH");
+                            String fiatAmount = exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(settings.getFiatCurrency()));
+                            TextView fiatBalanceView = (TextView) findViewById(R.id.fiatBalanceView);
+                            fiatBalanceView.setText(fiatAmount);
+                            settings.setLastBalance(bal);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    @Override
+                    public void onWalletCreated(String seed) {
+                        settings.setWalletInitialized(true);
                         settings.setMnemonic(seed);
                     }
                 });

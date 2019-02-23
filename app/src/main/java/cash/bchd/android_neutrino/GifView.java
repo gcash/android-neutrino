@@ -65,10 +65,9 @@ public class GifView extends View {
             int movieHeight = movie.height();
 
             // Scale canvas size to fit the custom view.
-            System.out.println(width);
-            System.out.println(movieWidth);
-            float multiplier = (float) 1.3;
-            canvas.scale((width / movieWidth) * multiplier, (height / movieHeight) * multiplier);
+            float widthMultiplier = (float) 1;
+            float heightMultiplier = (float) 1.3;
+            canvas.scale((width / movieWidth) * widthMultiplier, (height / movieHeight) * heightMultiplier);
 
             // Draw the gif image frame to custom view canvas.
             movie.draw(canvas, 1, 1);
