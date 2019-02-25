@@ -8,8 +8,8 @@ public class Settings {
     private static final String MNEMONIC_KEY = "Mnemonic";
     private static final String BLOCKS_ONLY_KEY = "BlocksOnly";
     private static final String LAST_BALANCE_KEY = "LastBalance";
-    private static final String LAST_FIAT_BALANCE_KEY = "LastFiatBalance";
     private static final String FIAT_CURRENCY_KEY = "FiatCurrency";
+    private static final String LAST_ADDRESS_KEY = "LastAddress";
 
     SharedPreferences prefs;
 
@@ -70,5 +70,16 @@ public class Settings {
     public String getFiatCurrency() {
         String currency = prefs.getString(FIAT_CURRENCY_KEY, "usd");
         return currency;
+    }
+
+    public void setLastAddress(String addr) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putString(LAST_ADDRESS_KEY, addr);
+        editor.apply();
+    }
+
+    public String getLastAddress() {
+        String addr = prefs.getString(LAST_ADDRESS_KEY, "");
+        return addr;
     }
 }

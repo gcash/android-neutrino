@@ -15,6 +15,9 @@ import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v7.widget.DividerItemDecoration;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.transition.ChangeTransform;
 import android.transition.TransitionManager;
 import android.view.Display;
@@ -25,12 +28,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import java.util.Currency;
+import java.util.List;
 
 import androidmads.library.qrgenearator.QRGContents;
 import androidmads.library.qrgenearator.QRGEncoder;
@@ -38,8 +43,11 @@ import cash.bchd.android_neutrino.wallet.AddressListener;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Config;
 import cash.bchd.android_neutrino.wallet.ExchangeRates;
+import cash.bchd.android_neutrino.wallet.TransactionData;
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
+
+import static android.widget.LinearLayout.HORIZONTAL;
 
 public class MainActivity extends CloseActivity {
 
@@ -56,15 +64,20 @@ public class MainActivity extends CloseActivity {
     CoordinatorLayout mCLayout;
     ImageView qrImage;
     TextView addrText;
+    TransactionStore txStore;
+    private RecyclerView.LayoutManager layoutManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        layoutManager = new LinearLayoutManager(this);
+
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
         this.settings = new Settings(sharedPref);
         this.exchangeRates = new ExchangeRates();
+        this.txStore = new TransactionStore(this);
 
         TextView bchBalanceView = (TextView)findViewById(R.id.bchBalanceView);
         Amount lastBal = new Amount(this.settings.getLastBalance());
@@ -148,13 +161,16 @@ public class MainActivity extends CloseActivity {
         fabQR.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                fab.bringToFront();
                 displayQRPopup();
+                sendViewToBack(v);
             }
         });
 
         fabScan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                fab.bringToFront();
                 displayQRScanner();
             }
         });
@@ -179,10 +195,14 @@ public class MainActivity extends CloseActivity {
     }
 
     private void displayQRPopup() {
+        String lastAddr = "";
         if (!wallet.isRunning()) {
-            Snackbar snackbar = Snackbar.make(mCLayout, "Wallet isn't loaded yet.", Snackbar.LENGTH_LONG);
-            snackbar.show();
-            return;
+            lastAddr = settings.getLastAddress();
+            if (lastAddr.equals("")) {
+                Snackbar snackbar = Snackbar.make(mCLayout, "Wallet isn't loaded yet.", Snackbar.LENGTH_LONG);
+                snackbar.show();
+                return;
+            }
         }
         toggleFABMenu();
         LayoutInflater layoutInflater = (LayoutInflater) MainActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -193,7 +213,13 @@ public class MainActivity extends CloseActivity {
         popupWindow.setFocusable(true);
         popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         try {
-            String addr = wallet.currentAddress();
+            String addr;
+            if (wallet.isRunning()) {
+                addr = wallet.currentAddress();
+                settings.setLastAddress(addr);
+            } else {
+                addr = lastAddr;
+            }
             WindowManager manager = (WindowManager) getSystemService(WINDOW_SERVICE);
             Display display = manager.getDefaultDisplay();
             Point point = new Point();
@@ -237,21 +263,29 @@ public class MainActivity extends CloseActivity {
                         public void run() {
                             LinearLayout qrLayout = (LinearLayout) customView.findViewById(R.id.qrCodeLayout);
                             int h = qrLayout.getHeight();
+                            qrLayout.setHorizontalGravity(Gravity.CENTER_HORIZONTAL);
+                            qrLayout.setVerticalGravity(Gravity.CENTER_VERTICAL);
+
+                            TextView addrHelperText = (TextView) customView.findViewById(R.id.addrHelpText);
 
                             qrImage.setVisibility(View.GONE);
                             addrText.setVisibility(View.GONE);
+                            addrHelperText.setVisibility(View.GONE);
                             final GifView showGifView = new GifView(getApplicationContext());
+
                             showGifView.setGifImageDrawableId(R.drawable.coinflip);
                             showGifView.drawGif();
+                            showGifView.setForegroundGravity(Gravity.CENTER);
+
 
                             ViewGroup.LayoutParams params = qrLayout.getLayoutParams();
                             Double dh = new Double(h);
-                            Double truncated = dh * 0.8;
-                            params.height = truncated.intValue();
+                            Double truncatedH = dh * 0.8;
+                            params.height = truncatedH.intValue();
                             params.width = h;
+
                             qrLayout.requestLayout();
                             qrLayout.addView(showGifView);
-                            qrLayout.setGravity(Gravity.CENTER);
                         }
                     });
                 }
@@ -295,6 +329,7 @@ public class MainActivity extends CloseActivity {
         fab3.animate().translationY(0);
         fabScan.animate().translationY(0);
         fabQR.animate().translationY(0);
+        fab.bringToFront();
     }
 
     protected void toggleRotation(View v){
@@ -341,10 +376,70 @@ public class MainActivity extends CloseActivity {
                         settings.setWalletInitialized(true);
                         settings.setMnemonic(seed);
                     }
+
+                    @Override
+                    public void onGetTransactions(List<TransactionData> txs) {
+                        runOnUiThread(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                if (txs.size() == 0) {
+                                    return;
+                                }
+                                TextView bchPlease = (TextView) findViewById(R.id.bchPlease);
+                                bchPlease.setVisibility(View.GONE);
+                                boolean updated = false;
+                                for (TransactionData tx : txs) {
+                                    if (true) { //!txStore.has(tx.getTxid())
+                                        String fiatCurrency = settings.getFiatCurrency();
+                                        tx.setFiatCurrency(fiatCurrency);
+                                        String formattedFiat = "";
+                                        try {
+                                            formattedFiat = exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                        tx.setFiatAmount(formattedFiat);
+                                        txStore.putTransaction(tx);
+                                        updated = true;
+                                        int i = txs.indexOf(tx);
+                                    }
+                                }
+                                RecyclerView recyclerView = (RecyclerView) findViewById(R.id.txRecylerView);
+                                recyclerView.setHasFixedSize(true);
+                                DividerItemDecoration decor = new DividerItemDecoration(getApplicationContext(), DividerItemDecoration.VERTICAL);
+                                recyclerView.addItemDecoration(decor);
+
+                                // use a linear layout manager
+
+                                recyclerView.setLayoutManager(layoutManager);
+
+                                // specify an adapter (see also next example)
+                                TransactionAdapter mAdapter = new TransactionAdapter(txs, getApplicationContext());
+                                recyclerView.setAdapter(mAdapter);
+                                /*if (updated) {
+                                    try {
+                                        txStore.save(getApplicationContext());
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                }*/
+                            }
+                        });
+                    }
                 });
             } catch (Exception e){
                 e.printStackTrace();
             }
         }
     }
+
+    public static void sendViewToBack(final View child) {
+        final ViewGroup parent = (ViewGroup)child.getParent();
+        if (null != parent) {
+            parent.removeView(child);
+            parent.addView(child, 0);
+        }
+    }
+
 }

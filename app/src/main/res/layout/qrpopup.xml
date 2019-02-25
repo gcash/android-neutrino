@@ -19,13 +19,26 @@
         />
 
     <TextView
+        android:id="@+id/addrHelpText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/grey"
+        android:textSize="15sp"
+        android:background="#fcfcfc"
+        android:padding="10dp"
+        android:gravity="left"
+        android:text="WALLET ADDRESS"
+        android:layout_marginTop="-20dp"/>
+    <TextView
         android:id="@+id/address"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="#000"
         android:textSize="20sp"
         android:background="#fcfcfc"
-        android:padding="10dp"
-        android:layout_marginTop="-20dp"/>
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingBottom="10dp"
+        android:layout_marginTop="-10dp"/>
 
 </LinearLayout>

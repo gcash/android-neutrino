@@ -37,7 +37,7 @@ public class ScannerActivity extends Activity {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
                 if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: go back to main activity
+                    System.out.println("Missing permissions");
                     return;
                 }
                 try {

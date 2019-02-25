@@ -2,8 +2,14 @@ package cash.bchd.android_neutrino.wallet;
 
 import android.content.Context;
 
+import com.google.common.collect.Lists;
+import com.google.common.io.BaseEncoding;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -31,7 +37,7 @@ public class Wallet {
 
     private final String MAINNET_URI_PREFIX = "bitcoincash:";
 
-    private HashMap addressListeners = new HashMap();
+    private HashMap<String, AddressListener> addressListeners = new HashMap<String, AddressListener>();
 
     private boolean running;
 
@@ -70,6 +76,7 @@ public class Wallet {
                         stub.ping(request);
                         listener.onWalletReady();
                         listener.onBalanceChange(balance());
+                        getTransactions(listener);
                         listenTransactions(listener);
                         running = true;
                         break;
@@ -101,8 +108,9 @@ public class Wallet {
                         hasMinedTransactions = true;
                         for (Api.TransactionDetails tx : block.getTransactionsList()) {
                             for (Api.TransactionDetails.Output output : tx.getCreditsList()) {
-                                AddressListener addrListener = (AddressListener) addressListeners.get(output.getAddress());
-                                if (addrListener != null) {
+                                Object obj = addressListeners.get(output.getAddress());
+                                if (obj != null) {
+                                    AddressListener addrListener = (AddressListener) obj;
                                     addrListener.onPaymentReceived();
                                 }
                             }
@@ -130,7 +138,7 @@ public class Wallet {
 
             @Override
             public void onError(Throwable t) {
-
+                t.printStackTrace();
             }
 
             @Override
@@ -170,6 +178,54 @@ public class Wallet {
         Api.GenerateMnemonicSeedRequest request = Api.GenerateMnemonicSeedRequest.newBuilder().setBitSize(128).build();
         Api.GenerateMnemonicSeedResponse reply = stub.generateMnemonicSeed(request);
         return reply.getMnemonic();
+    }
+
+    private void getTransactions(WalletEventListener listener) throws Exception {
+        WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
+        Api.GetTransactionsRequest request = Api.GetTransactionsRequest.newBuilder().build();
+        ListenableFuture<Api.GetTransactionsResponse> reply = stub.getTransactions(request);
+
+        Futures.addCallback(reply, new FutureCallback<Api.GetTransactionsResponse>() {
+            @Override
+            public void onSuccess(Api.GetTransactionsResponse result) {
+                List<TransactionData> txs = new ArrayList<TransactionData>();
+                for (Api.BlockDetails block : result.getMinedTransactionsList()) {
+                    for (Api.TransactionDetails tx : block.getTransactionsList()) {
+                        txs.add(extractTransactionData(tx));
+                    }
+                }
+                for (Api.TransactionDetails tx : result.getUnminedTransactionsList()) {
+                    txs.add(extractTransactionData(tx));
+                }
+                listener.onGetTransactions(Lists.reverse(txs));
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                t.printStackTrace();
+            }
+        });
+    }
+
+    private TransactionData extractTransactionData(Api.TransactionDetails tx) {
+        long total = 0;
+        String toAddress = "";
+        for (Api.TransactionDetails.Output output : tx.getCreditsList()) {
+            total += output.getAmount();
+            toAddress = output.getAddress();
+        }
+        for (Api.TransactionDetails.Input input : tx.getDebitsList()) {
+            total -= input.getPreviousAmount();
+        }
+        if (total > 0) {
+            toAddress = "";
+        }
+        byte[] idBytes = new byte[32];
+        tx.getHash().copyTo(idBytes, 0);
+
+        String txid = BaseEncoding.base16().lowerCase().encode(idBytes);
+        TransactionData txData = new TransactionData(txid, (total > 0), "", total, "", "", tx.getTimestamp(), toAddress);
+        return txData;
     }
 
     /**

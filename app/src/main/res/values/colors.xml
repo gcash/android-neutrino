@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorPrimary">#008577</color>
-    <color name="colorPrimaryDark">#00574B</color>
+    <color name="colorPrimaryDark">#5eb0e2</color>
     <color name="colorAccent">#D81B60</color>
     <color name="liteGrey">#E7E5E5</color>
+    <color name="grey">#898b83</color>
+    <color name="neonGreen">#abcb37</color>
+    <color name="neonBlue">#59B9E9</color>
+    <color name="neonPurple">#8271b4</color>
 </resources>
