@@ -2,7 +2,6 @@ package cash.bchd.android_neutrino.wallet;
 
 import android.content.Context;
 
-import com.google.common.collect.Lists;
 import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -227,7 +226,7 @@ public class Wallet {
                 for (Api.TransactionDetails tx : result.getUnminedTransactionsList()) {
                     txs.add(extractTransactionData(tx, 0));
                 }
-                listener.onGetTransactions(Lists.reverse(txs), bestHeight);
+                listener.onGetTransactions(txs, bestHeight);
             }
 
             @Override

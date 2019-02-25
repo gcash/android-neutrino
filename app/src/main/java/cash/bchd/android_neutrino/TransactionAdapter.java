@@ -67,6 +67,9 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         for (TransactionData tx : mDataset) {
             if (tx.getTxid().equals(newTx.getTxid())) {
                 tx.setHeight(newTx.getHeight());
+                if (tx.getFiatAmount().equals("")) {
+                    tx.setFiatAmount(newTx.getFiatAmount());
+                }
                 mDataset.set(i, tx);
                 found = true;
                 break;

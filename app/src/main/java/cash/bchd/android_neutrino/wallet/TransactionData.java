@@ -2,7 +2,7 @@ package cash.bchd.android_neutrino.wallet;
 
 import java.io.Serializable;
 
-public class TransactionData implements Serializable {
+public class TransactionData implements Serializable, Comparable<TransactionData> {
     private String txid;
     private boolean incoming;
     private String memo;
@@ -77,5 +77,15 @@ public class TransactionData implements Serializable {
 
     public void setHeight(int height) {
         this.height = height;
+    }
+
+    @Override
+    public int compareTo(TransactionData td) {
+        if (this.timestamp > td.timestamp) {
+            return 1;
+        } else if (this.timestamp < td.timestamp) {
+            return -1;
+        }
+        return 0;
     }
 }

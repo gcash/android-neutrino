@@ -28,12 +28,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
+import java.util.Collections;
 import java.util.Currency;
 import java.util.List;
 
@@ -47,7 +47,6 @@ import cash.bchd.android_neutrino.wallet.TransactionData;
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
 
-import static android.widget.LinearLayout.HORIZONTAL;
 
 public class MainActivity extends CloseActivity {
 
@@ -136,8 +135,9 @@ public class MainActivity extends CloseActivity {
 
         recyclerView.setLayoutManager(layoutManager);
 
-        // specify an adapter (see also next example)
+        // specify an adapter
         List<TransactionData> txs = txStore.getData();
+        Collections.sort(txs, Collections.reverseOrder());
         if (txs.size() > 0) {
             TextView bchPlease = (TextView) findViewById(R.id.bchPlease);
             bchPlease.setVisibility(View.GONE);
@@ -399,8 +399,8 @@ public class MainActivity extends CloseActivity {
 
                     @Override
                     public void onGetTransactions(List<TransactionData> txs, int blockHeight) {
+                        Collections.sort(txs, Collections.reverseOrder());
                         runOnUiThread(new Runnable() {
-
                             @Override
                             public void run() {
                                 if (txs.size() == 0) {
@@ -418,8 +418,8 @@ public class MainActivity extends CloseActivity {
                                         e.printStackTrace();
                                     }
                                     tx.setFiatAmount(formattedFiat);
+                                    mAdapter.updateOrInsertTx(tx);
                                 }
-                                mAdapter.setNewData(txs);
                                 mAdapter.notifyDataSetChanged();
                                 txStore.setData(txs);
                                 try {
