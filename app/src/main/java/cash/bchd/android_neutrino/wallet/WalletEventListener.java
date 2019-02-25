@@ -9,5 +9,9 @@ public class WalletEventListener {
 
     public void onWalletCreated(String seed){}
 
-    public void onGetTransactions(List<TransactionData> txs) {}
+    public void onGetTransactions(List<TransactionData> txs, int blockHeight) {}
+
+    public void onBlock(int blockHeight) {}
+
+    public void onTransaction(TransactionData tx) {}
 }

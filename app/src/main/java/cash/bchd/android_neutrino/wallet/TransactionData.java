@@ -1,6 +1,8 @@
 package cash.bchd.android_neutrino.wallet;
 
-public class TransactionData {
+import java.io.Serializable;
+
+public class TransactionData implements Serializable {
     private String txid;
     private boolean incoming;
     private String memo;
@@ -9,9 +11,10 @@ public class TransactionData {
     private String fiatCurrency;
     private long timestamp;
     private String toAddress;
+    private int height;
 
     public TransactionData(String txid, boolean incoming, String memo, long amount, String fiatAmount,
-                           String fiatCurrency, long timestamp, String toAddress){
+                           String fiatCurrency, long timestamp, String toAddress, int height) {
 
         this.txid = txid;
         this.incoming = incoming;
@@ -21,6 +24,7 @@ public class TransactionData {
         this.fiatCurrency = fiatCurrency;
         this.timestamp = timestamp;
         this.toAddress = toAddress;
+        this.height = height;
     }
 
     public String getTxid() {
@@ -55,6 +59,10 @@ public class TransactionData {
         return this.toAddress;
     }
 
+    public int getHeight() {
+        return this.height;
+    }
+
     public void setFiatCurrency(String fiatCurrency) {
         this.fiatCurrency = fiatCurrency;
     }
@@ -65,5 +73,9 @@ public class TransactionData {
 
     public void setMemo(String memo) {
         this.memo = memo;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
     }
 }

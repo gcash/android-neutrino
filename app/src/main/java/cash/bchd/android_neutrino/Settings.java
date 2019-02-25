@@ -10,6 +10,7 @@ public class Settings {
     private static final String LAST_BALANCE_KEY = "LastBalance";
     private static final String FIAT_CURRENCY_KEY = "FiatCurrency";
     private static final String LAST_ADDRESS_KEY = "LastAddress";
+    private static final String LAST_BLOCK_HEIGHT_KEY = "LastBlockHeight";
 
     SharedPreferences prefs;
 
@@ -81,5 +82,16 @@ public class Settings {
     public String getLastAddress() {
         String addr = prefs.getString(LAST_ADDRESS_KEY, "");
         return addr;
+    }
+
+    public void setLastBlockHeight(int blockHeight) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putInt(LAST_BLOCK_HEIGHT_KEY, blockHeight);
+        editor.apply();
+    }
+
+    public int getLastBlockHeight() {
+        int height = prefs.getInt(LAST_BLOCK_HEIGHT_KEY, 0);
+        return height;
     }
 }

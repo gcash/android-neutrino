@@ -19,6 +19,7 @@ import cash.bchd.android_neutrino.wallet.TransactionData;
 public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.TxViewHolder> {
     private List<TransactionData> mDataset;
     Context ctx;
+    int blockHeight;
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -29,6 +30,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         TextView txDescription;
         TextView txMemo;
         ImageView arrowImage;
+        ImageView confirmationCircle;
         public TxViewHolder(LinearLayout v) {
             super(v);
             bchAmount = (TextView) v.findViewById(R.id.bchAmount);
@@ -36,13 +38,44 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             txDescription = (TextView) v.findViewById(R.id.txDescription);
             txMemo = (TextView) v.findViewById(R.id.txMemo);
             arrowImage = (ImageView) v.findViewById(R.id.arrowImage);
+            confirmationCircle = (ImageView) v.findViewById(R.id.confirmationCircle);
         }
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public TransactionAdapter(List<TransactionData> myDataset, Context context) {
+    public TransactionAdapter(List<TransactionData> myDataset, Context context, int height) {
         mDataset = myDataset;
         ctx = context;
+        blockHeight = height;
+    }
+
+    public void setNewData(List<TransactionData> data) {
+        mDataset = data;
+    }
+
+    public List<TransactionData> getData() {
+        return mDataset;
+    }
+
+    public void setBlockHeight(int height) {
+        blockHeight = height;
+    }
+
+    public void updateOrInsertTx(TransactionData newTx) {
+        int i = 0;
+        boolean found = false;
+        for (TransactionData tx : mDataset) {
+            if (tx.getTxid().equals(newTx.getTxid())) {
+                tx.setHeight(newTx.getHeight());
+                mDataset.set(i, tx);
+                found = true;
+                break;
+            }
+            i++;
+        }
+        if (!found) {
+            mDataset.add(0, newTx);
+        }
     }
 
     // Create new views (invoked by the layout manager)
@@ -64,14 +97,29 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         // - replace the contents of the view with that element
 
         TransactionData tx = mDataset.get(position);
-        String bch = new Amount(tx.getAmount()).toString() + " BCH";
+        String bch = "₿" + new Amount(tx.getAmount()).toString();
         holder.bchAmount.setText(bch);
-        holder.fiatAmount.setText(tx.getFiatAmount());
+
+        int confirmations = 0;
+        if (tx.getHeight() > 0) {
+            confirmations = blockHeight - tx.getHeight() + 1;
+        }
+        if (confirmations <= 0) {
+            holder.fiatAmount.setText("Unconfirmed");
+            holder.confirmationCircle.setImageResource(R.drawable.red_circle);
+        } else if (confirmations < 10) {
+            holder.confirmationCircle.setImageResource(R.drawable.yellow_circle);
+            String confirmedText = confirmations + " Confirmations";
+            holder.fiatAmount.setText(confirmedText);
+        } else {
+            holder.confirmationCircle.setVisibility(View.GONE);
+            holder.fiatAmount.setText(tx.getFiatAmount());
+        }
 
         if (tx.getIncoming()) {
             holder.txDescription.setText("Received Bitcoin Cash");
             holder.arrowImage.setImageResource(R.drawable.receive_arrow);
-            holder.bchAmount.setTextColor(ctx.getResources().getColor(R.color.neonGreen));
+            holder.bchAmount.setTextColor(ctx.getResources().getColor(R.color.darkGreen));
             if (tx.getMemo().equals("")){
                 holder.txMemo.setText("From Bitcoin Cash Address");
             } else {

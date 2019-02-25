@@ -65,7 +65,8 @@ public class MainActivity extends CloseActivity {
     ImageView qrImage;
     TextView addrText;
     TransactionStore txStore;
-    private RecyclerView.LayoutManager layoutManager;
+    RecyclerView.LayoutManager layoutManager;
+    TransactionAdapter mAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,6 +126,24 @@ public class MainActivity extends CloseActivity {
         changeTransform.setDuration(500);
         changeTransform.setInterpolator(new AccelerateInterpolator());
         TransitionManager.beginDelayedTransition(mCLayout,changeTransform);
+
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.txRecylerView);
+        recyclerView.setHasFixedSize(true);
+        DividerItemDecoration decor = new DividerItemDecoration(getApplicationContext(), DividerItemDecoration.VERTICAL);
+        recyclerView.addItemDecoration(decor);
+
+        // use a linear layout manager
+
+        recyclerView.setLayoutManager(layoutManager);
+
+        // specify an adapter (see also next example)
+        List<TransactionData> txs = txStore.getData();
+        if (txs.size() > 0) {
+            TextView bchPlease = (TextView) findViewById(R.id.bchPlease);
+            bchPlease.setVisibility(View.GONE);
+        }
+        mAdapter = new TransactionAdapter(txs, getApplicationContext(), settings.getLastBlockHeight());
+        recyclerView.setAdapter(mAdapter);
 
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -361,7 +380,8 @@ public class MainActivity extends CloseActivity {
                             System.out.println("Updating balance");
                             Amount amt = new Amount(bal);
                             TextView bchBalanceView = (TextView) findViewById(R.id.bchBalanceView);
-                            bchBalanceView.setText(amt.toString() + " BCH");
+                            String balanceStr = amt.toString() + " BCH";
+                            bchBalanceView.setText(balanceStr);
                             String fiatAmount = exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(settings.getFiatCurrency()));
                             TextView fiatBalanceView = (TextView) findViewById(R.id.fiatBalanceView);
                             fiatBalanceView.setText(fiatAmount);
@@ -378,7 +398,7 @@ public class MainActivity extends CloseActivity {
                     }
 
                     @Override
-                    public void onGetTransactions(List<TransactionData> txs) {
+                    public void onGetTransactions(List<TransactionData> txs, int blockHeight) {
                         runOnUiThread(new Runnable() {
 
                             @Override
@@ -388,42 +408,55 @@ public class MainActivity extends CloseActivity {
                                 }
                                 TextView bchPlease = (TextView) findViewById(R.id.bchPlease);
                                 bchPlease.setVisibility(View.GONE);
-                                boolean updated = false;
                                 for (TransactionData tx : txs) {
-                                    if (true) { //!txStore.has(tx.getTxid())
-                                        String fiatCurrency = settings.getFiatCurrency();
-                                        tx.setFiatCurrency(fiatCurrency);
-                                        String formattedFiat = "";
-                                        try {
-                                            formattedFiat = exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
-                                        } catch (Exception e) {
-                                            e.printStackTrace();
-                                        }
-                                        tx.setFiatAmount(formattedFiat);
-                                        txStore.putTransaction(tx);
-                                        updated = true;
-                                        int i = txs.indexOf(tx);
-                                    }
-                                }
-                                RecyclerView recyclerView = (RecyclerView) findViewById(R.id.txRecylerView);
-                                recyclerView.setHasFixedSize(true);
-                                DividerItemDecoration decor = new DividerItemDecoration(getApplicationContext(), DividerItemDecoration.VERTICAL);
-                                recyclerView.addItemDecoration(decor);
-
-                                // use a linear layout manager
-
-                                recyclerView.setLayoutManager(layoutManager);
-
-                                // specify an adapter (see also next example)
-                                TransactionAdapter mAdapter = new TransactionAdapter(txs, getApplicationContext());
-                                recyclerView.setAdapter(mAdapter);
-                                /*if (updated) {
+                                    String fiatCurrency = settings.getFiatCurrency();
+                                    tx.setFiatCurrency(fiatCurrency);
+                                    String formattedFiat = "";
                                     try {
-                                        txStore.save(getApplicationContext());
+                                        formattedFiat = exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
                                     } catch (Exception e) {
                                         e.printStackTrace();
                                     }
-                                }*/
+                                    tx.setFiatAmount(formattedFiat);
+                                }
+                                mAdapter.setNewData(txs);
+                                mAdapter.notifyDataSetChanged();
+                                txStore.setData(txs);
+                                try {
+                                    txStore.save(getApplicationContext());
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onBlock(int blockHeight) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mAdapter.setBlockHeight(blockHeight);
+                                mAdapter.notifyDataSetChanged();
+                                settings.setLastBlockHeight(blockHeight);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onTransaction(TransactionData tx) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mAdapter.updateOrInsertTx(tx);
+                                mAdapter.notifyDataSetChanged();
+
+                                txStore.setData(mAdapter.getData());
+                                try {
+                                    txStore.save(getApplicationContext());
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
                             }
                         });
                     }

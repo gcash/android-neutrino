@@ -39,6 +39,8 @@ public class Wallet {
 
     private HashMap<String, AddressListener> addressListeners = new HashMap<String, AddressListener>();
 
+    private int lastBlockHeight;
+
     private boolean running;
 
     /**
@@ -96,14 +98,28 @@ public class Wallet {
     }
 
     public void listenTransactions(WalletEventListener listener) {
+        try {
+            this.lastBlockHeight = network().getBestHeight();
+            listener.onBlock(this.lastBlockHeight);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         WalletServiceGrpc.WalletServiceStub stub = WalletServiceGrpc.newStub(channel).withCallCredentials(creds);
         Api.TransactionNotificationsRequest request = Api.TransactionNotificationsRequest.newBuilder().build();
         stub.transactionNotifications(request, new StreamObserver<Api.TransactionNotificationsResponse>() {
             @Override
             public void onNext(Api.TransactionNotificationsResponse value) {
                 List<Api.BlockDetails> blocks = value.getAttachedBlocksList();
+                if (value.getDetachedBlocksCount() > 0) {
+                    lastBlockHeight = 0;
+                }
                 boolean hasMinedTransactions = false;
                 for (Api.BlockDetails block : blocks) {
+                    if (block.getHeight() > lastBlockHeight) {
+                        lastBlockHeight = block.getHeight();
+                        listener.onBlock(block.getHeight());
+                    }
                     if (block.getTransactionsCount() > 0) {
                         hasMinedTransactions = true;
                         for (Api.TransactionDetails tx : block.getTransactionsList()) {
@@ -166,6 +182,13 @@ public class Wallet {
         return reply.getSpendable();
     }
 
+    public Api.NetworkResponse network() throws Exception {
+        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(channel).withCallCredentials(creds);
+        Api.NetworkRequest request = Api.NetworkRequest.newBuilder().build();
+        Api.NetworkResponse reply = stub.network(request);
+        return reply;
+    }
+
     private boolean walletExists() throws Exception {
         WalletLoaderServiceGrpc.WalletLoaderServiceBlockingStub stub = WalletLoaderServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
         Api.WalletExistsRequest request = Api.WalletExistsRequest.newBuilder().build();
@@ -188,16 +211,23 @@ public class Wallet {
         Futures.addCallback(reply, new FutureCallback<Api.GetTransactionsResponse>() {
             @Override
             public void onSuccess(Api.GetTransactionsResponse result) {
+                int bestHeight = 0;
+                try {
+                    bestHeight = network().getBestHeight();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
                 List<TransactionData> txs = new ArrayList<TransactionData>();
                 for (Api.BlockDetails block : result.getMinedTransactionsList()) {
                     for (Api.TransactionDetails tx : block.getTransactionsList()) {
-                        txs.add(extractTransactionData(tx));
+                        txs.add(extractTransactionData(tx, block.getHeight()));
                     }
                 }
                 for (Api.TransactionDetails tx : result.getUnminedTransactionsList()) {
-                    txs.add(extractTransactionData(tx));
+                    txs.add(extractTransactionData(tx, 0));
                 }
-                listener.onGetTransactions(Lists.reverse(txs));
+                listener.onGetTransactions(Lists.reverse(txs), bestHeight);
             }
 
             @Override
@@ -207,7 +237,7 @@ public class Wallet {
         });
     }
 
-    private TransactionData extractTransactionData(Api.TransactionDetails tx) {
+    private TransactionData extractTransactionData(Api.TransactionDetails tx, int height) {
         long total = 0;
         String toAddress = "";
         for (Api.TransactionDetails.Output output : tx.getCreditsList()) {
@@ -224,7 +254,7 @@ public class Wallet {
         tx.getHash().copyTo(idBytes, 0);
 
         String txid = BaseEncoding.base16().lowerCase().encode(idBytes);
-        TransactionData txData = new TransactionData(txid, (total > 0), "", total, "", "", tx.getTimestamp(), toAddress);
+        TransactionData txData = new TransactionData(txid, (total > 0), "", total, "", "", tx.getTimestamp(), toAddress, height);
         return txData;
     }
 

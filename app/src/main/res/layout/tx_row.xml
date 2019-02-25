@@ -54,9 +54,25 @@
             android:textSize="15sp"
             android:textStyle="bold"/>
 
-        <TextView
-            android:id="@+id/fiatAmount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end">
+
+            <ImageView
+                android:id="@+id/confirmationCircle"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                app:srcCompat="@drawable/red_circle"
+                android:layout_gravity="center"
+                android:layout_marginTop="1dp"/>
+
+            <TextView
+                android:id="@+id/fiatAmount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"/>
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>
