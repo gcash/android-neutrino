@@ -130,6 +130,8 @@ public class Wallet {
                                     addrListener.onPaymentReceived();
                                 }
                             }
+                            TransactionData td = extractTransactionData(tx, block.getHeight(), block.getTimestamp());
+                            listener.onTransaction(td);
                         }
                     }
                 }
@@ -142,6 +144,8 @@ public class Wallet {
                                 addrListener.onPaymentReceived();
                             }
                         }
+                        TransactionData td = extractTransactionData(tx, 0, System.currentTimeMillis()/1000);
+                        listener.onTransaction(td);
                     }
                     try {
                         long bal = balance();
@@ -221,11 +225,11 @@ public class Wallet {
                 List<TransactionData> txs = new ArrayList<TransactionData>();
                 for (Api.BlockDetails block : result.getMinedTransactionsList()) {
                     for (Api.TransactionDetails tx : block.getTransactionsList()) {
-                        txs.add(extractTransactionData(tx, block.getHeight()));
+                        txs.add(extractTransactionData(tx, block.getHeight(), block.getTimestamp()));
                     }
                 }
                 for (Api.TransactionDetails tx : result.getUnminedTransactionsList()) {
-                    txs.add(extractTransactionData(tx, 0));
+                    txs.add(extractTransactionData(tx, 0, System.currentTimeMillis()/1000));
                 }
                 listener.onGetTransactions(txs, bestHeight);
             }
@@ -237,7 +241,7 @@ public class Wallet {
         });
     }
 
-    private TransactionData extractTransactionData(Api.TransactionDetails tx, int height) {
+    private TransactionData extractTransactionData(Api.TransactionDetails tx, int height, long timestamp) {
         long total = 0;
         String toAddress = "";
         for (Api.TransactionDetails.Output output : tx.getCreditsList()) {
@@ -254,7 +258,7 @@ public class Wallet {
         byte[] txBytes = tx.getHash().toByteArray();
         reverse(txBytes);
         String txid = BaseEncoding.base16().lowerCase().encode(txBytes);
-        TransactionData txData = new TransactionData(txid, (total > 0), "", total, "", "", tx.getTimestamp(), toAddress, height);
+        TransactionData txData = new TransactionData(txid, (total > 0), "", total, "", "", timestamp, toAddress, height);
         return txData;
     }
 
