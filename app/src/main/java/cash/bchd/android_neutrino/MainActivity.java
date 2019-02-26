@@ -72,6 +72,8 @@ public class MainActivity extends CloseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        cancelCloseTimer();
+
         layoutManager = new LinearLayoutManager(this);
 
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
@@ -194,6 +196,12 @@ public class MainActivity extends CloseActivity {
             }
         });
 
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        cancelCloseTimer();
     }
 
     Rect outRect = new Rect();
