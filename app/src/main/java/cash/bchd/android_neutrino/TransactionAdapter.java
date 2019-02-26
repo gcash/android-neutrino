@@ -1,16 +1,27 @@
 package cash.bchd.android_neutrino;
 
+import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.v7.widget.RecyclerView;
+import android.text.Html;
+import android.text.method.LinkMovementMethod;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import org.w3c.dom.Text;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import cash.bchd.android_neutrino.wallet.Amount;
@@ -19,6 +30,7 @@ import cash.bchd.android_neutrino.wallet.TransactionData;
 public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.TxViewHolder> {
     private List<TransactionData> mDataset;
     Context ctx;
+    CoordinatorLayout cLayout;
     int blockHeight;
 
     // Provide a reference to the views for each data item
@@ -31,8 +43,10 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         TextView txMemo;
         ImageView arrowImage;
         ImageView confirmationCircle;
+        LinearLayout layout;
         public TxViewHolder(LinearLayout v) {
             super(v);
+            layout = v;
             bchAmount = (TextView) v.findViewById(R.id.bchAmount);
             fiatAmount = (TextView) v.findViewById(R.id.fiatAmount);
             txDescription = (TextView) v.findViewById(R.id.txDescription);
@@ -43,9 +57,10 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public TransactionAdapter(List<TransactionData> myDataset, Context context, int height) {
+    public TransactionAdapter(List<TransactionData> myDataset, Context context, CoordinatorLayout layout, int height) {
         mDataset = myDataset;
         ctx = context;
+        cLayout = layout;
         blockHeight = height;
     }
 
@@ -139,6 +154,66 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
                 holder.txMemo.setText(tx.getMemo());
             }
         }
+
+        holder.layout.setOnClickListener(new LinearLayout.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                View customView = LayoutInflater.from(ctx).inflate(R.layout.txdetailspopup, null);
+                PopupWindow popupWindow = new PopupWindow(customView, CoordinatorLayout.LayoutParams.WRAP_CONTENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT, true);
+                popupWindow.showAtLocation(cLayout, Gravity.CENTER, 0, 0);
+                popupWindow.setOutsideTouchable(true);
+                popupWindow.setFocusable(true);
+                popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+
+                ImageView arrow = (ImageView) customView.findViewById(R.id.txDetailsArrow);
+                if (tx.getIncoming()) {
+                    arrow.setImageResource(R.drawable.receive_arrow);
+                } else {
+                    arrow.setImageResource(R.drawable.receive_arrow);
+                }
+                TextView bchAmount = (TextView) customView.findViewById(R.id.txDetailsBchAmount);
+                String detailsAmount = new Amount(tx.getAmount()).toString() + " BCH";
+                bchAmount.setText(detailsAmount);
+
+                TextView fiatAmount = (TextView) customView.findViewById(R.id.txDetailsFiatAmount);
+                fiatAmount.setText(tx.getFiatAmount());
+
+                TextView dateView = (TextView) customView.findViewById(R.id.txDetailsDate);
+                Date date = new Date(tx.getTimestamp());
+                DateFormat formatter = new SimpleDateFormat("hh:mm a - MMM dd, yyyy");
+                String dateFormatted = formatter.format(date);
+                dateView.setText(dateFormatted);
+
+                TextView status = (TextView) customView.findViewById(R.id.txDetailsStatus);
+                ImageView circle = (ImageView) customView.findViewById(R.id.confirmationCircle);
+
+                int confirmations = 0;
+                if (tx.getHeight() > 0) {
+                    confirmations = blockHeight - tx.getHeight() + 1;
+                }
+                if (confirmations <= 0) {
+                    status.setText("Unconfirmed");
+                    circle.setImageResource(R.drawable.red_circle);
+                } else if (confirmations < 10) {
+                    status.setText("Pending");
+                    circle.setImageResource(R.drawable.yellow_circle);
+                } else {
+                    status.setText("Confirmed");
+                    circle.setImageResource(R.drawable.green_circle);
+                }
+
+                TextView memo = (TextView) customView.findViewById(R.id.txDetailsMemo);
+                memo.setText(tx.getMemo());
+
+                TextView txid = (TextView) customView.findViewById(R.id.txDetailsTxid);
+                txid.setText(tx.getTxid());
+
+                TextView link = (TextView) customView.findViewById(R.id.txDetailsLink);
+                String url = "https://www.blockchain.com/bch/tx/" + tx.getTxid();
+                link.setText(url);
+            }
+        });
+
     }
 
     // Return the size of your dataset (invoked by the layout manager)

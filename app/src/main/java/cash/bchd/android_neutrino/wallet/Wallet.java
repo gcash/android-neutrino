@@ -2,6 +2,7 @@ package cash.bchd.android_neutrino.wallet;
 
 import android.content.Context;
 
+import com.google.android.gms.common.util.ArrayUtils;
 import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -249,10 +250,10 @@ public class Wallet {
         if (total > 0) {
             toAddress = "";
         }
-        byte[] idBytes = new byte[32];
-        tx.getHash().copyTo(idBytes, 0);
 
-        String txid = BaseEncoding.base16().lowerCase().encode(idBytes);
+        byte[] txBytes = tx.getHash().toByteArray();
+        reverse(txBytes);
+        String txid = BaseEncoding.base16().lowerCase().encode(txBytes);
         TransactionData txData = new TransactionData(txid, (total > 0), "", total, "", "", tx.getTimestamp(), toAddress, height);
         return txData;
     }
@@ -271,5 +272,21 @@ public class Wallet {
     public void stop() {
         channel.shutdown();
         mobile.Mobile.stopWallet();
+    }
+
+    public static void reverse(byte[] array) {
+        if (array == null) {
+            return;
+        }
+        int i = 0;
+        int j = array.length - 1;
+        byte tmp;
+        while (j > i) {
+            tmp = array[j];
+            array[j] = array[i];
+            array[i] = tmp;
+            j--;
+            i++;
+        }
     }
 }

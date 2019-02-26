@@ -142,7 +142,7 @@ public class MainActivity extends CloseActivity {
             TextView bchPlease = (TextView) findViewById(R.id.bchPlease);
             bchPlease.setVisibility(View.GONE);
         }
-        mAdapter = new TransactionAdapter(txs, getApplicationContext(), settings.getLastBlockHeight());
+        mAdapter = new TransactionAdapter(txs, this, mCLayout, settings.getLastBlockHeight());
         recyclerView.setAdapter(mAdapter);
 
         fab.setOnClickListener(new View.OnClickListener() {
