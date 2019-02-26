@@ -448,6 +448,18 @@ public class MainActivity extends CloseActivity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+                                TextView bchPlease = (TextView) findViewById(R.id.bchPlease);
+                                bchPlease.setVisibility(View.GONE);
+
+                                String fiatCurrency = settings.getFiatCurrency();
+                                tx.setFiatCurrency(fiatCurrency);
+                                String formattedFiat = "";
+                                try {
+                                    formattedFiat = exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                                tx.setFiatAmount(formattedFiat);
                                 mAdapter.updateOrInsertTx(tx);
                                 mAdapter.notifyDataSetChanged();
 

@@ -274,7 +274,9 @@ public class Wallet {
      * no data is corrupted.
      */
     public void stop() {
-        channel.shutdown();
+        if (isRunning()) {
+            channel.shutdown();
+        }
         mobile.Mobile.stopWallet();
     }
 

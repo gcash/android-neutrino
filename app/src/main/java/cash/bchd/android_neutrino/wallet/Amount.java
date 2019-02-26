@@ -1,8 +1,10 @@
 package cash.bchd.android_neutrino.wallet;
 
+import java.math.BigDecimal;
+
 public class Amount {
 
-    private static final int SATOSHIS_PER_BCH = 100000000;
+    private static final double SATOSHIS_PER_BCH = 100000000;
     private long satoshis;
 
     public Amount(long satoshis) {
@@ -10,16 +12,17 @@ public class Amount {
     }
 
     public double toBCH() {
-        Long sats = new Long(this.satoshis);
+        Long sats = Long.valueOf(this.satoshis);
         return sats.doubleValue() / SATOSHIS_PER_BCH;
     }
 
     public String toString() {
-        Long sats = new Long(this.satoshis);
-        return removeTrailingZeros(sats.doubleValue() / SATOSHIS_PER_BCH);
+        return removeTrailingZeros(toBCH());
     }
 
     private static String removeTrailingZeros(double d) {
-        return String.format("%.12f", d).replaceAll("[0]*$", "").replaceAll(".$", "");
+        String s = String.format("%.12f", d);
+        BigDecimal stripedVal = new BigDecimal(s).stripTrailingZeros();
+        return stripedVal.toString();
     }
 }

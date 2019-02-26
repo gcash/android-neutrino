@@ -85,6 +85,9 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
                 if (tx.getFiatAmount().equals("")) {
                     tx.setFiatAmount(newTx.getFiatAmount());
                 }
+                if (tx.getAmount() == 0) {
+                    tx.setAmount(newTx.getAmount());
+                }
                 mDataset.set(i, tx);
                 found = true;
                 break;
@@ -125,12 +128,14 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         if (confirmations <= 0) {
             holder.fiatAmount.setText("Unconfirmed");
             holder.confirmationCircle.setImageResource(R.drawable.red_circle);
+            holder.confirmationCircle.setVisibility(View.VISIBLE);
         } else if (confirmations < 10) {
             holder.confirmationCircle.setImageResource(R.drawable.yellow_circle);
+            holder.confirmationCircle.setVisibility(View.VISIBLE);
             String confirmedText = confirmations + " Confirmations";
             holder.fiatAmount.setText(confirmedText);
         } else {
-            holder.confirmationCircle.setVisibility(View.GONE);
+            holder.confirmationCircle.setVisibility(View.INVISIBLE);
             holder.fiatAmount.setText(tx.getFiatAmount());
         }
 
@@ -169,7 +174,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
                 if (tx.getIncoming()) {
                     arrow.setImageResource(R.drawable.receive_arrow);
                 } else {
-                    arrow.setImageResource(R.drawable.receive_arrow);
+                    arrow.setImageResource(R.drawable.send_arrow);
                 }
                 TextView bchAmount = (TextView) customView.findViewById(R.id.txDetailsBchAmount);
                 String detailsAmount = new Amount(tx.getAmount()).toString() + " BCH";

@@ -81,7 +81,11 @@ public class ExchangeRates {
         double bchBtcRate = bchObj.getDouble("last");
 
         double fiat = round((btcRate/bchBtcRate) * bchAmount.toBCH(), 2);
-        String formatted = currencyCode.getSymbol() + String.valueOf(fiat);
+        String fiatStr = String.valueOf(fiat);
+        if (fiatStr.indexOf(".") == fiatStr.length()-2) {
+            fiatStr += "0";
+        }
+        String formatted = currencyCode.getSymbol() + fiatStr;
         cb.onRateFetched(formatted);
     }
 

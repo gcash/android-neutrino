@@ -8,9 +8,9 @@ import cash.bchd.android_neutrino.wallet.Wallet;
 public class CloseActivity extends AppCompatActivity {
     protected static Wallet wallet;
     @Override
-    protected void onDestroy() {
+    protected void onStop() {
+        super.onStop();
         wallet.stop();
-        super.onDestroy();
         wallet = null;
     }
 }

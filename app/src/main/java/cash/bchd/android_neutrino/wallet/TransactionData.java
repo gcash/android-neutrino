@@ -79,6 +79,10 @@ public class TransactionData implements Serializable, Comparable<TransactionData
         this.height = height;
     }
 
+    public void setAmount(long amount) {
+        this.amount = amount;
+    }
+
     @Override
     public int compareTo(TransactionData td) {
         if (this.timestamp > td.timestamp) {
