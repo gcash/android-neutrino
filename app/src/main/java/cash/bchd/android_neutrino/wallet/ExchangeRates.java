@@ -16,12 +16,18 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class ExchangeRates {
+    private static ExchangeRates instance;
     private static final String EXCHANGE_RATE_ENDPOINT = "https://ticker.openbazaar.org/api";
 
     private JSONObject rates;
 
     public ExchangeRates() {
+        instance = this;
         startExchangeRateService();
+    }
+
+    public static ExchangeRates getInstance() {
+        return instance;
     }
 
     private void startExchangeRateService() {

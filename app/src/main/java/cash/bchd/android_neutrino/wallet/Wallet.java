@@ -9,6 +9,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +25,9 @@ import walletrpc.WalletServiceGrpc;
  * Wallet represents an instance of a bchwallet. It will load and start the
  * bchwallet daemon and provide convience methods to the wallet's API calls.
  */
-public class Wallet {
+public class Wallet implements Serializable {
+
+    private static Wallet instance;
 
     private String getConfigFilePath;
     private final String host = "127.0.0.1";
@@ -51,11 +54,16 @@ public class Wallet {
         this.getConfigFilePath = config.getConfigFilePath();
         this.creds = new AuthCredentials(config.getAuthToken());
         this.channel = ManagedChannelBuilder.forAddress(this.host, this.port).usePlaintext().build();
+        instance = this;
         try {
             config.save(context);
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static Wallet getInstance() {
+        return instance;
     }
 
     public void loadWallet(WalletEventListener listener) throws Exception {
@@ -99,8 +107,8 @@ public class Wallet {
 
     public void listenTransactions(WalletEventListener listener) {
         try {
-            this.lastBlockHeight = network().getBestHeight();
-            listener.onBlock(this.lastBlockHeight);
+            lastBlockHeight = network().getBestHeight();
+            listener.onBlock(lastBlockHeight);
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -17,6 +17,9 @@ public class Amount {
     }
 
     public String toString() {
+        if (this.satoshis == 0) {
+            return "0";
+        }
         return removeTrailingZeros(toBCH());
     }
 

@@ -9,12 +9,14 @@ import cash.bchd.android_neutrino.wallet.Wallet;
 
 public class CloseActivity extends AppCompatActivity {
     protected static Wallet wallet;
-    Timer closeTimer;
+    protected static Timer closeTimer;
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        wallet.stop();
-        wallet = null;
+        if (wallet != null) {
+            wallet.stop();
+            wallet = null;
+        }
     }
 
     @Override
@@ -27,17 +29,19 @@ public class CloseActivity extends AppCompatActivity {
             new TimerTask() {
                 @Override
                 public void run() {
-                    wallet.stop();
-                    wallet = null;
+                    if (wallet != null) {
+                        wallet.stop();
+                        wallet = null;
+                    }
                 }
                         },
             600000);
     }
 
-    public void cancelCloseTimer() {
-        if (this.closeTimer != null) {
-            this.closeTimer.cancel();
-            this.closeTimer = null;
+    public static void cancelCloseTimer() {
+        if (closeTimer != null) {
+            closeTimer.cancel();
+            closeTimer = null;
         }
     }
 }

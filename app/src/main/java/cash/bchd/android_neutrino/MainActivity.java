@@ -55,7 +55,7 @@ public class MainActivity extends CloseActivity {
     FloatingActionButton fab;
     FloatingActionButton fab1;
     FloatingActionButton fab2;
-    FloatingActionButton fab3;
+    FloatingActionButton fabSend;
     FloatingActionButton fabScan;
     FloatingActionButton fabQR;
     boolean isFabOpen;
@@ -103,9 +103,7 @@ public class MainActivity extends CloseActivity {
         };
         thread.start();
 
-
-
-        if (wallet == null) {
+        if (Wallet.getInstance() == null) {
             String[] addrs = new String[0];
             Config cfg = new Config(getDataDir().getPath(), !settings.getWalletInitialized(),
                     true, settings.getBlocksOnly(), addrs, "", "",
@@ -117,7 +115,7 @@ public class MainActivity extends CloseActivity {
         fab = findViewById(R.id.fab);
         fab1 = findViewById(R.id.speakNowFab);
         fab2 = findViewById(R.id.speakNowFab1);
-        fab3 = findViewById(R.id.speakNowFab2);
+        fabSend = findViewById(R.id.btnSend);
         fabScan = findViewById(R.id.btnScan);
         fabQR = findViewById(R.id.btnQR);
 
@@ -173,6 +171,10 @@ public class MainActivity extends CloseActivity {
                             displayQRScanner();
                             toggleFABMenu();
                         }
+                        if (inViewInBounds(fabSend, (int) event.getRawX(), (int) event.getRawY())) {
+                            openSendActivity();
+                            toggleFABMenu();
+                        }
                     }
                 }
                 return true;
@@ -196,6 +198,14 @@ public class MainActivity extends CloseActivity {
             }
         });
 
+        fabSend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                fab.bringToFront();
+                openSendActivity();
+            }
+        });
+
     }
 
     @Override
@@ -213,6 +223,13 @@ public class MainActivity extends CloseActivity {
         view.getLocationOnScreen(location);
         outRect.offset(location[0], location[1]);
         return outRect.contains(x, y);
+    }
+
+    private void openSendActivity() {
+        toggleFABMenu();
+        Intent intent = new Intent(this, SendActivity.class);
+        intent.putExtra("fiatCurrency", this.settings.getFiatCurrency());
+        startActivity(intent);
     }
 
     private void displayQRScanner() {
@@ -344,7 +361,7 @@ public class MainActivity extends CloseActivity {
         isFabOpen = true;
         fab1.animate().translationY(-getResources().getDimension(R.dimen.standard_65));
         fab2.animate().translationY(-getResources().getDimension(R.dimen.standard_120));
-        fab3.animate().translationY(-getResources().getDimension(R.dimen.standard_175));
+        fabSend.animate().translationY(-getResources().getDimension(R.dimen.standard_175));
         fabScan.animate().translationY(-getResources().getDimension(R.dimen.standard_230));
         fabQR.animate().translationY(-getResources().getDimension(R.dimen.standard_285));
     }
@@ -353,7 +370,7 @@ public class MainActivity extends CloseActivity {
         isFabOpen = false;
         fab1.animate().translationY(0);
         fab2.animate().translationY(0);
-        fab3.animate().translationY(0);
+        fabSend.animate().translationY(0);
         fabScan.animate().translationY(0);
         fabQR.animate().translationY(0);
         fab.bringToFront();
