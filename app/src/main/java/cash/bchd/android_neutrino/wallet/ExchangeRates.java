@@ -75,7 +75,14 @@ public class ExchangeRates {
         double bchBtcRate = bchObj.getDouble("last");
 
         double fiat = round((btcRate/bchBtcRate) * bchAmount.toBCH(), 2);
-        return currencyCode.getSymbol() + String.valueOf(fiat);
+        String fiatStr = String.valueOf(fiat);
+        if (fiatStr.indexOf(".") != 0) {
+            String afterDecimal = fiatStr.substring(fiatStr.indexOf(".")+1);
+            if (afterDecimal.length() == 1) {
+                fiatStr = fiatStr + "0";
+            }
+        }
+        return currencyCode.getSymbol() + fiatStr;
     }
 
     public double convertToBCH(double amount, Currency currencyCode) throws Exception {

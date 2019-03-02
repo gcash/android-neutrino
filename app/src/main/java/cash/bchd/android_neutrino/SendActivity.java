@@ -108,6 +108,18 @@ public class SendActivity extends AppCompatActivity {
                     String bchBalance = "Balance: " + balance.toString() + " BCH";
                     balanceTxtView.setText(bchBalance);
                     symbolLabel.setText("₿");
+
+
+                    String amt = inputAmount.getText().toString();
+                    if (!amt.equals("")) {
+                        try {
+                            Amount bchRate = new Amount(ExchangeRates.getInstance().convertToBCH(Double.valueOf(amt), Currency.getInstance(fiatCurrency)));
+                            inputAmount.setText(bchRate.toString());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+
                     showingFiat = false;
                     updateAlternateAmount();
                 } else {
@@ -115,6 +127,18 @@ public class SendActivity extends AppCompatActivity {
                         String balanceStr = "Balance: " + ExchangeRates.getInstance().getFormattedAmountInFiat(balance, Currency.getInstance(fiatCurrency));
                         balanceTxtView.setText(balanceStr);
                         symbolLabel.setText(Currency.getInstance(fiatCurrency).getSymbol());
+
+                        String amt = inputAmount.getText().toString();
+                        if (!amt.equals("")) {
+                            try {
+                                Amount bchRate = new Amount(Double.valueOf(amt));
+                                String formatted = ExchangeRates.getInstance().getFormattedAmountInFiat(bchRate, Currency.getInstance(fiatCurrency));
+                                inputAmount.setText(formatted.substring(1));
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+
                     } catch(Exception e) {
                         e.printStackTrace();
                     }
