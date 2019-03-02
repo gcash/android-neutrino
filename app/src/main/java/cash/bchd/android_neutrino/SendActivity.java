@@ -8,6 +8,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.support.design.widget.Snackbar;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -20,19 +21,26 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.ToggleButton;
+
+import com.google.android.gms.common.api.CommonStatusCodes;
+import com.google.android.gms.vision.barcode.Barcode;
 
 import org.w3c.dom.Text;
 
 import java.util.Currency;
 
 import cash.bchd.android_neutrino.wallet.Amount;
+import cash.bchd.android_neutrino.wallet.BitcoinPaymentURI;
 import cash.bchd.android_neutrino.wallet.ExchangeRates;
 import cash.bchd.android_neutrino.wallet.Wallet;
 import walletrpc.Api;
 
 public class SendActivity extends AppCompatActivity {
+
+    public static final int RC_BARCODE_CAPTURE = 9001;
 
     Wallet wallet;
     TextView balanceTxtView;
@@ -42,6 +50,10 @@ public class SendActivity extends AppCompatActivity {
     TextInputEditText inputAmount;
     TextView conversionRate;
     boolean sendAll;
+    LinearLayout sendLayout;
+    TextInputEditText address;
+    TextInputEditText memo;
+    TextView symbolLabel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +76,8 @@ public class SendActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
 
+        sendLayout = (LinearLayout) findViewById(R.id.sendLayout);
+
         balanceTxtView = (TextView) findViewById(R.id.sendBalance);
         try {
             balance = new Amount(wallet.balance());
@@ -74,7 +88,7 @@ public class SendActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        TextView symbolLabel = (TextView) findViewById(R.id.symbolLabel);
+        symbolLabel = (TextView) findViewById(R.id.symbolLabel);
 
         symbolLabel.setText(Currency.getInstance(fiatCurrency).getSymbol());
 
@@ -104,51 +118,11 @@ public class SendActivity extends AppCompatActivity {
         toggle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (showingFiat) {
-                    String bchBalance = "Balance: " + balance.toString() + " BCH";
-                    balanceTxtView.setText(bchBalance);
-                    symbolLabel.setText("₿");
-
-
-                    String amt = inputAmount.getText().toString();
-                    if (!amt.equals("")) {
-                        try {
-                            Amount bchRate = new Amount(ExchangeRates.getInstance().convertToBCH(Double.valueOf(amt), Currency.getInstance(fiatCurrency)));
-                            inputAmount.setText(bchRate.toString());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                    showingFiat = false;
-                    updateAlternateAmount();
-                } else {
-                    try {
-                        String balanceStr = "Balance: " + ExchangeRates.getInstance().getFormattedAmountInFiat(balance, Currency.getInstance(fiatCurrency));
-                        balanceTxtView.setText(balanceStr);
-                        symbolLabel.setText(Currency.getInstance(fiatCurrency).getSymbol());
-
-                        String amt = inputAmount.getText().toString();
-                        if (!amt.equals("")) {
-                            try {
-                                Amount bchRate = new Amount(Double.valueOf(amt));
-                                String formatted = ExchangeRates.getInstance().getFormattedAmountInFiat(bchRate, Currency.getInstance(fiatCurrency));
-                                inputAmount.setText(formatted.substring(1));
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-
-                    } catch(Exception e) {
-                        e.printStackTrace();
-                    }
-                    showingFiat = true;
-                    updateAlternateAmount();
-                }
+                toggleBchFiat();
             }
         });
 
-        TextInputEditText address = (TextInputEditText) findViewById(R.id.addressInput);
+        address = (TextInputEditText) findViewById(R.id.addressInput);
         address.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -156,13 +130,16 @@ public class SendActivity extends AppCompatActivity {
 
                 if(event.getAction() == MotionEvent.ACTION_UP) {
                     if(event.getX() >= (address.getRight() - address.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
-                        System.out.println("here");
+                        Intent intent = new Intent(getApplicationContext(), ScannerActivity.class);
+                        startActivityForResult(intent, RC_BARCODE_CAPTURE);
                         return true;
                     }
                 }
                 return false;
             }
         });
+
+        memo = (TextInputEditText) findViewById(R.id.memoInput);
 
         TextView feeText = (TextView) findViewById(R.id.feeText);
         String feeStr = "Network Fee: " + satPerByte + " sat/byte";
@@ -257,6 +234,55 @@ public class SendActivity extends AppCompatActivity {
                 }
             }
         });
+
+        String qrData = intent.getExtras().getString("qrdata");
+        if (qrData != null) {
+            this.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, intent);
+        }
+    }
+
+    public void toggleBchFiat() {
+        if (showingFiat) {
+            String bchBalance = "Balance: " + balance.toString() + " BCH";
+            balanceTxtView.setText(bchBalance);
+            symbolLabel.setText("₿");
+
+
+            String amt = inputAmount.getText().toString();
+            if (!amt.equals("")) {
+                try {
+                    Amount bchRate = new Amount(ExchangeRates.getInstance().convertToBCH(Double.valueOf(amt), Currency.getInstance(fiatCurrency)));
+                    inputAmount.setText(bchRate.toString());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            showingFiat = false;
+            updateAlternateAmount();
+        } else {
+            try {
+                String balanceStr = "Balance: " + ExchangeRates.getInstance().getFormattedAmountInFiat(balance, Currency.getInstance(fiatCurrency));
+                balanceTxtView.setText(balanceStr);
+                symbolLabel.setText(Currency.getInstance(fiatCurrency).getSymbol());
+
+                String amt = inputAmount.getText().toString();
+                if (!amt.equals("")) {
+                    try {
+                        Amount bchRate = new Amount(Double.valueOf(amt));
+                        String formatted = ExchangeRates.getInstance().getFormattedAmountInFiat(bchRate, Currency.getInstance(fiatCurrency));
+                        inputAmount.setText(formatted.substring(1));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+            showingFiat = true;
+            updateAlternateAmount();
+        }
     }
 
     public void updateAlternateAmount() {
@@ -301,6 +327,50 @@ public class SendActivity extends AppCompatActivity {
 
             default:
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == RC_BARCODE_CAPTURE) {
+            if (resultCode == CommonStatusCodes.SUCCESS) {
+                if (data != null) {
+                    String qrdata = data.getStringExtra("qrdata");
+
+                    BitcoinPaymentURI uri = BitcoinPaymentURI.parse(qrdata);
+                    if (uri != null) {
+                        address.setText(uri.getAddress());
+                        if (uri.getAmount() != null) {
+                            if (showingFiat) {
+                                toggleBchFiat();
+                            }
+                            inputAmount.setText(uri.getAmount().toString());
+                        }
+                        if (uri.getMessage() != null) {
+                            memo.setText(uri.getMessage());
+                        }
+                    } else {
+                        address.setText(qrdata);
+                    }
+                    try {
+                        boolean valid = wallet.validateAddress(address.getText().toString());
+                        TextInputLayout layout = (TextInputLayout) findViewById(R.id.addressLayout);
+                        if (!valid) {
+                            layout.setError("INVALID BITCOIN CASH ADDRESS");
+                        } else {
+                            layout.setError(null);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    return;
+                }
+            }
+            Snackbar snackbar = Snackbar.make(sendLayout, "Barcode Read Error", Snackbar.LENGTH_LONG);
+            snackbar.show();
+        }
+        else {
+            super.onActivityResult(requestCode, resultCode, data);
         }
     }
 }

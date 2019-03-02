@@ -60,6 +60,8 @@ public class Wallet implements Serializable {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        // TODO: if we ever add testnet then set the scheme here
+        BitcoinPaymentURI.SCHEME = MAINNET_URI_PREFIX;
     }
 
     public static Wallet getInstance() {

@@ -3,16 +3,23 @@ package cash.bchd.android_neutrino;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.util.SparseArray;
+import android.view.Display;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 
+import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.Detector;
+import com.google.android.gms.vision.MultiProcessor;
 import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.barcode.BarcodeDetector;
 
@@ -29,9 +36,19 @@ public class ScannerActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scanner);
 
+
         surfaceView = (SurfaceView) findViewById(R.id.scanPreview);
         detector = new BarcodeDetector.Builder(this).setBarcodeFormats(Barcode.QR_CODE).build();
-        camera = new CameraSource.Builder(this, detector).setRequestedPreviewSize(640,840).build();
+
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        System.out.println(size.x);
+
+        camera = new CameraSource.Builder(this, detector).setRequestedPreviewSize(640, 480)
+                .setFacing(CameraSource.CAMERA_FACING_BACK)
+                .setRequestedFps(30.0f)
+                .setAutoFocusEnabled(true).build();
 
         surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
@@ -71,9 +88,13 @@ public class ScannerActivity extends Activity {
                 if (qrCodes.size() != 0) {
                     Vibrator vibrator = (Vibrator)getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
                     vibrator.vibrate(500);
-                    System.out.println(qrCodes.valueAt(0));
+                    Intent data = new Intent();
+                    data.putExtra("qrdata", qrCodes.valueAt(0).rawValue);
+                    setResult(CommonStatusCodes.SUCCESS, data);
+                    finish();
                 }
             }
         });
     }
+
 }

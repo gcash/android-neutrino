@@ -12,9 +12,11 @@ import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.design.widget.TextInputLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
@@ -34,6 +36,8 @@ import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
+import com.google.android.gms.common.api.CommonStatusCodes;
+
 import java.util.Collections;
 import java.util.Currency;
 import java.util.List;
@@ -42,6 +46,7 @@ import androidmads.library.qrgenearator.QRGContents;
 import androidmads.library.qrgenearator.QRGEncoder;
 import cash.bchd.android_neutrino.wallet.AddressListener;
 import cash.bchd.android_neutrino.wallet.Amount;
+import cash.bchd.android_neutrino.wallet.BitcoinPaymentURI;
 import cash.bchd.android_neutrino.wallet.Config;
 import cash.bchd.android_neutrino.wallet.ExchangeRates;
 import cash.bchd.android_neutrino.wallet.TransactionData;
@@ -239,7 +244,7 @@ public class MainActivity extends CloseActivity {
     private void displayQRScanner() {
         toggleFABMenu();
         Intent intent = new Intent(this, ScannerActivity.class);
-        startActivity(intent);
+        startActivityForResult(intent, SendActivity.RC_BARCODE_CAPTURE);
     }
 
     private void displayQRPopup() {
@@ -309,6 +314,8 @@ public class MainActivity extends CloseActivity {
 
                         @Override
                         public void run() {
+                            Vibrator vibrator = (Vibrator)getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                            vibrator.vibrate(500);
                             LinearLayout qrLayout = (LinearLayout) customView.findViewById(R.id.qrCodeLayout);
                             int h = qrLayout.getHeight();
                             qrLayout.setHorizontalGravity(Gravity.CENTER_HORIZONTAL);
@@ -525,6 +532,27 @@ public class MainActivity extends CloseActivity {
         if (null != parent) {
             parent.removeView(child);
             parent.addView(child, 0);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == SendActivity.RC_BARCODE_CAPTURE) {
+            if (resultCode == CommonStatusCodes.SUCCESS) {
+                if (data != null) {
+                    String qrdata = data.getStringExtra("qrdata");
+                    Intent intent = new Intent(this, SendActivity.class);
+                    intent.putExtra("fiatCurrency", this.settings.getFiatCurrency());
+                    intent.putExtra("feePerByte", this.settings.getFeePerByte());
+                    intent.putExtra("qrdata", qrdata);
+                    startActivity(intent);
+                }
+            }
+            Snackbar snackbar = Snackbar.make(mCLayout, "Barcode Read Error", Snackbar.LENGTH_LONG);
+            snackbar.show();
+        }
+        else {
+            super.onActivityResult(requestCode, resultCode, data);
         }
     }
 
