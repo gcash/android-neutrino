@@ -246,12 +246,14 @@ public class SendActivity extends AppCompatActivity {
                     } else {
                         inputAmount.setText(balance.toString());
                     }
+                    inputAmount.setEnabled(false);
                     updateAlternateAmount();
                     sendAll = true;
                 } else {
-                    inputAmount.setText("0");
+                    inputAmount.setText("");
                     updateAlternateAmount();
                     sendAll = false;
+                    inputAmount.setEnabled(true);
                 }
             }
         });
