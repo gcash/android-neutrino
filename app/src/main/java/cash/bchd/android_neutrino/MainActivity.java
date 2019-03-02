@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -66,6 +67,7 @@ public class MainActivity extends CloseActivity {
     TransactionStore txStore;
     RecyclerView.LayoutManager layoutManager;
     TransactionAdapter mAdapter;
+    SwipeRefreshLayout mSwipeRefreshLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -206,6 +208,7 @@ public class MainActivity extends CloseActivity {
             }
         });
 
+        mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
     }
 
     @Override
@@ -394,7 +397,7 @@ public class MainActivity extends CloseActivity {
         }
         protected void onPostExecute(String result) {
             try {
-                wallet.loadWallet(new WalletEventListener() {
+                WalletEventListener listener = new WalletEventListener() {
                     @Override
                     public void onWalletReady() {
                         System.out.println("Wallet ready");
@@ -497,6 +500,18 @@ public class MainActivity extends CloseActivity {
                                 }
                             }
                         });
+                    }
+                };
+                wallet.loadWallet(listener);
+                mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+                    @Override
+                    public void onRefresh() {
+                        try {
+                            wallet.getTransactions(listener);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        mSwipeRefreshLayout.setRefreshing(false);
                     }
                 });
             } catch (Exception e){

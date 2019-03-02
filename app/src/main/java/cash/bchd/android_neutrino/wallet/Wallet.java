@@ -222,7 +222,7 @@ public class Wallet implements Serializable {
         return reply.getMnemonic();
     }
 
-    private void getTransactions(WalletEventListener listener) throws Exception {
+    public void getTransactions(WalletEventListener listener) throws Exception {
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
         Api.GetTransactionsRequest request = Api.GetTransactionsRequest.newBuilder().build();
         ListenableFuture<Api.GetTransactionsResponse> reply = stub.getTransactions(request);
