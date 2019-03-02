@@ -78,6 +78,15 @@ public class ExchangeRates {
         return currencyCode.getSymbol() + String.valueOf(fiat);
     }
 
+    public double convertToBCH(double amount, Currency currencyCode) throws Exception {
+        JSONObject btcObj = rates.getJSONObject(currencyCode.getCurrencyCode());
+        double btcRate = btcObj.getDouble("last");
+
+        JSONObject bchObj = rates.getJSONObject("BCH");
+        double bchBtcRate = bchObj.getDouble("last");
+        return round(amount / (btcRate/bchBtcRate), 8);
+    }
+
     public void fetchFormattedAmountInFiat(Amount bchAmount, Currency currencyCode, Callback cb) throws Exception {
         rates = readJsonFromUrl(EXCHANGE_RATE_ENDPOINT);
         JSONObject btcObj = rates.getJSONObject(currencyCode.getCurrencyCode());

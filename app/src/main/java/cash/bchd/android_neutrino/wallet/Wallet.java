@@ -194,6 +194,13 @@ public class Wallet implements Serializable {
         return reply.getSpendable();
     }
 
+    public boolean validateAddress(String addr) throws Exception {
+        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
+        Api.ValidateAddressRequest request = Api.ValidateAddressRequest.newBuilder().setAddress(addr).build();
+        Api.ValidateAddressResponse reply = stub.validateAddress(request);
+        return reply.getValid();
+    }
+
     public Api.NetworkResponse network() throws Exception {
         WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(channel).withCallCredentials(creds);
         Api.NetworkRequest request = Api.NetworkRequest.newBuilder().build();

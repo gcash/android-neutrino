@@ -11,6 +11,10 @@ public class Amount {
         this.satoshis = satoshis;
     }
 
+    public Amount(double bch) {
+        this.satoshis = (long) (bch * SATOSHIS_PER_BCH);
+    }
+
     public double toBCH() {
         Long sats = Long.valueOf(this.satoshis);
         return sats.doubleValue() / SATOSHIS_PER_BCH;
@@ -27,5 +31,9 @@ public class Amount {
         String s = String.format("%.12f", d);
         BigDecimal stripedVal = new BigDecimal(s).stripTrailingZeros();
         return stripedVal.toString();
+    }
+
+    public long getSatoshis() {
+        return this.satoshis;
     }
 }

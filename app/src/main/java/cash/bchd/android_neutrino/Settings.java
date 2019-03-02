@@ -11,6 +11,7 @@ public class Settings {
     private static final String FIAT_CURRENCY_KEY = "FiatCurrency";
     private static final String LAST_ADDRESS_KEY = "LastAddress";
     private static final String LAST_BLOCK_HEIGHT_KEY = "LastBlockHeight";
+    private static final String FEE_PER_BYTE_KEY = "FeePerByte";
 
     SharedPreferences prefs;
 
@@ -93,5 +94,16 @@ public class Settings {
     public int getLastBlockHeight() {
         int height = prefs.getInt(LAST_BLOCK_HEIGHT_KEY, 0);
         return height;
+    }
+
+    public void setFeePerByte(int satPerByte) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putInt(FEE_PER_BYTE_KEY, satPerByte);
+        editor.apply();
+    }
+
+    public int getFeePerByte() {
+        int fee = prefs.getInt(FEE_PER_BYTE_KEY, 50);
+        return fee;
     }
 }

@@ -229,6 +229,7 @@ public class MainActivity extends CloseActivity {
         toggleFABMenu();
         Intent intent = new Intent(this, SendActivity.class);
         intent.putExtra("fiatCurrency", this.settings.getFiatCurrency());
+        intent.putExtra("feePerByte", this.settings.getFeePerByte());
         startActivity(intent);
     }
 
