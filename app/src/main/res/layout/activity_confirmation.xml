@@ -1,7 +1,273 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
     android:layout_height="match_parent"
+    tools:context=".ConfirmationActivity"
     android:background="@drawable/gradient">
 
-</android.support.constraint.ConstraintLayout>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/sendTxt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="50dp"
+            android:text="Send"
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            android:textSize="40sp"
+            app:layout_anchorGravity="center_horizontal" />
+
+        <TextView
+            android:id="@+id/confirmBchAmount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="0.1234 BCH"
+            android:textAlignment="center"
+            android:layout_below="@+id/sendTxt"
+            android:textColor="@android:color/white"
+            android:textSize="40sp"
+            app:layout_anchorGravity="center_horizontal" />
+
+        <TextView
+            android:id="@+id/confirmFiatAmount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="($123.45)"
+            android:textAlignment="center"
+            android:layout_below="@+id/confirmBchAmount"
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
+            app:layout_anchorGravity="center_horizontal" />
+
+        <RelativeLayout
+            android:id="@+id/pinLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="30dp"
+            android:visibility="gone"
+            android:layout_below="@+id/confirmFiatAmount">
+
+            <com.andrognito.pinlockview.IndicatorDots
+                android:id="@+id/indicator_dots"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/keyLayout"
+            android:layout_width="18dp"
+            android:layout_height="20dp"
+            android:layout_below="@id/pinLayout"
+            android:layout_marginTop="30dp"
+            android:gravity="center_horizontal"
+            android:visibility="gone">
+
+            <com.andrognito.pinlockview.PinLockView
+                android:id="@+id/pin_lock_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                app:keypadHorizontalSpacing="50dp"
+                app:keypadVerticalSpacing="50dp" />
+
+        </RelativeLayout>
+
+        <android.support.v7.widget.CardView
+            xmlns:card_view="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/detailsCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/pinLayout"
+            android:layout_marginLeft="15dp"
+            android:layout_marginRight="15dp"
+            android:layout_marginBottom="10dp"
+            android:background="@android:color/white"
+            android:layout_marginTop="30dp"
+            android:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginBottom="5dp"
+                    android:layout_weight="1"
+                    android:layout_gravity="start"
+                    android:ellipsize="end"
+                    android:textSize="16sp"
+                    android:textColor="@color/grey"
+                    android:text="PAY TO" />
+
+                <TextView
+                    android:id="@+id/payTo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginEnd="10dp"
+                    android:padding="10dp"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:background="@color/liteGrey"
+                    android:textColor="@android:color/black"
+                    android:text="Bitpay.com"
+                    android:textSize="14sp" />
+
+                <View
+                    android:id="@+id/divider7"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?android:attr/listDivider"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginTop="10dp"/>
+
+                <TextView
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:layout_gravity="start"
+                    android:layout_marginBottom="5dp"
+                    android:ellipsize="end"
+                    android:textSize="16sp"
+                    android:textColor="@color/grey"
+                    android:text="PAYMENT ADDRESS" />
+
+                <TextView
+                    android:id="@+id/paymentAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginEnd="10dp"
+                    android:padding="10dp"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:background="@color/liteGrey"
+                    android:textColor="@android:color/black"
+                    android:text="qrydyz5km0v7zpq6fweyky4sn962g900uv08dqgc83"
+                    android:textSize="14sp" />
+
+                <View
+                    android:id="@+id/divider8"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?android:attr/listDivider"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginTop="10dp"/>
+
+                <TextView
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:layout_gravity="start"
+                    android:layout_marginBottom="5dp"
+                    android:ellipsize="end"
+                    android:textSize="16sp"
+                    android:textColor="@color/grey"
+                    android:text="NETWORK FEE" />
+
+                <TextView
+                    android:id="@+id/networkFee"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginEnd="10dp"
+                    android:padding="10dp"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:background="@color/liteGrey"
+                    android:textColor="@android:color/black"
+                    android:text="0.00001 BCH"
+                    android:textSize="14sp" />
+
+                <View
+                    android:id="@+id/divider9"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?android:attr/listDivider"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginTop="10dp"/>
+
+                <TextView
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:layout_gravity="start"
+                    android:layout_marginBottom="5dp"
+                    android:ellipsize="end"
+                    android:textSize="16sp"
+                    android:textColor="@color/grey"
+                    android:text="MEMO" />
+
+                <TextView
+                    android:id="@+id/memoConfirmation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginBottom="20dp"
+                    android:layout_marginEnd="10dp"
+                    android:padding="10dp"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:background="@color/liteGrey"
+                    android:textColor="@android:color/black"
+                    android:text="Payment for the stuff"
+                    android:textSize="14sp" />
+            </LinearLayout>
+        </android.support.v7.widget.CardView>
+
+        <ImageView
+            android:id="@+id/fingerprint"
+            android:layout_width="match_parent"
+            android:layout_height="90dp"
+            android:layout_marginBottom="20dp"
+            android:layout_alignParentBottom="true"
+            app:srcCompat="@drawable/fingerprint"
+            app:layout_anchorGravity="center_horizontal"
+            android:visibility="gone"/>
+
+        <com.ebanx.swipebtn.SwipeButton
+            android:id="@+id/swipe_btn"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="20dp"
+            android:layout_alignParentBottom="true"
+            app:inner_text="SWIPE TO PAY"
+            app:inner_text_color="@android:color/white"
+            app:inner_text_size="16sp"
+            app:inner_text_top_padding="30dp"
+            app:inner_text_bottom_padding="30dp"
+            app:inner_text_background="@drawable/shape_rounded"
+            app:button_image_height="80dp"
+            app:button_image_width="100dp"
+            app:button_image_disabled="@drawable/bitcoin"
+            app:button_image_enabled="@drawable/bitcoin"
+            app:button_left_padding="20dp"
+            app:button_right_padding="20dp"
+            app:button_top_padding="20dp"
+            app:button_bottom_padding="20dp"
+            app:button_background="@drawable/shape_button"
+            app:initial_state="disabled"
+            app:has_activate_state="true" />
+
+    </RelativeLayout>
+</android.support.design.widget.CoordinatorLayout>

@@ -547,9 +547,10 @@ public class MainActivity extends CloseActivity {
                     intent.putExtra("qrdata", qrdata);
                     startActivity(intent);
                 }
+            } else if (resultCode != 0 ) {
+                Snackbar snackbar = Snackbar.make(mCLayout, "Barcode Read Error", Snackbar.LENGTH_LONG);
+                snackbar.show();
             }
-            Snackbar snackbar = Snackbar.make(mCLayout, "Barcode Read Error", Snackbar.LENGTH_LONG);
-            snackbar.show();
         }
         else {
             super.onActivityResult(requestCode, resultCode, data);

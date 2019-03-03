@@ -202,7 +202,10 @@ public class SendActivity extends AppCompatActivity {
                     if (toSpend.getSatoshis() == 0 || toSpend.getSatoshis() > balance.getSatoshis()) {
                         TextInputEditText etAmount = (TextInputEditText) findViewById(R.id.amountInput);
                         etAmount.setError("INVALID AMOUNT");
+                        return;
                     }
+                    Intent intent = new Intent(getApplicationContext(), ConfirmationActivity.class);
+                    startActivity(intent);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -214,15 +217,9 @@ public class SendActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
                     if (showingFiat) {
-                        try {
-                            String formatted = ExchangeRates.getInstance().getFormattedAmountInFiat(balance, Currency.getInstance(fiatCurrency));
-                            inputAmount.setText(formatted.substring(1));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    } else {
-                        inputAmount.setText(balance.toString());
+                        toggleBchFiat();
                     }
+                    inputAmount.setText(balance.toString());
                     inputAmount.setEnabled(false);
                     updateAlternateAmount();
                     sendAll = true;
@@ -365,9 +362,10 @@ public class SendActivity extends AppCompatActivity {
                     }
                     return;
                 }
+            } else if (resultCode != 0) {
+                Snackbar snackbar = Snackbar.make(sendLayout, "Barcode Read Error", Snackbar.LENGTH_LONG);
+                snackbar.show();
             }
-            Snackbar snackbar = Snackbar.make(sendLayout, "Barcode Read Error", Snackbar.LENGTH_LONG);
-            snackbar.show();
         }
         else {
             super.onActivityResult(requestCode, resultCode, data);
