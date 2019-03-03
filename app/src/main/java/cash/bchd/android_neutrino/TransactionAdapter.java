@@ -152,7 +152,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             holder.arrowImage.setImageResource(R.drawable.send_arrow);
             holder.txDescription.setText("Sent Bitcoin Cash");
             holder.bchAmount.setTextColor(ctx.getResources().getColor(R.color.neonPurple));
-            if (tx.getMemo().equals("")){
+            if (tx.getMemo() == null || tx.getMemo().equals("")){
                 String to = "Sent to " + tx.getToAddress();
                 holder.txMemo.setText(to);
             } else {

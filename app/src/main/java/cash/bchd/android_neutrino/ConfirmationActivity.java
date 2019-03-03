@@ -3,12 +3,16 @@ package cash.bchd.android_neutrino;
 import android.content.Intent;
 import android.media.Image;
 import android.os.Bundle;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.andrognito.pinlockview.IndicatorDots;
 import com.andrognito.pinlockview.PinLockListener;
@@ -16,6 +20,11 @@ import com.andrognito.pinlockview.PinLockView;
 import com.ebanx.swipebtn.OnStateChangeListener;
 import com.ebanx.swipebtn.SwipeButton;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import cash.bchd.android_neutrino.wallet.Amount;
+import cash.bchd.android_neutrino.wallet.Wallet;
 import cdflynn.android.library.checkview.CheckView;
 
 public class ConfirmationActivity extends AppCompatActivity {
@@ -47,6 +56,57 @@ public class ConfirmationActivity extends AppCompatActivity {
             fingerprint.setVisibility(View.VISIBLE);
         } else {
             swipeButton.setVisibility(View.VISIBLE);
+        }
+
+        String paymentAddr = intent.getStringExtra("paymentAddress");
+        String bchAmount = intent.getStringExtra("amountBCH");
+        String formattedFiat = intent.getStringExtra("amountFiat");
+        long txFee = intent.getLongExtra("fee", 0);
+        byte[] serializedTx = intent.getByteArrayExtra("serializedTransaction");
+        ArrayList<String> inputStrings = intent.getStringArrayListExtra("inputVals");
+
+        List<Long> inputVals = new ArrayList<Long>();
+        for (String s : inputStrings) {
+            inputVals.add(Long.valueOf(s));
+        }
+
+        String memo = intent.getStringExtra("memo");
+        String label = intent.getStringExtra("label");
+
+        TextView amountTxtView = (TextView) findViewById(R.id.confirmBchAmount);
+        amountTxtView.setText(bchAmount + " BCH");
+
+        TextView fiatAmountTxtView = (TextView) findViewById(R.id.confirmFiatAmount);
+        fiatAmountTxtView.setText(formattedFiat);
+
+        TextView payTo = (TextView) findViewById(R.id.payTo);
+        if (label != null && !label.equals("")) {
+            payTo.setText(label);
+        } else {
+            TextView payToLabel = (TextView) findViewById(R.id.payToLabel);
+            View div7 = (View) findViewById(R.id.divider7);
+            payTo.setVisibility(View.GONE);
+            payToLabel.setVisibility(View.GONE);
+            div7.setVisibility(View.GONE);
+            TextView paymentAddrLabel = (TextView) findViewById(R.id.paymentAddrLabel);
+            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) paymentAddrLabel.getLayoutParams();
+            params.setMargins(params.leftMargin, 30, params.rightMargin, params.bottomMargin);
+            paymentAddrLabel.setLayoutParams(params);
+        }
+
+        TextView paymentAddress = (TextView) findViewById(R.id.paymentAddress);
+        paymentAddress.setText(paymentAddr);
+
+        TextView networkFee = (TextView) findViewById(R.id.networkFee);
+        networkFee.setText(new Amount(txFee).toString() + " BCH");
+
+        TextView memoTxtView = (TextView) findViewById(R.id.memoConfirmation);
+        if (memo != null && !memo.equals("")) {
+            memoTxtView.setText(memo);
+        } else {
+            TextView memoLabel = (TextView) findViewById(R.id.memoLabel);
+            memoTxtView.setVisibility(View.GONE);
+            memoLabel.setVisibility(View.GONE);
         }
 
         mPinLockView = (PinLockView) findViewById(R.id.pin_lock_view);
@@ -87,6 +147,27 @@ public class ConfirmationActivity extends AppCompatActivity {
         swipeButton.setOnStateChangeListener(new OnStateChangeListener() {
             @Override
             public void onStateChange(boolean active) {
+                Wallet wallet = Wallet.getInstance();
+                byte[] signedTx = null;
+                try {
+                    signedTx = wallet.signTransaction(serializedTx, inputVals, Wallet.DEFAULT_PASSPHRASE);
+                } catch (Exception e) {
+                    CoordinatorLayout layout = (CoordinatorLayout) findViewById(R.id.confirmationMainLayout);
+                    Snackbar snackbar = Snackbar.make(layout, "Error signing transaction.", Snackbar.LENGTH_LONG);
+                    snackbar.show();
+                    e.printStackTrace();
+                    return;
+                }
+                try {
+                    wallet.publishTransaction(signedTx, paymentAddr, memo);
+                } catch (Exception e) {
+                    CoordinatorLayout layout = (CoordinatorLayout) findViewById(R.id.confirmationMainLayout);
+                    Snackbar snackbar = Snackbar.make(layout, "Error broadcasting transaction.", Snackbar.LENGTH_LONG);
+                    snackbar.show();
+                    e.printStackTrace();
+                    return;
+                }
+
                 RelativeLayout rLayout = (RelativeLayout) findViewById(R.id.confirmationLayout);
                 CheckView checkView = (CheckView) findViewById(R.id.check);
                 RelativeLayout checkLayout = (RelativeLayout) findViewById(R.id.checkLayout);

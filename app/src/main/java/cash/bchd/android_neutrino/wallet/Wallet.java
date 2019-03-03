@@ -36,11 +36,12 @@ public class Wallet implements Serializable {
     public static final io.grpc.Context.Key<String> AUTH_TOKEN_KEY = io.grpc.Context.key("AuthenticationToken");
     private AuthCredentials creds;
 
-    private final String DEFAULT_PASSPHRASE = "LETMEIN";
+    public final static String DEFAULT_PASSPHRASE = "LETMEIN";
 
     private final String MAINNET_URI_PREFIX = "bitcoincash:";
 
     private HashMap<String, AddressListener> addressListeners = new HashMap<String, AddressListener>();
+    private HashMap<ByteString, String[]> metadataCache = new HashMap<ByteString, String[]>();
 
     private int lastBlockHeight;
 
@@ -189,6 +190,55 @@ public class Wallet implements Serializable {
         return reply.getAddress();
     }
 
+    public Api.CreateTransactionResponse createTransaction(String addr, long amtSatoshi, int feePerByte) throws Exception {
+        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
+        Api.CreateTransactionRequest.Output output = Api.CreateTransactionRequest.Output.newBuilder().setAmount(amtSatoshi).setAddress(addr).build();
+        Api.CreateTransactionRequest request = Api.CreateTransactionRequest.newBuilder()
+                .setAccount(0)
+                .setRequiredConfirmations(0)
+                .setSatPerKbFee(feePerByte*1000)
+                .addOutputs(output).build();
+        Api.CreateTransactionResponse reply = stub.createTransaction(request);
+        return reply;
+    }
+
+    public byte[] signTransaction(byte[] serializedTx, List<Long> inputValues, String passphrase) throws Exception {
+        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
+        Api.SignTransactionRequest.Builder builder = Api.SignTransactionRequest.newBuilder();
+        builder.setSerializedTransaction(ByteString.copyFrom(serializedTx));
+        for (Long val : inputValues) {
+            builder.addInputValues(val);
+        }
+        ByteString pw = ByteString.copyFromUtf8(passphrase);
+        builder.setPassphrase(pw);
+        Api.SignTransactionRequest request = builder.build();
+
+        Api.SignTransactionResponse reply = stub.signTransaction(request);
+        if (reply.getUnsignedInputIndexesList().size() > 0) {
+            throw new Exception("Error signing transaction");
+        }
+        return reply.getTransaction().toByteArray();
+    }
+
+    public void publishTransaction(byte[] serializedTransaction, String toAddress, String memo) throws Exception {
+        ByteString bs = ByteString.copyFrom(serializedTransaction);
+        String[] metadata = new String[2];
+        metadata[0] = toAddress;
+        metadata[1] = memo;
+        this.metadataCache.put(bs, metadata);
+        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
+        Api.PublishTransactionRequest request = Api.PublishTransactionRequest.newBuilder().setSignedTransaction(bs).build();
+        Api.PublishTransactionResponse reply = stub.publishTransaction(request);
+    }
+
+    public Api.SweepAccountResponse sweepAccount(String addr, int feePerByte) throws Exception {
+        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
+        Api.SweepAccountRequest request = Api.SweepAccountRequest.newBuilder()
+                .setAccount(0).setSatPerKbFee(feePerByte*1000).setSweepToAddress(addr).build();
+        Api.SweepAccountResponse reply = stub.sweepAccount(request);
+        return reply;
+    }
+
     public long balance() throws Exception {
         WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
         Api.BalanceRequest request = Api.BalanceRequest.newBuilder().setAccountNumber(0).setRequiredConfirmations(0).build();
@@ -275,7 +325,16 @@ public class Wallet implements Serializable {
         byte[] txBytes = tx.getHash().toByteArray();
         reverse(txBytes);
         String txid = BaseEncoding.base16().lowerCase().encode(txBytes);
-        TransactionData txData = new TransactionData(txid, (total > 0), "", total, "", "", timestamp, toAddress, height);
+
+        String[] metaData = this.metadataCache.get(tx.getTransaction());
+        String memo = "";
+        if (metaData != null && metaData.length == 2) {
+            toAddress = metaData[0];
+            memo = metaData[1];
+            this.metadataCache.remove(tx.getHash());
+        }
+
+        TransactionData txData = new TransactionData(txid, (total > 0), memo, total, "", "", timestamp, toAddress, height);
         return txData;
     }
 

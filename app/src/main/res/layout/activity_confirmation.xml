@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ConfirmationActivity"
+    android:id="@+id/confirmationMainLayout"
     android:background="@drawable/gradient">
 
     <RelativeLayout
@@ -27,7 +28,6 @@
             android:id="@+id/confirmBchAmount"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="0.1234 BCH"
             android:textAlignment="center"
             android:layout_below="@+id/sendTxt"
             android:textColor="@android:color/white"
@@ -38,7 +38,6 @@
             android:id="@+id/confirmFiatAmount"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="($123.45)"
             android:textAlignment="center"
             android:layout_below="@+id/confirmBchAmount"
             android:textColor="@android:color/white"
@@ -98,6 +97,7 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/payToLabel"
                     android:layout_width="200dp"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
@@ -122,7 +122,6 @@
                     android:ellipsize="end"
                     android:background="@color/liteGrey"
                     android:textColor="@android:color/black"
-                    android:text="Bitpay.com"
                     android:textSize="14sp" />
 
                 <View
@@ -134,6 +133,7 @@
                     android:layout_marginTop="10dp"/>
 
                 <TextView
+                    android:id="@+id/paymentAddrLabel"
                     android:layout_width="200dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="10dp"
@@ -157,7 +157,6 @@
                     android:ellipsize="end"
                     android:background="@color/liteGrey"
                     android:textColor="@android:color/black"
-                    android:text="qrydyz5km0v7zpq6fweyky4sn962g900uv08dqgc83"
                     android:textSize="14sp" />
 
                 <View
@@ -192,7 +191,6 @@
                     android:ellipsize="end"
                     android:background="@color/liteGrey"
                     android:textColor="@android:color/black"
-                    android:text="0.00001 BCH"
                     android:textSize="14sp" />
 
                 <View
@@ -204,6 +202,7 @@
                     android:layout_marginTop="10dp"/>
 
                 <TextView
+                    android:id="@+id/memoLabel"
                     android:layout_width="200dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="10dp"
@@ -228,7 +227,6 @@
                     android:ellipsize="end"
                     android:background="@color/liteGrey"
                     android:textColor="@android:color/black"
-                    android:text="Payment for the stuff"
                     android:textSize="14sp" />
             </LinearLayout>
         </android.support.v7.widget.CardView>

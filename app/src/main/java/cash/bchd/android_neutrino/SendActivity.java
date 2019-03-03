@@ -30,7 +30,9 @@ import com.google.android.gms.vision.barcode.Barcode;
 
 import org.w3c.dom.Text;
 
+import java.util.ArrayList;
 import java.util.Currency;
+import java.util.List;
 
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.BitcoinPaymentURI;
@@ -54,6 +56,7 @@ public class SendActivity extends AppCompatActivity {
     TextInputEditText address;
     TextInputEditText memo;
     TextView symbolLabel;
+    String label;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -204,9 +207,46 @@ public class SendActivity extends AppCompatActivity {
                         etAmount.setError("INVALID AMOUNT");
                         return;
                     }
+                    byte[] serializedTx = null;
+                    long txFee = 0;
+                    List<Long> inputVals = null;
+                    if (sendAll) {
+                        Api.SweepAccountResponse tx = wallet.sweepAccount(address.getText().toString(), satPerByte);
+                        serializedTx = tx.getSerializedTransaction().toByteArray();
+                        txFee = tx.getFee();
+                        inputVals = tx.getInputValuesList();
+
+                    } else {
+                        Api.CreateTransactionResponse tx = wallet.createTransaction(address.getText().toString(), toSpend.getSatoshis(), satPerByte);
+                        serializedTx = tx.getSerializedTransaction().toByteArray();
+                        txFee = tx.getFee();
+                        inputVals = tx.getInputValuesList();
+                    }
+
+                    String fiatFormatted = ExchangeRates.getInstance().getFormattedAmountInFiat(toSpend, Currency.getInstance(fiatCurrency));
+                    ArrayList<String> inputStrings = new ArrayList<String>();
+                    for (Long val : inputVals) {
+                        inputStrings.add(String.valueOf(val));
+                    }
+
                     Intent intent = new Intent(getApplicationContext(), ConfirmationActivity.class);
+                    intent.putExtra("paymentAddress", address.getText().toString());
+                    intent.putExtra("amountBCH", toSpend.toString());
+                    intent.putExtra("amountFiat", fiatFormatted);
+                    intent.putExtra("fee", txFee);
+                    intent.putExtra("serializedTransaction", serializedTx);
+                    intent.putStringArrayListExtra("inputVals", inputStrings);
+
+                    if (memo.getText() != null && !memo.getText().toString().equals("")) {
+                        intent.putExtra("memo", memo.getText().toString());
+                    }
+                    if (label != null && !label.equals("")) {
+                        intent.putExtra("label", label);
+                    }
                     startActivity(intent);
                 } catch (Exception e) {
+                    Snackbar snackbar = Snackbar.make(sendLayout, "Error creating transaction.", Snackbar.LENGTH_LONG);
+                    snackbar.show();
                     e.printStackTrace();
                 }
             }
@@ -345,6 +385,9 @@ public class SendActivity extends AppCompatActivity {
                         }
                         if (uri.getMessage() != null) {
                             memo.setText(uri.getMessage());
+                        }
+                        if (uri.getLabel() != null) {
+                            label = uri.getLabel();
                         }
                     } else {
                         address.setText(qrdata);

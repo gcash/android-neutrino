@@ -457,7 +457,7 @@ public class MainActivity extends CloseActivity {
                                     mAdapter.updateOrInsertTx(tx);
                                 }
                                 mAdapter.notifyDataSetChanged();
-                                txStore.setData(txs);
+                                txStore.setData(mAdapter.getData());
                                 try {
                                     txStore.save(getApplicationContext());
                                 } catch (Exception e) {
