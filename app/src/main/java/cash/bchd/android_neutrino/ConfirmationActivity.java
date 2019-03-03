@@ -5,6 +5,7 @@ import android.media.Image;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -14,6 +15,8 @@ import com.andrognito.pinlockview.PinLockListener;
 import com.andrognito.pinlockview.PinLockView;
 import com.ebanx.swipebtn.OnStateChangeListener;
 import com.ebanx.swipebtn.SwipeButton;
+
+import cdflynn.android.library.checkview.CheckView;
 
 public class ConfirmationActivity extends AppCompatActivity {
 
@@ -84,8 +87,37 @@ public class ConfirmationActivity extends AppCompatActivity {
         swipeButton.setOnStateChangeListener(new OnStateChangeListener() {
             @Override
             public void onStateChange(boolean active) {
-                System.out.println("Here");
+                RelativeLayout rLayout = (RelativeLayout) findViewById(R.id.confirmationLayout);
+                CheckView checkView = (CheckView) findViewById(R.id.check);
+                RelativeLayout checkLayout = (RelativeLayout) findViewById(R.id.checkLayout);
+
+                rLayout.setVisibility(View.GONE);
+                checkLayout.setVisibility(View.VISIBLE);
+                checkView.check();
             }
         });
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event)  {
+        if (Integer.parseInt(android.os.Build.VERSION.SDK) > 5
+                && keyCode == KeyEvent.KEYCODE_BACK
+                && event.getRepeatCount() == 0) {
+            onBackPressed();
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+
+    @Override
+    public void onBackPressed() {
+        RelativeLayout checkLayout = (RelativeLayout) findViewById(R.id.checkLayout);
+        if (checkLayout.getVisibility() == View.VISIBLE) {
+            Intent setIntent = new Intent(this, MainActivity.class);
+            startActivity(setIntent);
+        } else {
+            super.onBackPressed();
+        }
     }
 }

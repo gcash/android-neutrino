@@ -8,6 +8,7 @@
     android:background="@drawable/gradient">
 
     <RelativeLayout
+        android:id="@+id/confirmationLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
@@ -269,5 +270,21 @@
             app:initial_state="disabled"
             app:has_activate_state="true" />
 
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/checkLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:gravity="center">
+
+        <cdflynn.android.library.checkview.CheckView
+            android:id="@+id/check"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            app:checkView_strokeColor="@color/neonGreen"
+            app:checkView_strokeWidth="10dp"
+            app:layout_anchorGravity="center"/>
     </RelativeLayout>
 </android.support.design.widget.CoordinatorLayout>

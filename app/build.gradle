@@ -62,4 +62,5 @@ dependencies {
     implementation 'com.android.support:cardview-v7:28.0.0'
     implementation 'com.andrognito.pinlockview:pinlockview:2.1.0'
     implementation 'com.ebanx:swipe-button:0.8.3'
+    implementation 'com.github.cdflynn:checkview:v1.1'
 }
