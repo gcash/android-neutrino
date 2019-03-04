@@ -381,7 +381,8 @@ public class SendActivity extends AppCompatActivity {
                             if (showingFiat) {
                                 toggleBchFiat();
                             }
-                            inputAmount.setText(uri.getAmount().toString());
+                            Amount uriAmt = new Amount(uri.getAmount());
+                            inputAmount.setText(uriAmt.toString());
                         }
                         if (uri.getMessage() != null) {
                             memo.setText(uri.getMessage());

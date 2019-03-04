@@ -38,8 +38,11 @@ import android.widget.TextView;
 
 import com.google.android.gms.common.api.CommonStatusCodes;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Currency;
+import java.util.Date;
 import java.util.List;
 
 import androidmads.library.qrgenearator.QRGContents;

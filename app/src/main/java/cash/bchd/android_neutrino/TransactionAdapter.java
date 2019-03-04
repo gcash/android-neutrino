@@ -184,7 +184,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
                 fiatAmount.setText(tx.getFiatAmount());
 
                 TextView dateView = (TextView) customView.findViewById(R.id.txDetailsDate);
-                Date date = new Date(tx.getTimestamp());
+                Date date = new Date(tx.getTimestamp() * 1000);
                 DateFormat formatter = new SimpleDateFormat("hh:mm a - MMM dd, yyyy");
                 String dateFormatted = formatter.format(date);
                 dateView.setText(dateFormatted);
