@@ -23,7 +23,7 @@
         app:srcCompat="@drawable/settings" />
 
     <android.support.design.widget.FloatingActionButton
-        android:id="@+id/speakNowFab1"
+        android:id="@+id/btcReceive"
         app:fabCustomSize="40dp"
         android:layout_width="40dp"
         android:layout_height="40dp"

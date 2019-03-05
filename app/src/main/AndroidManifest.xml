@@ -37,6 +37,11 @@
             android:screenOrientation="portrait">
         </activity>
         <activity
+            android:name=".ReceiveActivity"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait">
+        </activity>
+        <activity
             android:name=".ConfirmationActivity"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait">

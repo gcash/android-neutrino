@@ -4,10 +4,10 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/sendLayout">
+    android:id="@+id/receiveLayout">
 
     <android.support.v7.widget.Toolbar
-        android:id="@+id/sendToolbar"
+        android:id="@+id/receiveToolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@drawable/gradient"
@@ -16,33 +16,17 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
-            android:id="@+id/toolbar_title"
+            android:id="@+id/receive_toolbar_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Send Bitcoin Cash"
+            android:text="Request Bitcoin Cash"
             style="@style/TextAppearance.AppCompat.Widget.ActionBar.Title"
             android:layout_gravity="center" />
 
     </android.support.v7.widget.Toolbar>
 
-    <TextView
-        android:id="@+id/sendBalance"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp"
-        android:layout_gravity="center"
-        app:layout_constraintStart_toStartOf="parent"/>
-
-    <View
-        android:id="@+id/divider"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="?android:attr/listDivider"
-        android:layout_marginBottom="10dp"/>
-
     <FrameLayout
+        android:layout_marginTop="50dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
@@ -53,7 +37,7 @@
             android:orientation="horizontal">
 
             <TextView
-                android:id="@+id/symbolLabel"
+                android:id="@+id/receiveSymbolLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="21dp"
@@ -62,14 +46,14 @@
                 android:textSize="40sp" />
 
             <android.support.design.widget.TextInputLayout
-                android:id="@+id/amountLayout"
+                android:id="@+id/receiveAmountLayout"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:hint=" "
                 android:minWidth="50dp">
 
                 <android.support.design.widget.TextInputEditText
-                    android:id="@+id/amountInput"
+                    android:id="@+id/receiveAmountInput"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:hint="0"
@@ -83,7 +67,7 @@
         </LinearLayout>
 
         <ImageView
-            android:id="@+id/toggleImage"
+            android:id="@+id/receiveToggleImage"
             android:layout_width="30dp"
             android:layout_height="20dp"
             android:layout_marginTop="40dp"
@@ -94,59 +78,42 @@
     </FrameLayout>
 
     <TextView
-        android:id="@+id/conversionRate"
+        android:id="@+id/receiveConversionRate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:text="0 BCH"/>
 
-    <ToggleButton
-        android:id="@+id/sendAllBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="30dp"
-        android:layout_gravity="center"
-        android:textColor="@color/grey"
-        android:background="@drawable/toggle_button_selector"
-        android:textOff="Send All"
-        android:textOn="Send All" />
 
     <android.support.design.widget.TextInputLayout
-        android:id="@+id/addressLayout"
+        android:id="@+id/labelLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="50dp"
         android:layout_marginBottom="25dp"
         android:layout_marginLeft="25dp"
         android:layout_marginRight="25dp">
 
         <android.support.design.widget.TextInputEditText
-            android:id="@+id/addressInput"
+            android:id="@+id/labelInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="To Address"
-            android:drawableRight="@drawable/smallqr"/>
+            android:hint="Your Name (optional)" />
 
     </android.support.design.widget.TextInputLayout>
 
     <android.support.design.widget.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="50dp"
         android:layout_margin="25dp">
 
         <android.support.design.widget.TextInputEditText
-            android:id="@+id/memoInput"
+            android:id="@+id/receiveMemoInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Memo (optional)" />
     </android.support.design.widget.TextInputLayout>
-
-    <TextView
-        android:id="@+id/feeText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="10dp"
-        android:layout_gravity="center" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -156,11 +123,11 @@
         android:orientation="vertical">
 
         <Button
-            android:id="@+id/sendBtn"
+            android:id="@+id/requestBtn"
             android:layout_width="match_parent"
             android:layout_height="65dp"
             android:layout_margin="25dp"
-            android:text="Send"
+            android:text="Request"
             android:background="@color/neonBlue"
             android:textColor="@android:color/white"
             android:textSize="20sp"

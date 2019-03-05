@@ -135,10 +135,9 @@ public class Wallet implements Serializable {
                         hasMinedTransactions = true;
                         for (Api.TransactionDetails tx : block.getTransactionsList()) {
                             for (Api.TransactionDetails.Output output : tx.getCreditsList()) {
-                                Object obj = addressListeners.get(output.getAddress());
-                                if (obj != null) {
-                                    AddressListener addrListener = (AddressListener) obj;
-                                    addrListener.onPaymentReceived();
+                                AddressListener addrListener = (AddressListener) addressListeners.get(output.getAddress());
+                                if (addrListener != null) {
+                                    addrListener.onPaymentReceived(output.getAmount());
                                 }
                             }
                             TransactionData td = extractTransactionData(tx, block.getHeight(), block.getTimestamp());
@@ -152,7 +151,7 @@ public class Wallet implements Serializable {
                         for (Api.TransactionDetails.Output output : tx.getCreditsList()) {
                             AddressListener addrListener = (AddressListener) addressListeners.get(output.getAddress());
                             if (addrListener != null) {
-                                addrListener.onPaymentReceived();
+                                addrListener.onPaymentReceived(output.getAmount());
                             }
                         }
                         TransactionData td = extractTransactionData(tx, 0, System.currentTimeMillis()/1000);

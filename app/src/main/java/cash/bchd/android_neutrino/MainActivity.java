@@ -16,7 +16,6 @@ import android.os.Vibrator;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.design.widget.TextInputLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
@@ -26,6 +25,7 @@ import android.transition.TransitionManager;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,18 +38,14 @@ import android.widget.TextView;
 
 import com.google.android.gms.common.api.CommonStatusCodes;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Currency;
-import java.util.Date;
 import java.util.List;
 
 import androidmads.library.qrgenearator.QRGContents;
 import androidmads.library.qrgenearator.QRGEncoder;
 import cash.bchd.android_neutrino.wallet.AddressListener;
 import cash.bchd.android_neutrino.wallet.Amount;
-import cash.bchd.android_neutrino.wallet.BitcoinPaymentURI;
 import cash.bchd.android_neutrino.wallet.Config;
 import cash.bchd.android_neutrino.wallet.ExchangeRates;
 import cash.bchd.android_neutrino.wallet.TransactionData;
@@ -63,7 +59,7 @@ public class MainActivity extends CloseActivity {
     ExchangeRates exchangeRates;
     FloatingActionButton fab;
     FloatingActionButton fab1;
-    FloatingActionButton fab2;
+    FloatingActionButton fabReceive;
     FloatingActionButton fabSend;
     FloatingActionButton fabScan;
     FloatingActionButton fabQR;
@@ -124,7 +120,7 @@ public class MainActivity extends CloseActivity {
 
         fab = findViewById(R.id.fab);
         fab1 = findViewById(R.id.speakNowFab);
-        fab2 = findViewById(R.id.speakNowFab1);
+        fabReceive = findViewById(R.id.btcReceive);
         fabSend = findViewById(R.id.btnSend);
         fabScan = findViewById(R.id.btnScan);
         fabQR = findViewById(R.id.btnQR);
@@ -185,6 +181,10 @@ public class MainActivity extends CloseActivity {
                             openSendActivity();
                             toggleFABMenu();
                         }
+                        if (inViewInBounds(fabReceive, (int) event.getRawX(), (int) event.getRawY())) {
+                            openReceiveActivity();
+                            toggleFABMenu();
+                        }
                     }
                 }
                 return true;
@@ -216,6 +216,14 @@ public class MainActivity extends CloseActivity {
             }
         });
 
+        fabReceive.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                fab.bringToFront();
+                openReceiveActivity();
+            }
+        });
+
         mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
     }
 
@@ -241,6 +249,14 @@ public class MainActivity extends CloseActivity {
         Intent intent = new Intent(this, SendActivity.class);
         intent.putExtra("fiatCurrency", this.settings.getFiatCurrency());
         intent.putExtra("feePerByte", this.settings.getFeePerByte());
+        startActivity(intent);
+    }
+
+    private void openReceiveActivity() {
+        toggleFABMenu();
+        Intent intent = new Intent(this, ReceiveActivity.class);
+        intent.putExtra("fiatCurrency", this.settings.getFiatCurrency());
+        intent.putExtra("lastAddress", this.settings.getLastAddress());
         startActivity(intent);
     }
 
@@ -312,7 +328,7 @@ public class MainActivity extends CloseActivity {
 
             wallet.listenAddress(addr, new AddressListener() {
                 @Override
-                public void onPaymentReceived() {
+                public void onPaymentReceived(long amount) {
                     runOnUiThread(new Runnable() {
 
                         @Override
@@ -374,7 +390,7 @@ public class MainActivity extends CloseActivity {
     private void showFABMenu(){
         isFabOpen = true;
         fab1.animate().translationY(-getResources().getDimension(R.dimen.standard_65));
-        fab2.animate().translationY(-getResources().getDimension(R.dimen.standard_120));
+        fabReceive.animate().translationY(-getResources().getDimension(R.dimen.standard_120));
         fabSend.animate().translationY(-getResources().getDimension(R.dimen.standard_175));
         fabScan.animate().translationY(-getResources().getDimension(R.dimen.standard_230));
         fabQR.animate().translationY(-getResources().getDimension(R.dimen.standard_285));
@@ -383,7 +399,7 @@ public class MainActivity extends CloseActivity {
     private void closeFABMenu(){
         isFabOpen = false;
         fab1.animate().translationY(0);
-        fab2.animate().translationY(0);
+        fabReceive.animate().translationY(0);
         fabSend.animate().translationY(0);
         fabScan.animate().translationY(0);
         fabQR.animate().translationY(0);
@@ -557,6 +573,16 @@ public class MainActivity extends CloseActivity {
         }
         else {
             super.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                return true;
+
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 
