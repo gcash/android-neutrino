@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.support.design.widget.Snackbar;
@@ -275,6 +276,14 @@ public class SendActivity extends AppCompatActivity {
         String qrData = intent.getExtras().getString("qrdata");
         if (qrData != null) {
             this.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, intent);
+            return;
+        }
+
+        Uri data = getIntent().getData();
+        if (data != null) {
+            Intent newIntent = new Intent();
+            newIntent.putExtra("qrdata", data.toString());
+            this.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, newIntent);
         }
     }
 

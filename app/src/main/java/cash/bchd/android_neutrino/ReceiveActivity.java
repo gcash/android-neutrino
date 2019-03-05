@@ -15,11 +15,13 @@ import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TextInputEditText;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -59,6 +61,13 @@ public class ReceiveActivity extends AppCompatActivity {
         setContentView(R.layout.activity_request);
 
         CloseActivity.cancelCloseTimer();
+
+        Toolbar myToolbar = (Toolbar) findViewById(R.id.receiveToolbar);
+        setSupportActionBar(myToolbar);
+
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
 
         Intent intent = getIntent();
         fiatCurrency = intent.getExtras().getString("fiatCurrency");
@@ -110,6 +119,19 @@ public class ReceiveActivity extends AppCompatActivity {
                 displayQRPopup();
             }
         });
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+
+                Intent intent = new Intent(this, MainActivity.class);
+                startActivity(intent);
+                return true;
+
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     public void toggleBchFiat() {

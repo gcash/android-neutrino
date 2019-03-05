@@ -35,6 +35,10 @@
             android:name=".SendActivity"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait">
+            <intent-filter>
+                <data android:scheme="bitcoincash" />
+                <action android:name="android.intent.action.VIEW" />
+            </intent-filter>
         </activity>
         <activity
             android:name=".ReceiveActivity"
