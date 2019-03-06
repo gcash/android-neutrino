@@ -11,6 +11,27 @@
         app:icon="@drawable/chain_icon_small"
         />
 
+    <android.support.v7.preference.Preference
+        android:key="backup"
+        android:title="Backup Wallet"
+        android:icon="@drawable/seed_icon_small"
+        app:summary="Write down your wallet's recovery seed."/>
+
+    <android.support.v7.preference.Preference
+        android:key="restore"
+        android:title="Recover Wallet"
+        android:icon="@drawable/restore_icon_small"
+        app:summary="Recovery a wallet from a seed backup."/>
+
+    <android.support.v7.preference.PreferenceScreen
+        android:persistent="false"
+        android:key="encryption"
+        android:title="Wallet Encryption"
+        android:icon="@drawable/key_icon_small"
+        app:summary="Set up encryption of the wallet's private keys.">
+
+    </android.support.v7.preference.PreferenceScreen>
+
     <android.support.v7.preference.SwitchPreferenceCompat
         app:key="blocksonly"
         app:icon="@drawable/block_icon_small"
@@ -25,6 +46,30 @@
         android:entryValues="@array/CurrencySymbols"
         app:summary="Set the fiat currency to use for viewing the BCH exchange rate."/>
 
+    <android.support.v7.preference.EditTextPreference
+        android:key="label"
+        android:title="Default Label"
+        android:icon="@drawable/label_icon_small"
+        app:summary="Pre-populate the label field in the payment request with the value entered here. Typically this field is your name or your business' name."/>
+
+    <android.support.v7.preference.EditTextPreference
+        android:key="memo"
+        android:title="Default Memo"
+        android:icon="@drawable/memo_icon_small"
+        app:summary="Pre-populate the memo field in the payment request with the value entered here. Typically this field describes what the payment is for."/>
+
+    <android.support.v7.preference.Preference
+        android:key="tor"
+        android:title="Tor"
+        android:icon="@drawable/tor_icon_small"
+        app:summary="Learn how to connect Neutrino wallet to Tor for enhanced privacy."/>
+
+    <android.support.v7.preference.Preference
+        android:key="donate"
+        android:title="Show Some Love"
+        android:icon="@drawable/bitcoin_icon_small"
+        app:summary="Donate to the bchd project."/>
+
     <android.support.v7.preference.PreferenceScreen
         android:persistent="false"
         android:key="bchd"
@@ -36,7 +81,7 @@
             android:key="ip"
             android:title="IP Address"
             android:icon="@drawable/ip_icon_small"
-            app:summary="Enter the IP address (ip:port) for the bchd full node"/>
+            app:summary="Enter the IP address (IP:Port) of the bchd full node"/>
 
         <android.support.v7.preference.EditTextPreference
             android:key="username"
