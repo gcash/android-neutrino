@@ -58,7 +58,7 @@ public class MainActivity extends CloseActivity {
     Settings settings;
     ExchangeRates exchangeRates;
     FloatingActionButton fab;
-    FloatingActionButton fab1;
+    FloatingActionButton fabSettings;
     FloatingActionButton fabReceive;
     FloatingActionButton fabSend;
     FloatingActionButton fabScan;
@@ -119,8 +119,8 @@ public class MainActivity extends CloseActivity {
         }
 
         fab = findViewById(R.id.fab);
-        fab1 = findViewById(R.id.speakNowFab);
-        fabReceive = findViewById(R.id.btcReceive);
+        fabSettings = findViewById(R.id.btnSettings);
+        fabReceive = findViewById(R.id.btnReceive);
         fabSend = findViewById(R.id.btnSend);
         fabScan = findViewById(R.id.btnScan);
         fabQR = findViewById(R.id.btnQR);
@@ -185,6 +185,10 @@ public class MainActivity extends CloseActivity {
                             openReceiveActivity();
                             toggleFABMenu();
                         }
+                        if (inViewInBounds(fabSettings, (int) event.getRawX(), (int) event.getRawY())) {
+                            openSettingsActivity();
+                            toggleFABMenu();
+                        }
                     }
                 }
                 return true;
@@ -224,6 +228,14 @@ public class MainActivity extends CloseActivity {
             }
         });
 
+        fabSettings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                fab.bringToFront();
+                openSettingsActivity();
+            }
+        });
+
         mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
     }
 
@@ -257,6 +269,12 @@ public class MainActivity extends CloseActivity {
         Intent intent = new Intent(this, ReceiveActivity.class);
         intent.putExtra("fiatCurrency", this.settings.getFiatCurrency());
         intent.putExtra("lastAddress", this.settings.getLastAddress());
+        startActivity(intent);
+    }
+
+    private void openSettingsActivity() {
+        toggleFABMenu();
+        Intent intent = new Intent(this, SettingsActivity.class);
         startActivity(intent);
     }
 
@@ -389,7 +407,7 @@ public class MainActivity extends CloseActivity {
 
     private void showFABMenu(){
         isFabOpen = true;
-        fab1.animate().translationY(-getResources().getDimension(R.dimen.standard_65));
+        fabSettings.animate().translationY(-getResources().getDimension(R.dimen.standard_65));
         fabReceive.animate().translationY(-getResources().getDimension(R.dimen.standard_120));
         fabSend.animate().translationY(-getResources().getDimension(R.dimen.standard_175));
         fabScan.animate().translationY(-getResources().getDimension(R.dimen.standard_230));
@@ -398,7 +416,7 @@ public class MainActivity extends CloseActivity {
 
     private void closeFABMenu(){
         isFabOpen = false;
-        fab1.animate().translationY(0);
+        fabSettings.animate().translationY(0);
         fabReceive.animate().translationY(0);
         fabSend.animate().translationY(0);
         fabScan.animate().translationY(0);

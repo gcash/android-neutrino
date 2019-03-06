@@ -1,0 +1,11 @@
+<resources>
+    <string-array name="CurrencyCodes">
+        <item>USD</item>
+        <item>EUR</item>
+    </string-array>
+
+    <string-array name="CurrencySymbols">
+        <item>$</item>
+        <item>$</item>
+    </string-array>
+</resources>

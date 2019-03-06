@@ -135,8 +135,10 @@ public class ReceiveActivity extends AppCompatActivity {
     }
 
     public void toggleBchFiat() {
+        TextView symbolLabel = (TextView) findViewById(R.id.receiveSymbolLabel);
         if (showingFiat) {
             String amt = receiveAmountInput.getText().toString();
+            symbolLabel.setText("₿");
             if (!amt.equals("")) {
                 try {
                     Amount bchRate = new Amount(ExchangeRates.getInstance().convertToBCH(Double.valueOf(amt), Currency.getInstance(fiatCurrency)));
@@ -150,6 +152,7 @@ public class ReceiveActivity extends AppCompatActivity {
             updateAlternateAmount();
         } else {
             try {
+                symbolLabel.setText(Currency.getInstance(fiatCurrency).getSymbol());
                 String amt = receiveAmountInput.getText().toString();
                 if (!amt.equals("")) {
                     try {

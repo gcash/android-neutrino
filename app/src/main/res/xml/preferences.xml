@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <android.support.v7.preference.Preference
+        app:key="blockchain"
+        app:title="Blockchain"
+        app:summary="Height: 572609\nHash: 0000000000000000045e06658ef635db053d7ea30063535e918b265146902fa1"
+        app:icon="@drawable/chain_icon_small"
+        />
+
+    <android.support.v7.preference.SwitchPreferenceCompat
+        app:key="blocksonly"
+        app:icon="@drawable/block_icon_small"
+        app:title="Blocks Only"
+        app:summary="Disable downloading unconfirmed transactions from the mempool. This will use less bandwidth but you will only detect transactions when they are mined."/>
+
+    <android.support.v7.preference.ListPreference
+        android:key="currency_preference"
+        android:title="Fiat Currency"
+        android:icon="@drawable/currency_icon_small"
+        android:entries="@array/CurrencyCodes"
+        android:entryValues="@array/CurrencySymbols"
+        app:summary="Set the fiat currency to use for viewing the BCH exchange rate."/>
+
+    <android.support.v7.preference.PreferenceScreen
+        android:persistent="false"
+        android:key="bchd"
+        android:title="BCHD"
+        android:icon="@drawable/bchd_icon_small"
+        app:summary="Enter credentials to RPC connect to a bchd full node rather than using SPV mode.">
+
+        <android.support.v7.preference.EditTextPreference
+            android:key="ip"
+            android:title="IP Address"
+            android:icon="@drawable/ip_icon_small"
+            app:summary="Enter the IP address (ip:port) for the bchd full node"/>
+
+        <android.support.v7.preference.EditTextPreference
+            android:key="username"
+            android:title="Username"
+            android:icon="@drawable/username_icon_small"
+            app:summary="Enter the bchd RPC username"/>
+
+        <android.support.v7.preference.EditTextPreference
+            android:key="password"
+            android:title="Password"
+            android:icon="@drawable/password_icon_small"
+            app:summary="Enter the bchd RPC password"/>
+
+        <android.support.v7.preference.EditTextPreference
+            android:key="cert"
+            android:title="Certificate"
+            android:icon="@drawable/cert_icon_small"
+            app:summary="Paste the contents of the bchd rpc.cert file for authentication"/>
+    </android.support.v7.preference.PreferenceScreen>
+
+</android.support.v7.preference.PreferenceScreen>
