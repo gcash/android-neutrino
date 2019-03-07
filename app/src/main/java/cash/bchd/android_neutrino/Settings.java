@@ -11,12 +11,20 @@ public class Settings {
     private static final String FIAT_CURRENCY_KEY = "FiatCurrency";
     private static final String LAST_ADDRESS_KEY = "LastAddress";
     private static final String LAST_BLOCK_HEIGHT_KEY = "LastBlockHeight";
+    private static final String LAST_BLOCK_HASH_KEY = "LastBlockHash";
     private static final String FEE_PER_BYTE_KEY = "FeePerByte";
 
     SharedPreferences prefs;
 
+    private static Settings instance;
+
     Settings(SharedPreferences prefs) {
         this.prefs = prefs;
+        instance = this;
+    }
+
+    public static Settings getInstance() {
+        return instance;
     }
 
     public void setWalletInitialized(boolean initialized) {
@@ -94,6 +102,17 @@ public class Settings {
     public int getLastBlockHeight() {
         int height = prefs.getInt(LAST_BLOCK_HEIGHT_KEY, 0);
         return height;
+    }
+
+    public void setLastBlockHash(String blockHash) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putString(LAST_BLOCK_HASH_KEY, blockHash);
+        editor.apply();
+    }
+
+    public String getLastBlockHash() {
+        String hash = prefs.getString(LAST_BLOCK_HASH_KEY, "");
+        return hash;
     }
 
     public void setFeePerByte(int satPerByte) {

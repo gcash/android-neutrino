@@ -505,13 +505,14 @@ public class MainActivity extends CloseActivity {
                     }
 
                     @Override
-                    public void onBlock(int blockHeight) {
+                    public void onBlock(int blockHeight, String blockHash) {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
                                 mAdapter.setBlockHeight(blockHeight);
                                 mAdapter.notifyDataSetChanged();
                                 settings.setLastBlockHeight(blockHeight);
+                                settings.setLastBlockHash(blockHash);
                             }
                         });
                     }

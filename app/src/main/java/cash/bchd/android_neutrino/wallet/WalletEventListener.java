@@ -11,7 +11,7 @@ public class WalletEventListener {
 
     public void onGetTransactions(List<TransactionData> txs, int blockHeight) {}
 
-    public void onBlock(int blockHeight) {}
+    public void onBlock(int blockHeight, String blockHash) {}
 
     public void onTransaction(TransactionData tx) {}
 }

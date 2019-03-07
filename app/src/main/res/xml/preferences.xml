@@ -7,7 +7,6 @@
     <android.support.v7.preference.Preference
         app:key="blockchain"
         app:title="Blockchain"
-        app:summary="Height: 572609\nHash: 0000000000000000045e06658ef635db053d7ea30063535e918b265146902fa1"
         app:icon="@drawable/chain_icon_small"
         />
 
@@ -43,7 +42,7 @@
         android:title="Fiat Currency"
         android:icon="@drawable/currency_icon_small"
         android:entries="@array/CurrencyCodes"
-        android:entryValues="@array/CurrencySymbols"
+        android:entryValues="@array/CurrencyCodes"
         app:summary="Set the fiat currency to use for viewing the BCH exchange rate."/>
 
     <android.support.v7.preference.EditTextPreference

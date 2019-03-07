@@ -42,8 +42,10 @@ public class Wallet implements Serializable {
 
     private HashMap<String, AddressListener> addressListeners = new HashMap<String, AddressListener>();
     private HashMap<ByteString, String[]> metadataCache = new HashMap<ByteString, String[]>();
+    private List<WalletEventListener> blockchainListeners = new ArrayList<WalletEventListener>();
 
     private int lastBlockHeight;
+    private String lastBlockHash;
 
     private boolean running;
 
@@ -110,11 +112,15 @@ public class Wallet implements Serializable {
 
     public void listenTransactions(WalletEventListener listener) {
         try {
-            lastBlockHeight = network().getBestHeight();
-            listener.onBlock(lastBlockHeight);
+            Api.NetworkResponse network = network();
+            lastBlockHeight = network.getBestHeight();
+            lastBlockHash = network.getBestBlock();
+
+            listener.onBlock(lastBlockHeight, lastBlockHash);
         } catch (Exception e) {
             e.printStackTrace();
         }
+        blockchainListeners.add(listener);
 
         WalletServiceGrpc.WalletServiceStub stub = WalletServiceGrpc.newStub(channel).withCallCredentials(creds);
         Api.TransactionNotificationsRequest request = Api.TransactionNotificationsRequest.newBuilder().build();
@@ -129,7 +135,11 @@ public class Wallet implements Serializable {
                 for (Api.BlockDetails block : blocks) {
                     if (block.getHeight() > lastBlockHeight) {
                         lastBlockHeight = block.getHeight();
-                        listener.onBlock(block.getHeight());
+                        lastBlockHash = txidToString(block.getHash());
+
+                        for (WalletEventListener blockchainListener : blockchainListeners) {
+                            blockchainListener.onBlock(lastBlockHeight, lastBlockHash);
+                        }
                     }
                     if (block.getTransactionsCount() > 0) {
                         hasMinedTransactions = true;
@@ -180,6 +190,10 @@ public class Wallet implements Serializable {
 
     public void listenAddress(String address, AddressListener listener) {
         addressListeners.put(address, listener);
+    }
+
+    public void listenBlockchain(WalletEventListener listener) {
+        blockchainListeners.add(listener);
     }
 
     public String currentAddress() throws Exception {
@@ -321,9 +335,7 @@ public class Wallet implements Serializable {
             toAddress = "";
         }
 
-        byte[] txBytes = tx.getHash().toByteArray();
-        reverse(txBytes);
-        String txid = BaseEncoding.base16().lowerCase().encode(txBytes);
+        String txid = txidToString(tx.getHash());
 
         String[] metaData = this.metadataCache.get(tx.getTransaction());
         String memo = "";
@@ -335,6 +347,12 @@ public class Wallet implements Serializable {
 
         TransactionData txData = new TransactionData(txid, (total > 0), memo, total, "", "", timestamp, toAddress, height);
         return txData;
+    }
+
+    private String txidToString(ByteString txid) {
+        byte[] txBytes = txid.toByteArray();
+        reverse(txBytes);
+        return BaseEncoding.base16().lowerCase().encode(txBytes);
     }
 
     /**
