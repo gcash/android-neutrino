@@ -32,6 +32,7 @@ public class Config {
     private String rpcConnect;
     private String bchdUsername;
     private String bchdPassword;
+    private String cert;
     private String caFilePath;
 
     // The app data directory
@@ -44,7 +45,7 @@ public class Config {
      * Construct the config file.
      */
     public Config(String dataDir, Boolean noInitialLoad, Boolean useSPV, Boolean blocksOnly, String[] connect, String rpcConnect,
-                  String bchdUsername, String bchdPassword, String caFilePath) {
+                  String bchdUsername, String bchdPassword, String cert) {
         this.dataDir = dataDir;
         this.useSPV = useSPV;
         this.blocksOnly = blocksOnly;
@@ -52,8 +53,12 @@ public class Config {
         this.rpcConnect = rpcConnect;
         this.bchdUsername = bchdUsername;
         this.bchdPassword = bchdPassword;
-        this.caFilePath = caFilePath;
         this.noInitialLoad = noInitialLoad;
+        this.cert = cert;
+
+        if (!cert.equals("")) {
+            this.caFilePath = this.dataDir + "/files/bchd.cert";
+        }
 
         SecureRandom random = new SecureRandom();
         byte randomBytes[] = new byte[32];
@@ -104,6 +109,12 @@ public class Config {
      * Save the config file to the data directory
      */
     public void save(Context context) throws Exception {
+        if (!this.caFilePath.equals("")) {
+            FileOutputStream certOutputSgtream = context.openFileOutput(this.caFilePath, Context.MODE_PRIVATE);
+            certOutputSgtream.write(this.cert.getBytes());
+            certOutputSgtream.close();
+        }
+
         FileOutputStream outputStream = context.openFileOutput(this.CONFIG_FILE_NAME, Context.MODE_PRIVATE);
         outputStream.write(this.getConfigData().getBytes());
         outputStream.close();

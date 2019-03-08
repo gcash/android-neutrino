@@ -15,6 +15,10 @@ public class Settings {
     private static final String FEE_PER_BYTE_KEY = "FeePerByte";
     private static final String DEFAULT_LABEL_KEY = "DefaultLabel";
     private static final String DEFAULT_MEMO_KEY = "DefaultMemo";
+    private static final String BCHD_IP_KEY = "BchdIP";
+    private static final String BCHD_USERNAME_KEY = "BchdUsername";
+    private static final String BCHD_PASSWORD_KEY = "BchdPassword";
+    private static final String BCHD_CERT_KEY = "BchdCert";
 
     SharedPreferences prefs;
 
@@ -148,5 +152,49 @@ public class Settings {
     public String getDefaultMemo() {
         String memo = prefs.getString(DEFAULT_MEMO_KEY, "");
         return memo;
+    }
+
+    public void setBchdIP(String ip) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putString(BCHD_IP_KEY, ip);
+        editor.apply();
+    }
+
+    public String getBchdIP() {
+        String ip = prefs.getString(BCHD_IP_KEY, "");
+        return ip;
+    }
+
+    public void setBchdUsername(String username) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putString(BCHD_USERNAME_KEY, username);
+        editor.apply();
+    }
+
+    public String getBchdUsername() {
+        String username = prefs.getString(BCHD_USERNAME_KEY, "");
+        return username;
+    }
+
+    public void setBchdPassword(String password) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putString(BCHD_PASSWORD_KEY, password);
+        editor.apply();
+    }
+
+    public String getBchdPassword() {
+        String password = prefs.getString(BCHD_PASSWORD_KEY, "");
+        return password;
+    }
+
+    public void setBchdCert(String cert) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putString(BCHD_CERT_KEY, cert);
+        editor.apply();
+    }
+
+    public String getBchdCert() {
+        String cert = prefs.getString(BCHD_CERT_KEY, "");
+        return cert;
     }
 }
