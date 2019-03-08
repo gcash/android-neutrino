@@ -10,4 +10,7 @@
     <color name="neonBlue">#59B9E9</color>
     <color name="lightBlue">#a8d4eb</color>
     <color name="neonPurple">#8271b4</color>
+    <color name="lightGreyCircle">#e2e2e4</color>
+    <color name="darkGreyCircle">#89898d</color>
+    <color name="greyBorder">#8e8e92</color>
 </resources>

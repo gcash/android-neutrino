@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.v7.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:key="preferenceScreen"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -14,7 +15,10 @@
         android:key="backup"
         android:title="Backup Wallet"
         android:icon="@drawable/seed_icon_small"
-        app:summary="Write down your wallet's recovery seed."/>
+        app:summary="Write down your wallet's recovery seed.">
+
+        <intent android:action="launchFromSettings"/>
+    </android.support.v7.preference.Preference>
 
     <android.support.v7.preference.Preference
         android:key="restore"

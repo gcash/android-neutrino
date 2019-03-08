@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@color/white"
+    android:orientation="vertical"
+    android:gravity="center_horizontal">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Your recovery phrase"
+        android:textStyle="bold"
+        android:textSize="20sp"
+        android:layout_marginTop="90dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Write down each word in order."
+        android:textSize="20sp"
+        android:layout_marginStart="50dp"
+        android:layout_marginEnd="50dp"
+        android:textAlignment="center"
+        android:layout_marginTop="20dp"/>
+
+    <com.google.android.flexbox.FlexboxLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="25dp"
+        android:layout_gravity="center_horizontal"
+        app:flexWrap="wrap"
+        app:alignItems="stretch"
+        app:alignContent="stretch" >
+
+        <TextView
+            android:id="@+id/word1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="word"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:layout_margin="5dp"
+            android:textSize="15sp"
+            android:background="@drawable/textview_border"/>
+
+        <TextView
+            android:id="@+id/word2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="word"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:layout_margin="5dp"
+            android:textSize="15sp"
+            android:background="@drawable/textview_border"/>
+
+        <TextView
+            android:id="@+id/word3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="word"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:layout_margin="5dp"
+            android:textSize="15sp"
+            android:background="@drawable/textview_border"/>
+
+        <TextView
+            android:id="@+id/word4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="word"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:layout_margin="5dp"
+            android:textSize="15sp"
+            android:background="@drawable/textview_border"/>
+
+        <TextView
+            android:id="@+id/word5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="word"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:layout_margin="5dp"
+            android:textSize="15sp"
+            android:background="@drawable/textview_border"/>
+
+        <TextView
+            android:id="@+id/word6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="word"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:layout_margin="5dp"
+            android:textSize="15sp"
+            android:background="@drawable/textview_border"/>
+
+        <TextView
+            android:id="@+id/word7"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="word"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:layout_margin="5dp"
+            android:textSize="15sp"
+            android:background="@drawable/textview_border"/>
+
+        <TextView
+            android:id="@+id/word8"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="word"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:layout_margin="5dp"
+            android:textSize="15sp"
+            android:background="@drawable/textview_border"/>
+
+        <TextView
+            android:id="@+id/word9"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="word"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:layout_margin="5dp"
+            android:textSize="15sp"
+            android:background="@drawable/textview_border"/>
+
+        <TextView
+            android:id="@+id/word10"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="word"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:layout_margin="5dp"
+            android:textSize="15sp"
+            android:background="@drawable/textview_border"/>
+
+        <TextView
+            android:id="@+id/word11"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="word"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:layout_margin="5dp"
+            android:textSize="15sp"
+            android:background="@drawable/textview_border"/>
+
+        <TextView
+            android:id="@+id/word12"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="word"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:layout_margin="5dp"
+            android:textSize="15sp"
+            android:background="@drawable/textview_border"/>
+
+
+    </com.google.android.flexbox.FlexboxLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Keep your recovery phrase safe. If you ever lose or replace your phone, you can use it to recover your funds."
+        android:textSize="20sp"
+        android:layout_marginStart="50dp"
+        android:layout_marginEnd="50dp"
+        android:textAlignment="center"
+        android:layout_marginTop="20dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Never share your recovery phrase with anyone. To be safe, avoid screenshots and don't store it on your mobile device."
+        android:textSize="20sp"
+        android:layout_marginStart="50dp"
+        android:layout_marginEnd="50dp"
+        android:textAlignment="center"
+        android:layout_marginTop="20dp"/>
+
+</LinearLayout>

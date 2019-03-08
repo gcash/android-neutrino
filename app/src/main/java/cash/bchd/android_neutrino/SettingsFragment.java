@@ -1,8 +1,11 @@
 package cash.bchd.android_neutrino;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.preference.PreferenceActivity;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
+import android.support.v7.preference.PreferenceScreen;
 import android.support.v7.preference.SwitchPreferenceCompat;
 
 import cash.bchd.android_neutrino.wallet.Wallet;
@@ -31,9 +34,18 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         wallet = Wallet.getInstance();
 
         if (rootKey == null) {
+            if (settings == null) {
+                settings = Settings.getInstance();
+            }
             Preference blockchainPref = (Preference) findPreference("blockchain");
             String blockchainInfo = "Height: " + this.settings.getLastBlockHeight() + "\nHash: " + this.settings.getLastBlockHash();
             blockchainPref.setSummary(blockchainInfo);
+
+            Preference backupPref = (Preference) findPreference("backup");
+            PreferenceScreen prefScreen = (PreferenceScreen) findPreference("preferenceScreen");
+            if (settings.getMnemonic().equals("")) {
+                prefScreen.removePreference(backupPref);
+            }
 
             Preference currencyPref = (Preference) findPreference("currency_preference");
             currencyPref.setSummary(settings.getFiatCurrency().toUpperCase());

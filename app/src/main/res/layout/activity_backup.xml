@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@color/white"
+    android:orientation="vertical" >
+    <!-- ViewPager -->
+    <cash.bchd.android_neutrino.CustomViewPager
+        android:layout_width="fill_parent" android:layout_height="fill_parent"
+        android:id="@+id/viewPager" />
+    <!-- Footer -->
+    <include layout="@layout/footer"  />
+</FrameLayout>
