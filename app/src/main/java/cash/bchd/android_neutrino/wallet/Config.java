@@ -54,6 +54,7 @@ public class Config {
         this.bchdUsername = bchdUsername;
         this.bchdPassword = bchdPassword;
         this.noInitialLoad = noInitialLoad;
+        this.caFilePath = "";
         this.cert = cert;
 
         if (!cert.equals("")) {
@@ -114,7 +115,6 @@ public class Config {
             certOutputSgtream.write(this.cert.getBytes());
             certOutputSgtream.close();
         }
-
         FileOutputStream outputStream = context.openFileOutput(this.CONFIG_FILE_NAME, Context.MODE_PRIVATE);
         outputStream.write(this.getConfigData().getBytes());
         outputStream.close();

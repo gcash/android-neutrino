@@ -63,12 +63,6 @@
         android:icon="@drawable/tor_icon_small"
         app:summary="Learn how to connect Neutrino wallet to Tor for enhanced privacy."/>
 
-    <android.support.v7.preference.Preference
-        android:key="donate"
-        android:title="Show Some Love"
-        android:icon="@drawable/bitcoin_icon_small"
-        app:summary="Donate to the bchd project."/>
-
     <android.support.v7.preference.PreferenceScreen
         android:persistent="false"
         android:key="bchd"
@@ -100,5 +94,11 @@
             android:icon="@drawable/cert_icon_small"
             app:summary="Paste the contents of the bchd rpc.cert file for authentication"/>
     </android.support.v7.preference.PreferenceScreen>
+
+    <android.support.v7.preference.Preference
+        android:key="donate"
+        android:title="Show Some Love"
+        android:icon="@drawable/bitcoin_icon_small"
+        app:summary="Donate to the bchd project."/>
 
 </android.support.v7.preference.PreferenceScreen>

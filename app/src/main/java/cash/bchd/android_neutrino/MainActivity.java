@@ -111,9 +111,10 @@ public class MainActivity extends CloseActivity {
 
         if (Wallet.getInstance() == null) {
             String[] addrs = new String[0];
+            String bchdIP = settings.getBchdIP();
             Config cfg = new Config(getDataDir().getPath(), !settings.getWalletInitialized(),
-                    true, settings.getBlocksOnly(), addrs, "", "",
-                    "", "");
+                    bchdIP.equals(""), settings.getBlocksOnly(), addrs, settings.getBchdIP(), settings.getBchdUsername(),
+                    settings.getBchdPassword(), settings.getBchdCert());
             wallet = new Wallet(this, cfg);
             new StartWalletTask().execute(wallet);
         }

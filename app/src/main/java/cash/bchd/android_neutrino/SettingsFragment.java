@@ -3,6 +3,7 @@ package cash.bchd.android_neutrino;
 import android.os.Bundle;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
+import android.support.v7.preference.SwitchPreferenceCompat;
 
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
@@ -84,6 +85,17 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                     }
                     settings.setDefaultMemo(o.toString());
                     return false;
+                }
+            });
+
+            SwitchPreferenceCompat blocksOnlyPref = (SwitchPreferenceCompat) findPreference("blocksonly");
+            blocksOnlyPref.setChecked(settings.getBlocksOnly());
+            blocksOnlyPref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object o) {
+                    boolean blockOnly = (Boolean) o;
+                    settings.setBlocksOnly(blockOnly);
+                    return true;
                 }
             });
 
