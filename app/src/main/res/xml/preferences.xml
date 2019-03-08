@@ -20,7 +20,7 @@
         android:key="restore"
         android:title="Recover Wallet"
         android:icon="@drawable/restore_icon_small"
-        app:summary="Recovery a wallet from a seed backup."/>
+        app:summary="Recover a wallet from a seed backup."/>
 
     <android.support.v7.preference.PreferenceScreen
         android:persistent="false"
