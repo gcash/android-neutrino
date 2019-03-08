@@ -44,6 +44,48 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             }
         });
 
+        Preference labelPref = (Preference) findPreference("label");
+        String defaultLabel = settings.getDefaultLabel();
+        String defaultLabelString = "Pre-populate the label field in the payment request with the value entered here. Typically this field is your name or your business' name.";
+        if (defaultLabel.equals("")) {
+            labelPref.setSummary(defaultLabelString);
+        } else {
+            labelPref.setSummary(defaultLabel);
+        }
+        labelPref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(Preference preference, Object o) {
+                if (o.toString().equals("")) {
+                    labelPref.setSummary(defaultLabelString);
+                } else {
+                    labelPref.setSummary(o.toString());
+                }
+                settings.setDefaultLabel(o.toString());
+                return false;
+            }
+        });
+
+        Preference memoPref = (Preference) findPreference("memo");
+        String defaultMemo = settings.getDefaultMemo();
+        String defaultMemoString = "Pre-populate the memo field in the payment request with the value entered here. Typically this field describes what the payment is for.";
+        if (defaultMemo.equals("")) {
+            memoPref.setSummary(defaultMemoString);
+        } else {
+            memoPref.setSummary(defaultMemo);
+        }
+        memoPref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(Preference preference, Object o) {
+                if (o.toString().equals("")) {
+                    memoPref.setSummary(defaultMemoString);
+                } else {
+                    memoPref.setSummary(o.toString());
+                }
+                settings.setDefaultMemo(o.toString());
+                return false;
+            }
+        });
+
         wallet.listenBlockchain(new WalletEventListener() {
             @Override
             public void onBlock(int blockHeight, String blockHash) {

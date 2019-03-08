@@ -82,6 +82,16 @@ public class ReceiveActivity extends AppCompatActivity {
         label = (TextInputEditText) findViewById(R.id.labelInput);
         memo = (TextInputEditText) findViewById(R.id.receiveMemoInput);
 
+        String defaultMemo = intent.getExtras().getString("defaultMemo");
+        String defaultLabel = intent.getExtras().getString("defaultLabel");
+
+        if (!defaultLabel.equals("")) {
+            label.setText(defaultLabel);
+        }
+        if (!defaultMemo.equals("")) {
+            memo.setText(defaultMemo);
+        }
+
         symbolLabel.setText(Currency.getInstance(fiatCurrency).getSymbol());
 
         ImageView toggle = (ImageView) findViewById(R.id.receiveToggleImage);

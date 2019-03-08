@@ -13,6 +13,8 @@ public class Settings {
     private static final String LAST_BLOCK_HEIGHT_KEY = "LastBlockHeight";
     private static final String LAST_BLOCK_HASH_KEY = "LastBlockHash";
     private static final String FEE_PER_BYTE_KEY = "FeePerByte";
+    private static final String DEFAULT_LABEL_KEY = "DefaultLabel";
+    private static final String DEFAULT_MEMO_KEY = "DefaultMemo";
 
     SharedPreferences prefs;
 
@@ -124,5 +126,27 @@ public class Settings {
     public int getFeePerByte() {
         int fee = prefs.getInt(FEE_PER_BYTE_KEY, 50);
         return fee;
+    }
+
+    public void setDefaultLabel(String label) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putString(DEFAULT_LABEL_KEY, label);
+        editor.apply();
+    }
+
+    public String getDefaultLabel() {
+        String label = prefs.getString(DEFAULT_LABEL_KEY, "");
+        return label;
+    }
+
+    public void setDefaultMemo(String memo) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putString(DEFAULT_MEMO_KEY, memo);
+        editor.apply();
+    }
+
+    public String getDefaultMemo() {
+        String memo = prefs.getString(DEFAULT_MEMO_KEY, "");
+        return memo;
     }
 }

@@ -269,6 +269,8 @@ public class MainActivity extends CloseActivity {
         Intent intent = new Intent(this, ReceiveActivity.class);
         intent.putExtra("fiatCurrency", this.settings.getFiatCurrency());
         intent.putExtra("lastAddress", this.settings.getLastAddress());
+        intent.putExtra("defaultLabel", this.settings.getDefaultLabel());
+        intent.putExtra("defaultMemo", this.settings.getDefaultMemo());
         startActivity(intent);
     }
 
