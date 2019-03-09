@@ -19,6 +19,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     private static Settings settings;
     private static Wallet wallet;
 
+    public static String activeScreen;
+
     public SettingsFragment() {
 
     }
@@ -31,6 +33,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         wallet = Wallet.getInstance();
 
         if (rootKey == null) {
+            activeScreen = "root";
             try {
                 Api.NetworkResponse net = wallet.network();
                 settings.setLastBlockHeight(net.getBestHeight());
@@ -130,6 +133,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 }
             });
         } else if (rootKey.equals("bchd")) {
+            activeScreen = "bchd";
             Preference ipPref = (Preference) findPreference("ip");
             String ip = settings.getBchdIP();
             String defaultIPString = "Enter the IP address (IP:Port) of the bchd full node";

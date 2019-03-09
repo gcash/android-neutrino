@@ -166,14 +166,7 @@ public class RestoreActivity extends AppCompatActivity {
 
                                 deleteRecursive(new File(getDataDir().getPath()));
 
-                                Intent mStartActivity = new Intent(getBaseContext(), MainActivity.class);
-                                int mPendingIntentId = 123456;
-                                PendingIntent mPendingIntent = PendingIntent.getActivity(getBaseContext(), mPendingIntentId, mStartActivity, PendingIntent.FLAG_CANCEL_CURRENT);
-                                AlarmManager mgr = (AlarmManager)getBaseContext().getSystemService(Context.ALARM_SERVICE);
-                                mgr.set(AlarmManager.RTC, System.currentTimeMillis() + 100, mPendingIntent);
                                 System.exit(0);
-
-                                finish();
                                 break;
 
                             case DialogInterface.BUTTON_NEGATIVE:
