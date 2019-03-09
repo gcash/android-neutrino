@@ -1,6 +1,8 @@
 package cash.bchd.android_neutrino;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.support.design.widget.Snackbar;
@@ -12,8 +14,13 @@ import android.widget.TextView;
 import com.andrognito.pinlockview.IndicatorDots;
 import com.andrognito.pinlockview.PinLockListener;
 import com.andrognito.pinlockview.PinLockView;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import cash.bchd.android_neutrino.wallet.Wallet;
+import io.grpc.Status;
+import walletrpc.Api;
 
 public class PinActivity extends AppCompatActivity {
     private boolean firstPinEntered = false;
@@ -23,11 +30,28 @@ public class PinActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pin);
 
+        Intent intent = getIntent();
+        boolean enterOnly = intent.getBooleanExtra("enterOnly", false);
+
+        if (enterOnly) {
+            TextView pinLabel = (TextView) findViewById(R.id.pinLabel);
+            pinLabel.setText("Enter Pin");
+        }
+
+
         IndicatorDots mIndicatorDots = (IndicatorDots) findViewById(R.id.pinIndicatorDots);
         PinLockView mPinLockView = (PinLockView) findViewById(R.id.pinpad);
         mPinLockView.setPinLockListener(new PinLockListener() {
             @Override
             public void onComplete(String pin) {
+                if (enterOnly) {
+                    Intent output = new Intent();
+                    output.putExtra("pin", pin);
+                    setResult(RESULT_OK, output);
+                    finish();
+                    return;
+                }
+
                 if (!firstPinEntered) {
                     firstPin = pin;
                     firstPinEntered = true;
@@ -43,25 +67,34 @@ public class PinActivity extends AppCompatActivity {
                         Vibrator vibrator = (Vibrator)getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
                         vibrator.vibrate(500);
                     } else {
-                        Thread thread = new Thread() {
-                            public void run() {
-                                try {
-                                    Wallet wallet = Wallet.getInstance();
-                                    String hashedPw = Wallet.SHA256(pin);
-                                    wallet.changePassword(Wallet.DEFAULT_PASSPHRASE, hashedPw);
-                                } catch (Exception e) {
-                                    e.printStackTrace();
+                        LinearLayout mCLayout = (LinearLayout) findViewById(R.id.setPinLayout);
+                        try {
+                            Wallet wallet = Wallet.getInstance();
+                            String hashedPw = Wallet.SHA256(pin);
+                            System.out.println(hashedPw);
+                            ListenableFuture<Api.ChangePassphraseResponse> res = wallet.changePasswordAsync(Wallet.DEFAULT_PASSPHRASE, hashedPw);
+                            Futures.addCallback(res, new FutureCallback<Api.ChangePassphraseResponse>() {
+                                @Override
+                                public void onSuccess(Api.ChangePassphraseResponse result) {
+                                    Settings.getInstance().setEncryptionType(EncryptionType.PIN);
+                                    Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                                    vibrator.vibrate(500);
+                                    SettingsActivity.fa.finish();
+                                    finish();
                                 }
-                            }
-                        };
-                        Settings.getInstance().setEncryptionType(EncryptionType.PIN);
-                        Vibrator vibrator = (Vibrator)getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-                        vibrator.vibrate(500);
-                        LinearLayout layout = (LinearLayout) findViewById(R.id.setPinLayout);
-                        Snackbar snackbar = Snackbar.make(layout, "New pin set.", Snackbar.LENGTH_LONG);
-                        snackbar.show();
-                        SettingsActivity.fa.finish();
-                        finish();
+
+                                @Override
+                                public void onFailure(Throwable t) {
+                                    Status status = Status.fromThrowable(t);
+                                    Snackbar snackbar = Snackbar.make(mCLayout, status.getDescription(), Snackbar.LENGTH_LONG);
+                                    snackbar.show();
+                                }
+                            });
+                        } catch (Exception e) {
+                            Snackbar snackbar = Snackbar.make(mCLayout, "Error setting password", Snackbar.LENGTH_LONG);
+                            snackbar.show();
+                            e.printStackTrace();
+                        }
                     }
                 }
             }

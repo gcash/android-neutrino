@@ -210,19 +210,19 @@ public class Wallet implements Serializable {
         return reply.getAddress();
     }
 
-    public void changePassword(String currentPw, String newPw) throws Exception {
+    public ListenableFuture<Api.ChangePassphraseResponse> changePasswordAsync(String currentPw, String newPw) throws Exception {
         ByteString bvo = ByteString.copyFromUtf8(currentPw);
         ByteString bvn = ByteString.copyFromUtf8(newPw);
-        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
+        WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
         Api.ChangePassphraseRequest request = Api.ChangePassphraseRequest.newBuilder()
                 .setKey(Api.ChangePassphraseRequest.Key.PRIVATE)
                 .setOldPassphrase(bvo)
                 .setNewPassphrase(bvn)
                 .build();
-        Api.ChangePassphraseResponse reply = stub.changePassphrase(request);
+        return stub.changePassphrase(request);
     }
 
-    public Api.CreateTransactionResponse createTransaction(String addr, long amtSatoshi, int feePerByte) throws Exception {
+    public Api.CreateTransactionResponse createTransaction(String addr, long amtSatoshi, int feePerByte) {
         WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
         Api.CreateTransactionRequest.Output output = Api.CreateTransactionRequest.Output.newBuilder().setAmount(amtSatoshi).setAddress(addr).build();
         Api.CreateTransactionRequest request = Api.CreateTransactionRequest.newBuilder()
@@ -252,6 +252,20 @@ public class Wallet implements Serializable {
         return reply.getTransaction().toByteArray();
     }
 
+    public ListenableFuture<Api.SignTransactionResponse> signTransactionAsync(byte[] serializedTx, List<Long> inputValues, String passphrase) {
+        WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
+        Api.SignTransactionRequest.Builder builder = Api.SignTransactionRequest.newBuilder();
+        builder.setSerializedTransaction(ByteString.copyFrom(serializedTx));
+        for (Long val : inputValues) {
+            builder.addInputValues(val);
+        }
+        ByteString pw = ByteString.copyFromUtf8(passphrase);
+        builder.setPassphrase(pw);
+        Api.SignTransactionRequest request = builder.build();
+
+        return stub.signTransaction(request);
+    }
+
     public void publishTransaction(byte[] serializedTransaction, String toAddress, String memo) throws Exception {
         ByteString bs = ByteString.copyFrom(serializedTransaction);
         String[] metadata = new String[2];
@@ -261,6 +275,17 @@ public class Wallet implements Serializable {
         WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
         Api.PublishTransactionRequest request = Api.PublishTransactionRequest.newBuilder().setSignedTransaction(bs).build();
         Api.PublishTransactionResponse reply = stub.publishTransaction(request);
+    }
+
+    public ListenableFuture<Api.PublishTransactionResponse> publishTransactionAsync(byte[] serializedTransaction, String toAddress, String memo) {
+        ByteString bs = ByteString.copyFrom(serializedTransaction);
+        String[] metadata = new String[2];
+        metadata[0] = toAddress;
+        metadata[1] = memo;
+        this.metadataCache.put(bs, metadata);
+        WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
+        Api.PublishTransactionRequest request = Api.PublishTransactionRequest.newBuilder().setSignedTransaction(bs).build();
+        return stub.publishTransaction(request);
     }
 
     public Api.SweepAccountResponse sweepAccount(String addr, int feePerByte) throws Exception {
