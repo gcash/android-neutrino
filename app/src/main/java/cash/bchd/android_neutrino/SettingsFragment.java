@@ -217,6 +217,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                     return false;
                 }
             });
+        } else if (rootKey.equals("encryption")) {
+            activeScreen = "encryption";
         }
     }
 }

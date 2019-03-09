@@ -58,7 +58,7 @@ public class SettingsActivity extends AppCompatActivity implements PreferenceFra
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        if (!SettingsFragment.activeScreen.equals("bchd")) {
+        if (SettingsFragment.activeScreen.equals("root")) {
             Intent intent = new Intent(this, MainActivity.class);
             startActivity(intent);
         }

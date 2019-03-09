@@ -36,6 +36,18 @@
         android:icon="@drawable/key_icon_small"
         app:summary="Set up encryption of the wallet's private keys.">
 
+        <android.support.v7.preference.Preference
+            android:key="pin"
+            android:title="Pin Encryption"
+            android:icon="@drawable/pin_icon_small"
+            app:summary="Enter a pin to encrypt the wallet with."/>
+
+        <android.support.v7.preference.Preference
+            android:key="fingerprint"
+            android:title="Fingerprint Authentication"
+            android:icon="@drawable/fingerprint_icon_small"
+            app:summary="Set up fingerprint based encryption."/>
+
     </android.support.v7.preference.PreferenceScreen>
 
     <android.support.v7.preference.SwitchPreferenceCompat
