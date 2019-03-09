@@ -1,5 +1,6 @@
 package cash.bchd.android_neutrino;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
@@ -53,6 +54,14 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             PreferenceScreen prefScreen = (PreferenceScreen) findPreference("preferenceScreen");
             if (settings.getMnemonic().equals("")) {
                 prefScreen.removePreference(backupPref);
+            }
+
+            Preference encryptionPref = (Preference) findPreference("encryption");
+            Preference removeEncryptionPref = (Preference) findPreference("removeEncryption");
+            if (settings.getEncryptionType() != EncryptionType.UNENCRYPTED) {
+                prefScreen.removePreference(encryptionPref);
+            } else {
+                prefScreen.removePreference(removeEncryptionPref);
             }
 
             Preference currencyPref = (Preference) findPreference("currency_preference");

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.Fragment;
@@ -91,6 +92,9 @@ public class BackupThree extends Fragment {
                         switch (which){
                             case DialogInterface.BUTTON_POSITIVE:
                                 settings.setMnemonic("");
+                                Vibrator vibrator = (Vibrator)getContext().getSystemService(Context.VIBRATOR_SERVICE);
+                                vibrator.vibrate(500);
+                                BackupActivity.fa.finish();
                                 break;
 
                             case DialogInterface.BUTTON_NEGATIVE:

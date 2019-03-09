@@ -43,15 +43,12 @@ public class ConfirmationActivity extends AppCompatActivity {
         CloseActivity.cancelCloseTimer();
 
         Intent intent = getIntent();
-        int authType = NO_AUTH;
+        EncryptionType encType = Settings.getInstance().getEncryptionType();
         SwipeButton swipeButton = (SwipeButton) findViewById(R.id.swipe_btn);
-        if (intent.getExtras() != null) {
-            authType = intent.getExtras().getInt("authType");
-        }
-        if (authType == PIN_AUTH) {
+        if (encType == EncryptionType.PIN) {
             RelativeLayout pinLayout = (RelativeLayout) findViewById(R.id.pinLayout);
             pinLayout.setVisibility(View.VISIBLE);
-        } else if (authType == FINGERPRINT_AUTH) {
+        } else if (encType == EncryptionType.FINGERPRINT) {
             ImageView fingerprint = (ImageView) findViewById(R.id.fingerprint);
             fingerprint.setVisibility(View.VISIBLE);
         } else {

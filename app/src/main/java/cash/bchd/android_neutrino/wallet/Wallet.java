@@ -1,6 +1,7 @@
 package cash.bchd.android_neutrino.wallet;
 
 import android.content.Context;
+import android.util.Base64;
 
 import com.google.android.gms.common.util.ArrayUtils;
 import com.google.common.io.BaseEncoding;
@@ -10,6 +11,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 
 import java.io.Serializable;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -207,6 +210,18 @@ public class Wallet implements Serializable {
         return reply.getAddress();
     }
 
+    public void changePassword(String currentPw, String newPw) throws Exception {
+        ByteString bvo = ByteString.copyFromUtf8(currentPw);
+        ByteString bvn = ByteString.copyFromUtf8(newPw);
+        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
+        Api.ChangePassphraseRequest request = Api.ChangePassphraseRequest.newBuilder()
+                .setKey(Api.ChangePassphraseRequest.Key.PRIVATE)
+                .setOldPassphrase(bvo)
+                .setNewPassphrase(bvn)
+                .build();
+        Api.ChangePassphraseResponse reply = stub.changePassphrase(request);
+    }
+
     public Api.CreateTransactionResponse createTransaction(String addr, long amtSatoshi, int feePerByte) throws Exception {
         WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
         Api.CreateTransactionRequest.Output output = Api.CreateTransactionRequest.Output.newBuilder().setAmount(amtSatoshi).setAddress(addr).build();
@@ -392,5 +407,15 @@ public class Wallet implements Serializable {
             j--;
             i++;
         }
+    }
+
+    public static String SHA256 (String text) throws NoSuchAlgorithmException {
+
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+
+        md.update(text.getBytes());
+        byte[] digest = md.digest();
+
+        return Base64.encodeToString(digest, Base64.DEFAULT);
     }
 }

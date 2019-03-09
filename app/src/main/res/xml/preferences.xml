@@ -40,7 +40,10 @@
             android:key="pin"
             android:title="Pin Encryption"
             android:icon="@drawable/pin_icon_small"
-            app:summary="Enter a pin to encrypt the wallet with."/>
+            app:summary="Enter a pin to encrypt the wallet with.">
+
+            <intent android:action="launchPinFromSettings"/>
+        </android.support.v7.preference.Preference>
 
         <android.support.v7.preference.Preference
             android:key="fingerprint"
@@ -49,6 +52,12 @@
             app:summary="Set up fingerprint based encryption."/>
 
     </android.support.v7.preference.PreferenceScreen>
+
+    <android.support.v7.preference.Preference
+        android:key="removeEncryption"
+        android:title="Remove Encryption"
+        android:icon="@drawable/key_icon_small"
+        app:summary="Decrypt wallet and return to unencrypted state."/>
 
     <android.support.v7.preference.SwitchPreferenceCompat
         app:key="blocksonly"

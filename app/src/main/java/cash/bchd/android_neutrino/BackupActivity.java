@@ -1,5 +1,6 @@
 package cash.bchd.android_neutrino;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
@@ -11,6 +12,9 @@ public class BackupActivity extends FragmentActivity {
     private CustomViewPager _mViewPager;
     private BackupAdapter _adapter;
     private Button _btn1,_btn2,_btn3;
+
+    public static Activity fa;
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -18,6 +22,7 @@ public class BackupActivity extends FragmentActivity {
         setContentView(R.layout.activity_backup);
         setUpView();
         setTab();
+        fa = this;
     }
     private void setUpView(){
         _mViewPager = (CustomViewPager) findViewById(R.id.viewPager);

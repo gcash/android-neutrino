@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.preference.PreferenceScreen;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
@@ -165,6 +166,9 @@ public class RestoreActivity extends AppCompatActivity {
                                 settings.setWalletInitialized(false);
 
                                 deleteRecursive(new File(getDataDir().getPath()));
+
+                                Vibrator vibrator = (Vibrator)getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                                vibrator.vibrate(500);
 
                                 System.exit(0);
                                 break;

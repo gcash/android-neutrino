@@ -19,6 +19,7 @@ public class Settings {
     private static final String BCHD_USERNAME_KEY = "BchdUsername";
     private static final String BCHD_PASSWORD_KEY = "BchdPassword";
     private static final String BCHD_CERT_KEY = "BchdCert";
+    private static final String ENCRYPTION_TYPE_KEY = "EncryptionType";
 
     SharedPreferences prefs;
 
@@ -196,5 +197,16 @@ public class Settings {
     public String getBchdCert() {
         String cert = prefs.getString(BCHD_CERT_KEY, "");
         return cert;
+    }
+
+    public void setEncryptionType(EncryptionType et) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putString(ENCRYPTION_TYPE_KEY, et.toString());
+        editor.apply();
+    }
+
+    public EncryptionType getEncryptionType() {
+        String t = prefs.getString(ENCRYPTION_TYPE_KEY, "unencrypted");
+        return EncryptionType.fromString(t);
     }
 }
