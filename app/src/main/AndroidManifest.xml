@@ -61,7 +61,17 @@
             android:screenOrientation="portrait">
 
             <intent-filter>
-                <action android:name="launchFromSettings"/>
+                <action android:name="launchBackupFromSettings"/>
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".RestoreActivity"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait">
+
+            <intent-filter>
+                <action android:name="launchRestoreFromSettings"/>
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>

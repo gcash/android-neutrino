@@ -91,8 +91,6 @@ public class BackupThree extends Fragment {
                         switch (which){
                             case DialogInterface.BUTTON_POSITIVE:
                                 settings.setMnemonic("");
-                                Intent intent = new Intent(getActivity(), SettingsActivity.class);
-                                getActivity().startActivity(intent);
                                 break;
 
                             case DialogInterface.BUTTON_NEGATIVE:

@@ -10,20 +10,17 @@ import android.support.v7.preference.SwitchPreferenceCompat;
 
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
+import walletrpc.Api;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
 
     public static final String FRAGMENT_TAG = "my_preference_fragment";
 
-    Settings settings;
-    Wallet wallet;
+    private static Settings settings;
+    private static Wallet wallet;
 
     public SettingsFragment() {
 
-    }
-
-    public void setSettings(Settings settings) {
-        this.settings = settings;
     }
 
     @Override
@@ -34,11 +31,19 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         wallet = Wallet.getInstance();
 
         if (rootKey == null) {
-            if (settings == null) {
-                settings = Settings.getInstance();
+            try {
+                Api.NetworkResponse net = wallet.network();
+                settings.setLastBlockHeight(net.getBestHeight());
+                settings.setLastBlockHash(net.getBestBlock());
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+            if (settings==null) {
+                return;
+            }
+
             Preference blockchainPref = (Preference) findPreference("blockchain");
-            String blockchainInfo = "Height: " + this.settings.getLastBlockHeight() + "\nHash: " + this.settings.getLastBlockHash();
+            String blockchainInfo = "Height: " + settings.getLastBlockHeight() + "\nHash: " + settings.getLastBlockHash();
             blockchainPref.setSummary(blockchainInfo);
 
             Preference backupPref = (Preference) findPreference("backup");

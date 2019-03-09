@@ -47,7 +47,7 @@ public class Wallet implements Serializable {
     private int lastBlockHeight;
     private String lastBlockHash;
 
-    private boolean running;
+    private static boolean running = false;
 
     /**
      * The wallet constructor takes in a context which it uses to derive the config file
@@ -69,6 +69,10 @@ public class Wallet implements Serializable {
 
     public static Wallet getInstance() {
         return instance;
+    }
+
+    public static void resetInstance() {
+        instance = null;
     }
 
     public void loadWallet(WalletEventListener listener) throws Exception {
@@ -371,6 +375,7 @@ public class Wallet implements Serializable {
             channel.shutdown();
         }
         mobile.Mobile.stopWallet();
+        running = false;
     }
 
     public static void reverse(byte[] array) {
