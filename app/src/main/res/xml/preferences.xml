@@ -92,7 +92,10 @@
         android:key="tor"
         android:title="Tor"
         android:icon="@drawable/tor_icon_small"
-        app:summary="Learn how to connect Neutrino wallet to Tor for enhanced privacy."/>
+        app:summary="Learn how to connect Neutrino wallet to Tor for enhanced privacy.">
+
+        <intent android:action="launchTorFromSettings"/>
+    </android.support.v7.preference.Preference>
 
     <android.support.v7.preference.PreferenceScreen
         android:persistent="false"
