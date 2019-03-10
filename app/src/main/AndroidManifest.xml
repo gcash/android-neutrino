@@ -6,6 +6,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+
+    <uses-feature android:name="android.hardware.fingerprint" android:required="false"/>
 
     <application
         android:allowBackup="true"
@@ -82,6 +85,16 @@
 
             <intent-filter>
                 <action android:name="launchPinFromSettings"/>
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".FingerprintSetupActivity"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait">
+
+            <intent-filter>
+                <action android:name="launchFingerprintFromSettings"/>
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>

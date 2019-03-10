@@ -71,7 +71,6 @@ public class PinActivity extends AppCompatActivity {
                         try {
                             Wallet wallet = Wallet.getInstance();
                             String hashedPw = Wallet.SHA256(pin);
-                            System.out.println(hashedPw);
                             ListenableFuture<Api.ChangePassphraseResponse> res = wallet.changePasswordAsync(Wallet.DEFAULT_PASSPHRASE, hashedPw);
                             Futures.addCallback(res, new FutureCallback<Api.ChangePassphraseResponse>() {
                                 @Override

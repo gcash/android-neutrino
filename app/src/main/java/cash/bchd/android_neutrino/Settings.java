@@ -22,6 +22,8 @@ public class Settings {
     private static final String ENCRYPTION_TYPE_KEY = "EncryptionType";
     private static final String INVALID_PIN_COUNT_KEY = "InvalidPinCount";
     private static final String LAST_INVALID_PIN_KEY = "LastInvalidPin";
+    private static final String ENCRYPTED_PASSWORD_KEY = "EncryptedPassword";
+    private static final String FINGERPRINT_IV_KEY = "FingerprintIV";
 
     SharedPreferences prefs;
 
@@ -232,5 +234,27 @@ public class Settings {
     public long getLastInvalidPin() {
         long timestamp = prefs.getLong(LAST_INVALID_PIN_KEY, 0);
         return timestamp;
+    }
+
+    public void setEncryptedPassword(String pw) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putString(ENCRYPTED_PASSWORD_KEY, pw);
+        editor.apply();
+    }
+
+    public String getEncryptedPassword() {
+        String pw = prefs.getString(ENCRYPTED_PASSWORD_KEY, "");
+        return pw;
+    }
+
+    public void setFingerprintIv(String iv) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putString(FINGERPRINT_IV_KEY, iv);
+        editor.apply();
+    }
+
+    public String getFingerprintIv() {
+        String iv = prefs.getString(FINGERPRINT_IV_KEY, "");
+        return iv;
     }
 }

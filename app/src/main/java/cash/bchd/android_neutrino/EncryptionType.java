@@ -13,10 +13,10 @@ public enum EncryptionType {
     }
 
     public static EncryptionType fromString(String s) {
-        switch(s) {
+        switch(s.toLowerCase()) {
             case "pin":
                 return PIN;
-            case "FINGEERPRINT":
+            case "fingerprint":
                 return FINGERPRINT;
         }
         return UNENCRYPTED;

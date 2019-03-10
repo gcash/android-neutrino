@@ -58,10 +58,11 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
             Preference encryptionPref = (Preference) findPreference("encryption");
             Preference removeEncryptionPref = (Preference) findPreference("removeEncryption");
-            if (settings.getEncryptionType() != EncryptionType.UNENCRYPTED) {
-                prefScreen.removePreference(encryptionPref);
-            } else {
+            System.out.println(settings.getEncryptionType());
+            if (settings.getEncryptionType() == EncryptionType.UNENCRYPTED) {
                 prefScreen.removePreference(removeEncryptionPref);
+            } else {
+                prefScreen.removePreference(encryptionPref);
             }
 
             Preference currencyPref = (Preference) findPreference("currency_preference");
