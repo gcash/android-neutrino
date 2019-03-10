@@ -157,8 +157,6 @@ public class ConfirmationActivity extends FingerprintActivity {
 
                             String password = BaseEncoding.base16().lowerCase().encode(decrypted);
 
-                            System.out.println("Decrypted PW: " + password);
-
                             signTransaction(serializedTx, paymentAddr, memo, inputVals, password);
                         } catch (Exception e) {
                             Snackbar snackbar = Snackbar.make(layout, e.getMessage(), Snackbar.LENGTH_LONG);

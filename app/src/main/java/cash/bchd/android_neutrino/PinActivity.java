@@ -32,8 +32,9 @@ public class PinActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         boolean enterOnly = intent.getBooleanExtra("enterOnly", false);
+        boolean removePin = intent.getBooleanExtra("removePin", false);
 
-        if (enterOnly) {
+        if (enterOnly || removePin) {
             TextView pinLabel = (TextView) findViewById(R.id.pinLabel);
             pinLabel.setText("Enter Pin");
         }
@@ -44,6 +45,45 @@ public class PinActivity extends AppCompatActivity {
         mPinLockView.setPinLockListener(new PinLockListener() {
             @Override
             public void onComplete(String pin) {
+                if (removePin) {
+                    LinearLayout mCLayout = (LinearLayout) findViewById(R.id.setPinLayout);
+                    try {
+                        Wallet wallet = Wallet.getInstance();
+                        String hashedPw = Wallet.SHA256(pin);
+                        ListenableFuture<Api.ChangePassphraseResponse> res = wallet.changePasswordAsync(hashedPw, Wallet.DEFAULT_PASSPHRASE);
+                        Futures.addCallback(res, new FutureCallback<Api.ChangePassphraseResponse>() {
+                            @Override
+                            public void onSuccess(Api.ChangePassphraseResponse result) {
+                                Settings.getInstance().setEncryptionType(EncryptionType.UNENCRYPTED);
+                                Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                                vibrator.vibrate(500);
+                                SettingsActivity.fa.finish();
+                                finish();
+                            }
+
+                            @Override
+                            public void onFailure(Throwable t) {
+                                runOnUiThread(new Runnable() {
+
+                                    @Override
+                                    public void run() {
+                                        Status status = Status.fromThrowable(t);
+                                        Snackbar snackbar = Snackbar.make(mCLayout, status.getDescription(), Snackbar.LENGTH_LONG);
+                                        snackbar.show();
+                                        mPinLockView.resetPinLockView();
+                                    }
+                                });
+                            }
+                        });
+                    } catch (Exception e) {
+                        Snackbar snackbar = Snackbar.make(mCLayout, "Error removing pin", Snackbar.LENGTH_LONG);
+                        snackbar.show();
+                        mPinLockView.resetPinLockView();
+                        e.printStackTrace();
+                    }
+                    return;
+                }
+
                 if (enterOnly) {
                     Intent output = new Intent();
                     output.putExtra("pin", pin);
@@ -84,9 +124,15 @@ public class PinActivity extends AppCompatActivity {
 
                                 @Override
                                 public void onFailure(Throwable t) {
-                                    Status status = Status.fromThrowable(t);
-                                    Snackbar snackbar = Snackbar.make(mCLayout, status.getDescription(), Snackbar.LENGTH_LONG);
-                                    snackbar.show();
+                                    runOnUiThread(new Runnable() {
+
+                                        @Override
+                                        public void run() {
+                                            Status status = Status.fromThrowable(t);
+                                            Snackbar snackbar = Snackbar.make(mCLayout, status.getDescription(), Snackbar.LENGTH_LONG);
+                                            snackbar.show();
+                                        }
+                                    });
                                 }
                             });
                         } catch (Exception e) {
