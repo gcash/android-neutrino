@@ -3,6 +3,7 @@ package cash.bchd.android_neutrino;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.hardware.fingerprint.FingerprintManager;
 import android.media.Image;
 import android.os.Bundle;
 import android.os.Vibrator;
@@ -19,6 +20,7 @@ import android.widget.TextView;
 
 import com.ebanx.swipebtn.OnStateChangeListener;
 import com.ebanx.swipebtn.SwipeButton;
+import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -34,13 +36,14 @@ import cdflynn.android.library.checkview.CheckView;
 import io.grpc.Status;
 import walletrpc.Api;
 
-public class ConfirmationActivity extends AppCompatActivity {
+public class ConfirmationActivity extends FingerprintActivity {
 
     byte[] serializedTx;
     List<Long> inputVals;
     String paymentAddr;
     String memo;
     SwipeButton swipeButton;
+    EncryptionType encType;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +53,7 @@ public class ConfirmationActivity extends AppCompatActivity {
         CloseActivity.cancelCloseTimer();
 
         Intent intent = getIntent();
-        EncryptionType encType = Settings.getInstance().getEncryptionType();
+        encType = Settings.getInstance().getEncryptionType();
         swipeButton = (SwipeButton) findViewById(R.id.swipe_btn);
         if (encType == EncryptionType.PIN) {
             swipeButton.setVisibility(View.VISIBLE);
@@ -137,6 +140,43 @@ public class ConfirmationActivity extends AppCompatActivity {
                 }
             }
         });
+
+        if (encType == EncryptionType.FINGERPRINT) {
+            CoordinatorLayout layout = (CoordinatorLayout) findViewById(R.id.confirmationMainLayout);
+            try {
+                this.initFingerprintScanner(false);
+                FingerprintHandler handler = new FingerprintHandler(this) {
+                    @Override
+                    public void onAuthenticationSucceeded(FingerprintManager.AuthenticationResult result) {
+                        try {
+                            String encryptedPwHex = Settings.getInstance().getEncryptedPassword();
+
+                            byte[] encrypted = BaseEncoding.base16().lowerCase().decode(encryptedPwHex);
+
+                            byte[] decrypted = result.getCryptoObject().getCipher().doFinal(encrypted);
+
+                            String password = BaseEncoding.base16().lowerCase().encode(decrypted);
+
+                            System.out.println("Decrypted PW: " + password);
+
+                            signTransaction(serializedTx, paymentAddr, memo, inputVals, password);
+                        } catch (Exception e) {
+                            Snackbar snackbar = Snackbar.make(layout, e.getMessage(), Snackbar.LENGTH_LONG);
+                            snackbar.show();
+                        }
+                    }
+
+                    @Override
+                    public void onAuthenticationFailed() {
+                        Snackbar snackbar = Snackbar.make(layout, "Invalid fingerprint", Snackbar.LENGTH_LONG);
+                        snackbar.show();
+                    }
+                };
+                handler.startAuth(fingerprintManager, cryptoObject);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -220,11 +260,15 @@ public class ConfirmationActivity extends AppCompatActivity {
                         String errStr = status.getDescription();
                         if (status.getDescription().equals("invalid passphrase for master private key")) {
                             errStr = "Invalid Pin";
-                            Settings settings = Settings.getInstance();
-                            int invalidCount = settings.getInvalidPinCount();
-                            invalidCount++;
-                            settings.setInvalidPinCount(invalidCount);
-                            settings.setLastInvalidPin(System.currentTimeMillis());
+                            if (encType == EncryptionType.FINGERPRINT) {
+                                errStr = "Invalid Fingerprint";
+                            } else if (encType == EncryptionType.PIN) {
+                                Settings settings = Settings.getInstance();
+                                int invalidCount = settings.getInvalidPinCount();
+                                invalidCount++;
+                                settings.setInvalidPinCount(invalidCount);
+                                settings.setLastInvalidPin(System.currentTimeMillis());
+                            }
                         }
                         Snackbar snackbar = Snackbar.make(layout, errStr, Snackbar.LENGTH_LONG);
                         snackbar.show();

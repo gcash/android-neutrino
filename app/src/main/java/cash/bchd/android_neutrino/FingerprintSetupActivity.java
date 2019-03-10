@@ -43,6 +43,7 @@ public class FingerprintSetupActivity extends FingerprintActivity {
                         Wallet wallet = Wallet.getInstance();
 
                         String pwHex = BaseEncoding.base16().lowerCase().encode(pwBytes);
+                        System.out.println("Saved PW: " + pwHex);
                         ListenableFuture<Api.ChangePassphraseResponse> res = wallet.changePasswordAsync(Wallet.DEFAULT_PASSPHRASE, pwHex);
                         Futures.addCallback(res, new FutureCallback<Api.ChangePassphraseResponse>() {
                             @Override
