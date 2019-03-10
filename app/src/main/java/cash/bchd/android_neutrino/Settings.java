@@ -20,6 +20,8 @@ public class Settings {
     private static final String BCHD_PASSWORD_KEY = "BchdPassword";
     private static final String BCHD_CERT_KEY = "BchdCert";
     private static final String ENCRYPTION_TYPE_KEY = "EncryptionType";
+    private static final String INVALID_PIN_COUNT_KEY = "InvalidPinCount";
+    private static final String LAST_INVALID_PIN_KEY = "LastInvalidPin";
 
     SharedPreferences prefs;
 
@@ -208,5 +210,27 @@ public class Settings {
     public EncryptionType getEncryptionType() {
         String t = prefs.getString(ENCRYPTION_TYPE_KEY, "unencrypted");
         return EncryptionType.fromString(t);
+    }
+
+    public void setInvalidPinCount(int count) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putInt(INVALID_PIN_COUNT_KEY, count);
+        editor.apply();
+    }
+
+    public int getInvalidPinCount() {
+        int count = prefs.getInt(INVALID_PIN_COUNT_KEY, 0);
+        return count;
+    }
+
+    public void setLastInvalidPin(long timestamp) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putLong(LAST_INVALID_PIN_KEY, timestamp);
+        editor.apply();
+    }
+
+    public long getLastInvalidPin() {
+        long timestamp = prefs.getLong(LAST_INVALID_PIN_KEY, 0);
+        return timestamp;
     }
 }

@@ -40,6 +40,7 @@ public class ConfirmationActivity extends AppCompatActivity {
     List<Long> inputVals;
     String paymentAddr;
     String memo;
+    SwipeButton swipeButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +51,7 @@ public class ConfirmationActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         EncryptionType encType = Settings.getInstance().getEncryptionType();
-        SwipeButton swipeButton = (SwipeButton) findViewById(R.id.swipe_btn);
+        swipeButton = (SwipeButton) findViewById(R.id.swipe_btn);
         if (encType == EncryptionType.PIN) {
             swipeButton.setVisibility(View.VISIBLE);
         } else if (encType == EncryptionType.FINGERPRINT) {
@@ -117,13 +118,23 @@ public class ConfirmationActivity extends AppCompatActivity {
         swipeButton.setOnStateChangeListener(new OnStateChangeListener() {
             @Override
             public void onStateChange(boolean active) {
-                if (encType == EncryptionType.PIN) {
-                    Intent intent = new Intent(ConfirmationActivity.this, PinActivity.class);
-                    intent.putExtra("enterOnly", true);
-                    startActivityForResult(intent, 1234);
-                    return;
+                if (active) {
+                    if (encType == EncryptionType.PIN) {
+                        Settings settings = Settings.getInstance();
+                        if (settings.getInvalidPinCount() >= 3 && settings.getLastInvalidPin() + 300000 > System.currentTimeMillis()) {
+                            CoordinatorLayout layout = (CoordinatorLayout) findViewById(R.id.confirmationMainLayout);
+                            Snackbar snackbar = Snackbar.make(layout, "Too many invalid pin attempts. Wait five minutes.", Snackbar.LENGTH_LONG);
+                            snackbar.show();
+                            return;
+                        }
+
+                        Intent intent = new Intent(ConfirmationActivity.this, PinActivity.class);
+                        intent.putExtra("enterOnly", true);
+                        startActivityForResult(intent, 1234);
+                        return;
+                    }
+                    signTransaction(serializedTx, paymentAddr, memo, inputVals, Wallet.DEFAULT_PASSPHRASE);
                 }
-                signTransaction(serializedTx, paymentAddr, memo, inputVals, Wallet.DEFAULT_PASSPHRASE);
             }
         });
     }
@@ -159,6 +170,7 @@ public class ConfirmationActivity extends AppCompatActivity {
         Futures.addCallback(res, new FutureCallback<Api.SignTransactionResponse>() {
             @Override
             public void onSuccess(Api.SignTransactionResponse result) {
+                Settings.getInstance().setInvalidPinCount(0);
                 if (result.getUnsignedInputIndexesList().size() > 0) {
                     Snackbar snackbar = Snackbar.make(layout, "Failed to sign transaction", Snackbar.LENGTH_LONG);
                     snackbar.show();
@@ -205,8 +217,18 @@ public class ConfirmationActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         Status status = Status.fromThrowable(t);
-                        Snackbar snackbar = Snackbar.make(layout, status.getDescription(), Snackbar.LENGTH_LONG);
+                        String errStr = status.getDescription();
+                        if (status.getDescription().equals("invalid passphrase for master private key")) {
+                            errStr = "Invalid Pin";
+                            Settings settings = Settings.getInstance();
+                            int invalidCount = settings.getInvalidPinCount();
+                            invalidCount++;
+                            settings.setInvalidPinCount(invalidCount);
+                            settings.setLastInvalidPin(System.currentTimeMillis());
+                        }
+                        Snackbar snackbar = Snackbar.make(layout, errStr, Snackbar.LENGTH_LONG);
                         snackbar.show();
+                        swipeButton.setHasActivationState(false);
                     }
                 });
             }
