@@ -76,6 +76,13 @@
         android:entryValues="@array/CurrencyCodes"
         app:summary="Set the fiat currency to use for viewing the BCH exchange rate."/>
 
+    <com.takisoft.fix.support.v7.preference.EditTextPreference
+        android:key="fee"
+        android:title="Network Fee"
+        android:icon="@drawable/label_icon_small"
+        android:inputType="phone"
+        app:summary="Set the network fee per byte to apply to your transactions." />
+
     <android.support.v7.preference.EditTextPreference
         android:key="label"
         android:title="Default Label"

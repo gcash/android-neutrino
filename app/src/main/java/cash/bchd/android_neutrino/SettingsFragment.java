@@ -3,11 +3,12 @@ package cash.bchd.android_neutrino;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.preference.PreferenceActivity;
+import com.takisoft.fix.support.v7.preference.EditTextPreference;
 import android.support.v7.preference.Preference;
-import android.support.v7.preference.PreferenceFragmentCompat;
+import com.takisoft.fix.support.v7.preference.PreferenceFragmentCompat;
 import android.support.v7.preference.PreferenceScreen;
 import android.support.v7.preference.SwitchPreferenceCompat;
+import android.text.InputType;
 
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
@@ -27,7 +28,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     }
 
     @Override
-    public void onCreatePreferences(Bundle bundle, String rootKey) {
+    public void onCreatePreferencesFix(Bundle bundle, String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
 
         settings = Settings.getInstance();
@@ -140,6 +141,17 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                     boolean blockOnly = (Boolean) o;
                     settings.setBlocksOnly(blockOnly);
                     return true;
+                }
+            });
+
+            Preference feePref = (Preference) findPreference("fee");
+            feePref.setSummary(settings.getFeePerByte());
+            feePref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object o) {
+                    settings.setFeePerByte(Integer.valueOf(o.toString()));
+                    feePref.setSummary(Integer.valueOf(o.toString()));
+                    return false;
                 }
             });
 
