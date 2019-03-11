@@ -87,6 +87,7 @@
                     android:ellipsize="end"
                     android:background="@color/liteGrey"
                     android:textColor="@android:color/black"
+                    android:drawablePadding="6dp"
                     android:textSize="14sp" />
 
                 <View

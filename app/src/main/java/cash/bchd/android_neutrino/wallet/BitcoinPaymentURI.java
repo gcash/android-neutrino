@@ -22,6 +22,7 @@ public class BitcoinPaymentURI {
     private static final String PARAMETER_AMOUNT = "amount";
     private static final String PARAMETER_LABEL = "label";
     private static final String PARAMETER_MESSAGE = "message";
+    private static final String PARAMTER_R = "r";
 
     private final String address;
     private final HashMap<String, Parameter> parameters;
@@ -41,6 +42,10 @@ public class BitcoinPaymentURI {
 
         if (builder.message != null) {
             parameters.put(PARAMETER_MESSAGE, new Parameter(builder.message, false));
+        }
+
+        if (builder.r != null) {
+            parameters.put(PARAMTER_R, new Parameter(builder.r, false));
         }
 
         if (builder.otherParameters != null) {
@@ -98,6 +103,20 @@ public class BitcoinPaymentURI {
         }
 
         return parameters.get(PARAMETER_MESSAGE).getValue();
+    }
+
+    /**
+     * Gets the payment request URL
+     *
+     * @return the payment request URL.
+     */
+
+    public String getR() {
+        if (parameters.get(PARAMTER_R) == null) {
+            return null;
+        }
+
+        return parameters.get(PARAMTER_R).getValue();
     }
 
     /**
@@ -187,14 +206,13 @@ public class BitcoinPaymentURI {
 
         String bitcoinPaymentURIWithoutScheme = string.replaceFirst(SCHEME, "");
         ArrayList<String> bitcoinPaymentURIElements = new ArrayList<>(Arrays.asList(bitcoinPaymentURIWithoutScheme.split("\\?")));
-
         if (bitcoinPaymentURIElements.size() != 1 && bitcoinPaymentURIElements.size() != 2) {
             return null;
         }
 
-        if (bitcoinPaymentURIElements.get(0).length() == 0) {
+        /*if (bitcoinPaymentURIElements.get(0).length() == 0) {
             return null;
-        }
+        }*/
 
         if (bitcoinPaymentURIElements.size() == 1) {
             return new Builder().address(bitcoinPaymentURIElements.get(0)).build();
@@ -240,6 +258,12 @@ public class BitcoinPaymentURI {
             queryParametersFiltered.remove(PARAMETER_MESSAGE);
         }
 
+        if (queryParametersFiltered.containsKey(PARAMTER_R)) {
+            bitcoinPaymentURIBuilder.r(queryParametersFiltered.get(PARAMTER_R));
+
+            queryParametersFiltered.remove(PARAMTER_R);
+        }
+
         for (Map.Entry<String, String> entry : queryParametersFiltered.entrySet()) {
             bitcoinPaymentURIBuilder.parameter(entry.getKey(), entry.getValue());
         }
@@ -253,6 +277,7 @@ public class BitcoinPaymentURI {
         private Double amount;
         private String label;
         private String message;
+        private String r;
         private HashMap<String, Parameter> otherParameters;
 
         /**
@@ -314,6 +339,20 @@ public class BitcoinPaymentURI {
 
         public Builder message(String message) {
             this.message = message;
+
+            return this;
+        }
+
+        /**
+         * Adds the message to the builder.
+         *
+         * @param r The payment request URL.
+         *
+         * @return the builder with the URL.
+         */
+
+        public Builder r(String r) {
+            this.r = r;
 
             return this;
         }

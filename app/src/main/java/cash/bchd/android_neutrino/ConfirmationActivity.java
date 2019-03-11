@@ -45,6 +45,12 @@ public class ConfirmationActivity extends FingerprintActivity {
     SwipeButton swipeButton;
     EncryptionType encType;
 
+    boolean isPaymentRequest;
+    byte[] merchantData;
+    String paymentURL;
+    String refundAddress;
+    long refundAmount;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,6 +76,13 @@ public class ConfirmationActivity extends FingerprintActivity {
         long txFee = intent.getLongExtra("fee", 0);
         serializedTx = intent.getByteArrayExtra("serializedTransaction");
         ArrayList<String> inputStrings = intent.getStringArrayListExtra("inputVals");
+
+        // Extra data if payment request
+        isPaymentRequest = intent.getBooleanExtra("isPaymentRequest", false);
+        merchantData = intent.getByteArrayExtra("merchantData");
+        paymentURL = intent.getStringExtra("paymentURL");
+        refundAddress = intent.getStringExtra("refundAddress");
+        refundAmount = intent.getLongExtra("refundAmount", 0);
 
         inputVals = new ArrayList<Long>();
         for (String s : inputStrings) {
@@ -98,6 +111,9 @@ public class ConfirmationActivity extends FingerprintActivity {
             LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) paymentAddrLabel.getLayoutParams();
             params.setMargins(params.leftMargin, 30, params.rightMargin, params.bottomMargin);
             paymentAddrLabel.setLayoutParams(params);
+        }
+        if (isPaymentRequest) {
+            payTo.setCompoundDrawablesWithIntrinsicBounds(R.drawable.small_shield, 0, 0, 0);
         }
 
         TextView paymentAddress = (TextView) findViewById(R.id.paymentAddress);
@@ -215,38 +231,11 @@ public class ConfirmationActivity extends FingerprintActivity {
                     return;
                 }
 
-                ListenableFuture<Api.PublishTransactionResponse> resp = wallet.publishTransactionAsync(result.getTransaction().toByteArray(), paymentAddr, memo);
-                Futures.addCallback(resp, new FutureCallback<Api.PublishTransactionResponse>() {
-                    @Override
-                    public void onSuccess(Api.PublishTransactionResponse result) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                RelativeLayout rLayout = (RelativeLayout) findViewById(R.id.confirmationLayout);
-                                CheckView checkView = (CheckView) findViewById(R.id.check);
-                                LinearLayout checkLayout = (LinearLayout) findViewById(R.id.checkLayout);
-
-                                rLayout.setVisibility(View.GONE);
-                                checkLayout.setVisibility(View.VISIBLE);
-                                checkView.check();
-                                Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-                                vibrator.vibrate(500);
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void onFailure(Throwable t) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Status status = Status.fromThrowable(t);
-                                Snackbar snackbar = Snackbar.make(layout, status.getDescription(), Snackbar.LENGTH_LONG);
-                                snackbar.show();
-                            }
-                        });
-                    }
-                });
+                if (!isPaymentRequest) {
+                    publishTransaction(wallet, result, layout);
+                } else {
+                    postPaymentToMerchant(wallet, result, layout);
+                }
             }
 
             @Override
@@ -271,6 +260,76 @@ public class ConfirmationActivity extends FingerprintActivity {
                         Snackbar snackbar = Snackbar.make(layout, errStr, Snackbar.LENGTH_LONG);
                         snackbar.show();
                         swipeButton.setHasActivationState(false);
+                    }
+                });
+            }
+        });
+    }
+
+    private void publishTransaction(Wallet wallet, Api.SignTransactionResponse result, CoordinatorLayout layout) {
+        ListenableFuture<Api.PublishTransactionResponse> resp = wallet.publishTransactionAsync(result.getTransaction().toByteArray(), paymentAddr, memo);
+        Futures.addCallback(resp, new FutureCallback<Api.PublishTransactionResponse>() {
+            @Override
+            public void onSuccess(Api.PublishTransactionResponse result) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        RelativeLayout rLayout = (RelativeLayout) findViewById(R.id.confirmationLayout);
+                        CheckView checkView = (CheckView) findViewById(R.id.check);
+                        LinearLayout checkLayout = (LinearLayout) findViewById(R.id.checkLayout);
+
+                        rLayout.setVisibility(View.GONE);
+                        checkLayout.setVisibility(View.VISIBLE);
+                        checkView.check();
+                        Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                        vibrator.vibrate(500);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Status status = Status.fromThrowable(t);
+                        Snackbar snackbar = Snackbar.make(layout, status.getDescription(), Snackbar.LENGTH_LONG);
+                        snackbar.show();
+                    }
+                });
+            }
+        });
+    }
+
+    private void postPaymentToMerchant(Wallet wallet, Api.SignTransactionResponse result, CoordinatorLayout layout) {
+        ListenableFuture<Api.PostPaymentResponse> resp = wallet.postPaymentAsync(refundAddress, refundAmount, result.getTransaction().toByteArray(), paymentURL, merchantData, paymentAddr, memo);
+        Futures.addCallback(resp, new FutureCallback<Api.PostPaymentResponse>() {
+            @Override
+            public void onSuccess(Api.PostPaymentResponse result) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        RelativeLayout rLayout = (RelativeLayout) findViewById(R.id.confirmationLayout);
+                        CheckView checkView = (CheckView) findViewById(R.id.check);
+                        LinearLayout checkLayout = (LinearLayout) findViewById(R.id.checkLayout);
+
+                        rLayout.setVisibility(View.GONE);
+                        checkLayout.setVisibility(View.VISIBLE);
+                        checkView.check();
+                        Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                        vibrator.vibrate(500);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Status status = Status.fromThrowable(t);
+                        Snackbar snackbar = Snackbar.make(layout, status.getDescription(), Snackbar.LENGTH_LONG);
+                        snackbar.show();
                     }
                 });
             }

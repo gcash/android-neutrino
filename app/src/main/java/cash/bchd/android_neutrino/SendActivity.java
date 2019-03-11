@@ -58,6 +58,7 @@ public class SendActivity extends AppCompatActivity {
     TextInputEditText memo;
     TextView symbolLabel;
     String label;
+    int satPerByte;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,7 +69,7 @@ public class SendActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         fiatCurrency = intent.getExtras().getString("fiatCurrency");
-        int satPerByte = intent.getExtras().getInt("feePerByte");
+        satPerByte = intent.getExtras().getInt("feePerByte");
 
         wallet = Wallet.getInstance();
 
@@ -385,6 +386,11 @@ public class SendActivity extends AppCompatActivity {
 
                     BitcoinPaymentURI uri = BitcoinPaymentURI.parse(qrdata);
                     if (uri != null) {
+                        if (uri.getR() != null){
+                            processPaymentRequest(qrdata);
+                            return;
+                        }
+
                         address.setText(uri.getAddress());
                         if (uri.getAmount() != null) {
                             if (showingFiat) {
@@ -422,6 +428,61 @@ public class SendActivity extends AppCompatActivity {
         }
         else {
             super.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+
+    private void processPaymentRequest(String qrdata) {
+        try {
+            Api.DownloadPaymentRequestResponse pr = wallet.downloadPaymentRequest(qrdata);
+            List<Api.CreateTransactionRequest.Output> outputs = new ArrayList<Api.CreateTransactionRequest.Output>();
+            long totalSatoshis = 0;
+            for (Api.DownloadPaymentRequestResponse.Output out : pr.getOutputsList()) {
+                Api.CreateTransactionRequest.Output output = Api.CreateTransactionRequest.Output.newBuilder().setAmount(out.getAmount()).setAddress(out.getAddress()).build();
+                outputs.add(output);
+                totalSatoshis += out.getAmount();
+            }
+            Amount totalAmt = new Amount(totalSatoshis);
+            String fiatFormatted = ExchangeRates.getInstance().getFormattedAmountInFiat(totalAmt, Currency.getInstance(fiatCurrency));
+
+            if (totalSatoshis > wallet.balance()) {
+                System.out.println(totalSatoshis);
+                System.out.println(wallet.balance());
+                Snackbar snackbar = Snackbar.make(sendLayout, "Insufficient Funds", Snackbar.LENGTH_LONG);
+                snackbar.show();
+                return;
+            }
+
+            Api.CreateTransactionResponse tx = wallet.createTransaction(outputs, satPerByte);
+            byte[] serializedTx = tx.getSerializedTransaction().toByteArray();
+            long txFee = tx.getFee();
+            List<Long> inputVals = tx.getInputValuesList();
+
+            ArrayList<String> inputStrings = new ArrayList<String>();
+            for (Long val : inputVals) {
+                inputStrings.add(String.valueOf(val));
+            }
+
+            Intent intent = new Intent(getApplicationContext(), ConfirmationActivity.class);
+            intent.putExtra("paymentAddress", outputs.get(0).getAddress());
+            intent.putExtra("amountBCH", totalAmt.toString());
+            intent.putExtra("amountFiat", fiatFormatted);
+            intent.putExtra("fee", txFee);
+            intent.putExtra("serializedTransaction", serializedTx);
+            intent.putStringArrayListExtra("inputVals", inputStrings);
+            intent.putExtra("memo", pr.getMemo());
+            intent.putExtra("label", pr.getPayToName());
+
+            intent.putExtra("isPaymentRequest", true);
+            intent.putExtra("merchantData", pr.getMerchantData().toByteArray());
+            intent.putExtra("paymentURL", pr.getPaymentUrl());
+            intent.putExtra("refundAddress", wallet.currentAddress());
+            intent.putExtra("refundAmount", totalSatoshis);
+            startActivity(intent);
+
+        } catch (Exception e) {
+            Snackbar snackbar = Snackbar.make(sendLayout, "Invalid Payment Request", Snackbar.LENGTH_LONG);
+            snackbar.show();
+            e.printStackTrace();
         }
     }
 }

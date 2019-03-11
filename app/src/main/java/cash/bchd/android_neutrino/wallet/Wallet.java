@@ -234,6 +234,43 @@ public class Wallet implements Serializable {
         return reply;
     }
 
+    public Api.CreateTransactionResponse createTransaction(List<Api.CreateTransactionRequest.Output> outputs, int feePerByte) {
+        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
+        Api.CreateTransactionRequest.Builder builder = Api.CreateTransactionRequest.newBuilder();
+
+        builder.setAccount(0)
+        .setRequiredConfirmations(0)
+        .setSatPerKbFee(feePerByte*1000);
+
+        for (Api.CreateTransactionRequest.Output out : outputs) {
+            builder.addOutputs(out);
+        }
+
+        Api.CreateTransactionRequest request = builder.build();
+        Api.CreateTransactionResponse reply = stub.createTransaction(request);
+        return reply;
+    }
+
+    public ListenableFuture<Api.PostPaymentResponse> postPaymentAsync(String refundAddress, long refundAmount, byte[] serializedTransaction, String paymentURL, byte[] merchantData, String toAddress, String memo) {
+        WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
+        Api.PostPaymentRequest.Output refundOuput = Api.PostPaymentRequest.Output.newBuilder().setAddress(refundAddress).setAmount(refundAmount).build();
+
+        ByteString bs = ByteString.copyFrom(serializedTransaction);
+        Api.PostPaymentRequest request = Api.PostPaymentRequest.newBuilder()
+                .setRefundOutput(refundOuput)
+                .setMerchantData(ByteString.copyFrom(merchantData))
+                .setPaymentUrl(paymentURL)
+                .addTransactions(bs)
+                .build();
+
+        String[] metadata = new String[2];
+        metadata[0] = toAddress;
+        metadata[1] = memo;
+        this.metadataCache.put(bs, metadata);
+
+        return stub.postPayment(request);
+    }
+
     public byte[] signTransaction(byte[] serializedTx, List<Long> inputValues, String passphrase) throws Exception {
         WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
         Api.SignTransactionRequest.Builder builder = Api.SignTransactionRequest.newBuilder();
@@ -293,6 +330,13 @@ public class Wallet implements Serializable {
         Api.SweepAccountRequest request = Api.SweepAccountRequest.newBuilder()
                 .setAccount(0).setSatPerKbFee(feePerByte*1000).setSweepToAddress(addr).build();
         Api.SweepAccountResponse reply = stub.sweepAccount(request);
+        return reply;
+    }
+
+    public Api.DownloadPaymentRequestResponse downloadPaymentRequest(String uri) throws Exception {
+        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
+        Api.DownloadPaymentRequestRequest request = Api.DownloadPaymentRequestRequest.newBuilder().setUri(uri).build();
+        Api.DownloadPaymentRequestResponse reply = stub.downloadPaymentRequest(request);
         return reply;
     }
 
