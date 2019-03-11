@@ -8,7 +8,6 @@ import android.support.v7.preference.Preference;
 import com.takisoft.fix.support.v7.preference.PreferenceFragmentCompat;
 import android.support.v7.preference.PreferenceScreen;
 import android.support.v7.preference.SwitchPreferenceCompat;
-import android.text.InputType;
 
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
@@ -17,6 +16,8 @@ import walletrpc.Api;
 public class SettingsFragment extends PreferenceFragmentCompat {
 
     public static final String FRAGMENT_TAG = "my_preference_fragment";
+
+    public static final String DONATE_URI = "bitcoincash:qrhea03074073ff3zv9whh0nggxc7k03ssh8jv9mkx?label=The%20bchd%20project&message=BCHD%20Donation";
 
     private static Settings settings;
     private static Wallet wallet;
@@ -144,13 +145,29 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 }
             });
 
-            Preference feePref = (Preference) findPreference("fee");
-            feePref.setSummary(settings.getFeePerByte());
+            EditTextPreference feePref = (EditTextPreference) findPreference("fee");
+            feePref.setSummary(settings.getFeePerByte() + " sat/byte");
+            feePref.setText(String.valueOf(settings.getFeePerByte()));
             feePref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object o) {
                     settings.setFeePerByte(Integer.valueOf(o.toString()));
-                    feePref.setSummary(Integer.valueOf(o.toString()));
+                    feePref.setSummary(Integer.valueOf(o.toString()) + " sat/byte");
+                    feePref.setText(o.toString());
+                    return false;
+                }
+            });
+
+            Preference donatePref = (Preference) findPreference("donate");
+            donatePref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+
+                    Intent intent = new Intent(getContext(), SendActivity.class);
+                    intent.putExtra("fiatCurrency", settings.getFiatCurrency());
+                    intent.putExtra("feePerByte", settings.getFeePerByte());
+                    intent.putExtra("qrdata", DONATE_URI);
+                    startActivity(intent);
                     return false;
                 }
             });
