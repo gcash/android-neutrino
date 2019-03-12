@@ -19,11 +19,12 @@ import android.widget.Toast;
 
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 public class NotificationService extends Service {
-    public static final long CHECK_INTERVAL = 60 * 1000; // 60 seconds
+    public static final long CHECK_INTERVAL = TimeUnit.MINUTES.toMillis(1);
 
-    public static final long NOTIFICATION_INTERVAL = 3888000 * 1000; // 45 days
+    public static final long NOTIFICATION_INTERVAL = TimeUnit.DAYS.toMillis(45);
 
     // run on another Thread to avoid crash
     private Handler mHandler = new Handler();
