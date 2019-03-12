@@ -138,9 +138,7 @@ public class ReceiveActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-
-                Intent intent = new Intent(this, MainActivity.class);
-                startActivity(intent);
+                finish();
                 return true;
 
             default:
@@ -259,7 +257,7 @@ public class ReceiveActivity extends AppCompatActivity {
             Amount requestAmount = null;
             if (receiveAmountInput.getText() != null && !receiveAmountInput.getText().toString().equals("")) {
                 if (showingFiat) {
-                    double bchAmount = ExchangeRates.getInstance().convertToBCH(Double.valueOf(receiveAmountInput.getText().toString().substring(1)), Currency.getInstance(fiatCurrency));
+                    double bchAmount = ExchangeRates.getInstance().convertToBCH(Double.valueOf(receiveAmountInput.getText().toString()), Currency.getInstance(fiatCurrency));
                     requestAmount = new Amount(bchAmount);
                     builder.amount(bchAmount);
                 } else {
@@ -322,89 +320,91 @@ public class ReceiveActivity extends AppCompatActivity {
             wallet.listenAddress(addr, new AddressListener() {
                 @Override
                 public void onPaymentReceived(long amount) {
-                    runOnUiThread(new Runnable() {
+                    if (getApplicationContext() != null) {
+                        runOnUiThread(new Runnable() {
 
-                        @Override
-                        public void run() {
-                            totalReceived += amount;
-                            if (totalReceived >= compareAmount.getSatoshis()) {
-                                Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-                                vibrator.vibrate(500);
-                                LinearLayout qrLayout = (LinearLayout) customView.findViewById(R.id.requestQRLayout);
-                                int h = qrLayout.getHeight();
-                                qrLayout.setHorizontalGravity(Gravity.CENTER_HORIZONTAL);
-                                qrLayout.setVerticalGravity(Gravity.CENTER_VERTICAL);
+                            @Override
+                            public void run() {
+                                totalReceived += amount;
+                                if (totalReceived >= compareAmount.getSatoshis()) {
+                                    Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                                    vibrator.vibrate(500);
+                                    LinearLayout qrLayout = (LinearLayout) customView.findViewById(R.id.requestQRLayout);
+                                    int h = qrLayout.getHeight();
+                                    qrLayout.setHorizontalGravity(Gravity.CENTER_HORIZONTAL);
+                                    qrLayout.setVerticalGravity(Gravity.CENTER_VERTICAL);
 
-                                qrImage.setVisibility(View.GONE);
-                                addrText.setVisibility(View.GONE);
-                                helperText.setVisibility(View.GONE);
-                                TextView partialPayment = (TextView) customView.findViewById(R.id.parialPayment);
-                                partialPayment.setVisibility(View.GONE);
-                                final GifView showGifView = new GifView(getApplicationContext());
+                                    qrImage.setVisibility(View.GONE);
+                                    addrText.setVisibility(View.GONE);
+                                    helperText.setVisibility(View.GONE);
+                                    TextView partialPayment = (TextView) customView.findViewById(R.id.parialPayment);
+                                    partialPayment.setVisibility(View.GONE);
+                                    final GifView showGifView = new GifView(getApplicationContext());
 
-                                showGifView.setGifImageDrawableId(R.drawable.coinflip);
-                                showGifView.drawGif();
-                                showGifView.setForegroundGravity(Gravity.CENTER);
+                                    showGifView.setGifImageDrawableId(R.drawable.coinflip);
+                                    showGifView.drawGif();
+                                    showGifView.setForegroundGravity(Gravity.CENTER);
 
 
-                                ViewGroup.LayoutParams params = qrLayout.getLayoutParams();
-                                Double dh = new Double(h);
-                                Double truncatedH = dh * 0.8;
-                                System.out.println(truncatedH);
-                                System.out.println(h);
-                                params.height = 1092;
-                                params.width = 1366;
+                                    ViewGroup.LayoutParams params = qrLayout.getLayoutParams();
+                                    Double dh = new Double(h);
+                                    Double truncatedH = dh * 0.8;
+                                    System.out.println(truncatedH);
+                                    System.out.println(h);
+                                    params.height = 1092;
+                                    params.width = 1366;
 
-                                qrLayout.requestLayout();
-                                qrLayout.addView(showGifView);
-                            } else {
-                                TextView partialPayment = (TextView) customView.findViewById(R.id.parialPayment);
-                                partialPayment.setVisibility(View.VISIBLE);
+                                    qrLayout.requestLayout();
+                                    qrLayout.addView(showGifView);
+                                } else {
+                                    TextView partialPayment = (TextView) customView.findViewById(R.id.parialPayment);
+                                    partialPayment.setVisibility(View.VISIBLE);
 
-                                TextView helperText = (TextView) customView.findViewById(R.id.uriHelpText);
-                                Amount newAmt = new Amount(compareAmount.getSatoshis() - totalReceived);
-                                helperText.setText("Send " + newAmt.toString() + " BCH To:");
+                                    TextView helperText = (TextView) customView.findViewById(R.id.uriHelpText);
+                                    Amount newAmt = new Amount(compareAmount.getSatoshis() - totalReceived);
+                                    helperText.setText("Send " + newAmt.toString() + " BCH To:");
 
-                                builder.amount(newAmt.toBCH());
+                                    builder.amount(newAmt.toBCH());
 
-                                BitcoinPaymentURI newUri = builder.build();
+                                    BitcoinPaymentURI newUri = builder.build();
 
-                                QRGEncoder qrgEncoder = new QRGEncoder(
-                                        newUri.getURI(), null,
-                                        QRGContents.Type.TEXT,
-                                        finalDimension);
+                                    QRGEncoder qrgEncoder = new QRGEncoder(
+                                            newUri.getURI(), null,
+                                            QRGContents.Type.TEXT,
+                                            finalDimension);
 
-                                Bitmap newBitmap = null;
-                                try {
-                                    newBitmap = qrgEncoder.encodeAsBitmap();
-                                } catch (Exception e) {
-                                    e.printStackTrace();
+                                    Bitmap newBitmap = null;
+                                    try {
+                                        newBitmap = qrgEncoder.encodeAsBitmap();
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                    ImageView qrImage = (ImageView) customView.findViewById(R.id.requestQRCode);
+
+                                    qrImage.setImageBitmap(newBitmap);
+
+                                    qrImage.setOnClickListener(new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
+                                            copyToClipboard(newUri.getURI());
+                                        }
+                                    });
+
+                                    TextView addrText = (TextView) customView.findViewById(R.id.requestURi);
+                                    addrText.setText(newUri.getURI());
+                                    addrText.setOnClickListener(new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
+                                            copyToClipboard(newUri.getURI());
+                                        }
+                                    });
+
+                                    LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) helperText.getLayoutParams();
+                                    params.setMargins(params.leftMargin, -25, params.rightMargin, params.bottomMargin);
                                 }
-                                ImageView qrImage = (ImageView) customView.findViewById(R.id.requestQRCode);
-
-                                qrImage.setImageBitmap(newBitmap);
-
-                                qrImage.setOnClickListener(new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
-                                        copyToClipboard(newUri.getURI());
-                                    }
-                                });
-
-                                TextView addrText = (TextView) customView.findViewById(R.id.requestURi);
-                                addrText.setText(newUri.getURI());
-                                addrText.setOnClickListener(new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
-                                        copyToClipboard(newUri.getURI());
-                                    }
-                                });
-
-                                LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) helperText.getLayoutParams();
-                                params.setMargins(params.leftMargin, -25, params.rightMargin, params.bottomMargin);
                             }
-                        }
-                    });
+                        });
+                    }
                 }
             });
         } catch (Exception e) {

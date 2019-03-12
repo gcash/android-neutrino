@@ -381,39 +381,41 @@ public class MainActivity extends CloseActivity {
             wallet.listenAddress(addr, new AddressListener() {
                 @Override
                 public void onPaymentReceived(long amount) {
-                    runOnUiThread(new Runnable() {
+                    if (getApplicationContext() != null) {
+                        runOnUiThread(new Runnable() {
 
-                        @Override
-                        public void run() {
-                            Vibrator vibrator = (Vibrator)getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-                            vibrator.vibrate(500);
-                            LinearLayout qrLayout = (LinearLayout) customView.findViewById(R.id.qrCodeLayout);
-                            int h = qrLayout.getHeight();
-                            qrLayout.setHorizontalGravity(Gravity.CENTER_HORIZONTAL);
-                            qrLayout.setVerticalGravity(Gravity.CENTER_VERTICAL);
+                            @Override
+                            public void run() {
+                                Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                                vibrator.vibrate(500);
+                                LinearLayout qrLayout = (LinearLayout) customView.findViewById(R.id.qrCodeLayout);
+                                int h = qrLayout.getHeight();
+                                qrLayout.setHorizontalGravity(Gravity.CENTER_HORIZONTAL);
+                                qrLayout.setVerticalGravity(Gravity.CENTER_VERTICAL);
 
-                            TextView addrHelperText = (TextView) customView.findViewById(R.id.addrHelpText);
+                                TextView addrHelperText = (TextView) customView.findViewById(R.id.addrHelpText);
 
-                            qrImage.setVisibility(View.GONE);
-                            addrText.setVisibility(View.GONE);
-                            addrHelperText.setVisibility(View.GONE);
-                            final GifView showGifView = new GifView(getApplicationContext());
+                                qrImage.setVisibility(View.GONE);
+                                addrText.setVisibility(View.GONE);
+                                addrHelperText.setVisibility(View.GONE);
+                                final GifView showGifView = new GifView(getApplicationContext());
 
-                            showGifView.setGifImageDrawableId(R.drawable.coinflip);
-                            showGifView.drawGif();
-                            showGifView.setForegroundGravity(Gravity.CENTER);
+                                showGifView.setGifImageDrawableId(R.drawable.coinflip);
+                                showGifView.drawGif();
+                                showGifView.setForegroundGravity(Gravity.CENTER);
 
 
-                            ViewGroup.LayoutParams params = qrLayout.getLayoutParams();
-                            Double dh = new Double(h);
-                            Double truncatedH = dh * 0.8;
-                            params.height = truncatedH.intValue();
-                            params.width = h;
+                                ViewGroup.LayoutParams params = qrLayout.getLayoutParams();
+                                Double dh = new Double(h);
+                                Double truncatedH = dh * 0.8;
+                                params.height = truncatedH.intValue();
+                                params.width = h;
 
-                            qrLayout.requestLayout();
-                            qrLayout.addView(showGifView);
-                        }
-                    });
+                                qrLayout.requestLayout();
+                                qrLayout.addView(showGifView);
+                            }
+                        });
+                    }
                 }
             });
         } catch (Exception e) {
@@ -483,18 +485,20 @@ public class MainActivity extends CloseActivity {
 
                     @Override
                     public void onBalanceChange(long bal) {
-                        try {
-                            System.out.println("Updating balance");
-                            Amount amt = new Amount(bal);
-                            TextView bchBalanceView = (TextView) findViewById(R.id.bchBalanceView);
-                            String balanceStr = amt.toString() + " BCH";
-                            bchBalanceView.setText(balanceStr);
-                            String fiatAmount = exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(settings.getFiatCurrency()));
-                            TextView fiatBalanceView = (TextView) findViewById(R.id.fiatBalanceView);
-                            fiatBalanceView.setText(fiatAmount);
-                            settings.setLastBalance(bal);
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                        if (getApplicationContext() != null) {
+                            try {
+                                System.out.println("Updating balance");
+                                Amount amt = new Amount(bal);
+                                TextView bchBalanceView = (TextView) findViewById(R.id.bchBalanceView);
+                                String balanceStr = amt.toString() + " BCH";
+                                bchBalanceView.setText(balanceStr);
+                                String fiatAmount = exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(settings.getFiatCurrency()));
+                                TextView fiatBalanceView = (TextView) findViewById(R.id.fiatBalanceView);
+                                fiatBalanceView.setText(fiatAmount);
+                                settings.setLastBalance(bal);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
 
@@ -506,16 +510,64 @@ public class MainActivity extends CloseActivity {
 
                     @Override
                     public void onGetTransactions(List<TransactionData> txs, int blockHeight) {
-                        Collections.sort(txs, Collections.reverseOrder());
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (txs.size() == 0) {
-                                    return;
+                        if (getApplicationContext() != null) {
+                            Collections.sort(txs, Collections.reverseOrder());
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (txs.size() == 0) {
+                                        return;
+                                    }
+                                    TextView bchPlease = (TextView) findViewById(R.id.bchPlease);
+                                    bchPlease.setVisibility(View.GONE);
+                                    for (TransactionData tx : txs) {
+                                        String fiatCurrency = settings.getFiatCurrency();
+                                        tx.setFiatCurrency(fiatCurrency);
+                                        String formattedFiat = "";
+                                        try {
+                                            formattedFiat = exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                        tx.setFiatAmount(formattedFiat);
+                                        mAdapter.updateOrInsertTx(tx);
+                                    }
+                                    mAdapter.notifyDataSetChanged();
+                                    txStore.setData(mAdapter.getData());
+                                    try {
+                                        txStore.save(getApplicationContext());
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
                                 }
-                                TextView bchPlease = (TextView) findViewById(R.id.bchPlease);
-                                bchPlease.setVisibility(View.GONE);
-                                for (TransactionData tx : txs) {
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void onBlock(int blockHeight, String blockHash) {
+                        if (getApplicationContext() != null) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mAdapter.setBlockHeight(blockHeight);
+                                    mAdapter.notifyDataSetChanged();
+                                    settings.setLastBlockHeight(blockHeight);
+                                    settings.setLastBlockHash(blockHash);
+                                }
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void onTransaction(TransactionData tx) {
+                        if (getApplicationContext() != null) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    TextView bchPlease = (TextView) findViewById(R.id.bchPlease);
+                                    bchPlease.setVisibility(View.GONE);
+
                                     String fiatCurrency = settings.getFiatCurrency();
                                     tx.setFiatCurrency(fiatCurrency);
                                     String formattedFiat = "";
@@ -526,59 +578,17 @@ public class MainActivity extends CloseActivity {
                                     }
                                     tx.setFiatAmount(formattedFiat);
                                     mAdapter.updateOrInsertTx(tx);
-                                }
-                                mAdapter.notifyDataSetChanged();
-                                txStore.setData(mAdapter.getData());
-                                try {
-                                    txStore.save(getApplicationContext());
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        });
-                    }
+                                    mAdapter.notifyDataSetChanged();
 
-                    @Override
-                    public void onBlock(int blockHeight, String blockHash) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                mAdapter.setBlockHeight(blockHeight);
-                                mAdapter.notifyDataSetChanged();
-                                settings.setLastBlockHeight(blockHeight);
-                                settings.setLastBlockHash(blockHash);
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void onTransaction(TransactionData tx) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                TextView bchPlease = (TextView) findViewById(R.id.bchPlease);
-                                bchPlease.setVisibility(View.GONE);
-
-                                String fiatCurrency = settings.getFiatCurrency();
-                                tx.setFiatCurrency(fiatCurrency);
-                                String formattedFiat = "";
-                                try {
-                                    formattedFiat = exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
-                                } catch (Exception e) {
-                                    e.printStackTrace();
+                                    txStore.setData(mAdapter.getData());
+                                    try {
+                                        txStore.save(getApplicationContext());
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
                                 }
-                                tx.setFiatAmount(formattedFiat);
-                                mAdapter.updateOrInsertTx(tx);
-                                mAdapter.notifyDataSetChanged();
-
-                                txStore.setData(mAdapter.getData());
-                                try {
-                                    txStore.save(getApplicationContext());
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        });
+                            });
+                        }
                     }
                 };
                 wallet.loadWallet(listener);

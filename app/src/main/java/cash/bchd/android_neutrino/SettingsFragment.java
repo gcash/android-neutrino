@@ -35,6 +35,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         settings = Settings.getInstance();
         wallet = Wallet.getInstance();
 
+        System.out.println("opening settings");
+
         if (rootKey == null) {
             activeScreen = "root";
             try {
@@ -175,14 +177,16 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             wallet.listenBlockchain(new WalletEventListener() {
                 @Override
                 public void onBlock(int blockHeight, String blockHash) {
-                    getActivity().runOnUiThread(new Runnable() {
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(new Runnable() {
 
-                        @Override
-                        public void run() {
-                            String blockchainInfo = "Height: " + blockHeight + "\nHash: " + blockHash;
-                            blockchainPref.setSummary(blockchainInfo);
-                        }
-                    });
+                            @Override
+                            public void run() {
+                                String blockchainInfo = "Height: " + blockHeight + "\nHash: " + blockHash;
+                                blockchainPref.setSummary(blockchainInfo);
+                            }
+                        });
+                    }
                 }
             });
         } else if (rootKey.equals("bchd")) {
