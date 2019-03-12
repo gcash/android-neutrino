@@ -1,6 +1,7 @@
 package cash.bchd.android_neutrino;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Rect;
@@ -62,11 +63,13 @@ public class SendActivity extends AppCompatActivity {
     TextView symbolLabel;
     String label;
     int satPerByte;
+    public static Activity fa;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_send);
+        fa = this;
 
         CloseActivity.cancelCloseTimer();
 

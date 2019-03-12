@@ -209,8 +209,8 @@ public class ConfirmationActivity extends FingerprintActivity {
     public void onBackPressed() {
         LinearLayout checkLayout = (LinearLayout) findViewById(R.id.checkLayout);
         if (checkLayout.getVisibility() == View.VISIBLE) {
-            Intent setIntent = new Intent(this, MainActivity.class);
-            startActivity(setIntent);
+            finish();
+            SendActivity.fa.finish();
         } else {
             super.onBackPressed();
         }
