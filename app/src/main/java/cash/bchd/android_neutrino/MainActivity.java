@@ -1,6 +1,7 @@
 package cash.bchd.android_neutrino;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -61,6 +62,8 @@ import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
 import walletrpc.Api;
 
+import static cash.bchd.android_neutrino.SendActivity.RC_BARCODE_CAPTURE;
+
 
 public class MainActivity extends CloseActivity {
 
@@ -88,6 +91,8 @@ public class MainActivity extends CloseActivity {
         setContentView(R.layout.activity_main);
 
         cancelCloseTimer();
+
+        startService(new Intent(this, NotificationService.class));
 
         layoutManager = new LinearLayoutManager(this);
 
@@ -247,6 +252,14 @@ public class MainActivity extends CloseActivity {
         });
 
         mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
+
+        Intent intent = getIntent();
+        boolean launchDonationActivity = intent.getBooleanExtra("launchDonationActivity", false);
+        if (launchDonationActivity) {
+            Intent newIntent = new Intent();
+            newIntent.putExtra("qrdata", SettingsFragment.DONATE_URI);
+            this.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, newIntent);
+        }
     }
 
     @Override
@@ -293,7 +306,7 @@ public class MainActivity extends CloseActivity {
     private void displayQRScanner() {
         toggleFABMenu();
         Intent intent = new Intent(this, ScannerActivity.class);
-        startActivityForResult(intent, SendActivity.RC_BARCODE_CAPTURE);
+        startActivityForResult(intent, RC_BARCODE_CAPTURE);
     }
 
     private void displayQRPopup() {
@@ -596,7 +609,7 @@ public class MainActivity extends CloseActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == SendActivity.RC_BARCODE_CAPTURE) {
+        if (requestCode == RC_BARCODE_CAPTURE) {
             if (resultCode == CommonStatusCodes.SUCCESS) {
                 if (data != null) {
                     String qrdata = data.getStringExtra("qrdata");
@@ -682,5 +695,4 @@ public class MainActivity extends CloseActivity {
                 return super.onOptionsItemSelected(item);
         }
     }
-
 }

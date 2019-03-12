@@ -24,6 +24,7 @@ public class Settings {
     private static final String LAST_INVALID_PIN_KEY = "LastInvalidPin";
     private static final String ENCRYPTED_PASSWORD_KEY = "EncryptedPassword";
     private static final String FINGERPRINT_IV_KEY = "FingerprintIV";
+    private static final String LAST_NOTIFICATION_KEY = "LastNotification";
 
     SharedPreferences prefs;
 
@@ -256,5 +257,16 @@ public class Settings {
     public String getFingerprintIv() {
         String iv = prefs.getString(FINGERPRINT_IV_KEY, "");
         return iv;
+    }
+
+    public void setLastNotification(long timestamp) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putLong(LAST_NOTIFICATION_KEY, timestamp);
+        editor.apply();
+    }
+
+    public long getLastNotification() {
+        long timestamp = prefs.getLong(LAST_NOTIFICATION_KEY, 0);
+        return timestamp;
     }
 }
