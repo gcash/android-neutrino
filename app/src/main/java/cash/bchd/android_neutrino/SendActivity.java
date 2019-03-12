@@ -7,7 +7,10 @@ import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.nfc.NdefMessage;
+import android.nfc.NfcAdapter;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.provider.ContactsContract;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TextInputEditText;
@@ -483,6 +486,19 @@ public class SendActivity extends AppCompatActivity {
             Snackbar snackbar = Snackbar.make(sendLayout, "Invalid Payment Request", Snackbar.LENGTH_LONG);
             snackbar.show();
             e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction())) {
+            Uri uri = intent.getData();
+            String uriString = intent.getDataString();
+
+            Intent newIntent = new Intent();
+            newIntent.putExtra("qrdata", uriString);
+            this.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, newIntent);
         }
     }
 }

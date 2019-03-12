@@ -11,6 +11,9 @@ import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Vibrator;
@@ -40,6 +43,7 @@ import android.widget.TextView;
 
 import com.google.android.gms.common.api.CommonStatusCodes;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Currency;
@@ -351,6 +355,15 @@ public class MainActivity extends CloseActivity {
                    copyToClipboard(addr);
                 }
             });
+
+            NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(this);
+            if (nfcAdapter != null) {
+                NdefRecord uriRecord = new NdefRecord(
+                        NdefRecord.TNF_ABSOLUTE_URI,
+                        addrURI.getBytes(Charset.forName("US-ASCII")),
+                        new byte[0], new byte[0]);
+                nfcAdapter.setNdefPushMessage(new NdefMessage(uriRecord), this);
+            }
 
             wallet.listenAddress(addr, new AddressListener() {
                 @Override

@@ -7,7 +7,9 @@
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    <uses-permission android:name="android.permission.NFC" />
 
+    <uses-feature android:name="android.hardware.nfc" android:required="false" />
     <uses-feature android:name="android.hardware.fingerprint" android:required="false"/>
 
     <application
@@ -41,6 +43,11 @@
             <intent-filter>
                 <data android:scheme="bitcoincash" />
                 <action android:name="android.intent.action.VIEW" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.nfc.action.NDEF_DISCOVERED"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:scheme="bitcoincash" />
             </intent-filter>
         </activity>
         <activity
