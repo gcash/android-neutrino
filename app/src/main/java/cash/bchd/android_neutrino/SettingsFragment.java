@@ -1,9 +1,9 @@
 package cash.bchd.android_neutrino;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import com.takisoft.fix.support.v7.preference.EditTextPreference;
+
 import android.support.v7.preference.Preference;
 import com.takisoft.fix.support.v7.preference.PreferenceFragmentCompat;
 import android.support.v7.preference.PreferenceScreen;
@@ -34,8 +34,6 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
         settings = Settings.getInstance();
         wallet = Wallet.getInstance();
-
-        System.out.println("opening settings");
 
         if (rootKey == null) {
             activeScreen = "root";

@@ -10,6 +10,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 
+import java.io.File;
 import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -68,6 +69,9 @@ public class Wallet implements Serializable {
         }
         // TODO: if we ever add testnet then set the scheme here
         BitcoinPaymentURI.SCHEME = MAINNET_URI_PREFIX;
+
+        File directory = new File(config.getDataDir()+File.separator+"mainnet");
+        directory.mkdirs();
     }
 
     public static Wallet getInstance() {
@@ -78,15 +82,25 @@ public class Wallet implements Serializable {
         instance = null;
     }
 
-    public void loadWallet(WalletEventListener listener) throws Exception {
-        if (!walletExists()) {
-            String mnemonic = generateMnemonic();
-            WalletLoaderServiceGrpc.WalletLoaderServiceFutureStub stub = WalletLoaderServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
-            ByteString pw = ByteString.copyFromUtf8(DEFAULT_PASSPHRASE);
+    public void loadWallet(WalletEventListener listener, String mnemonic) {
+        while(true) {
+            try {
+                if (!walletExists()) {
+                    String mnemonicToSet = mnemonic;
+                    if (mnemonicToSet.equals("")) {
+                        mnemonicToSet = generateMnemonic();
+                    }
+                    WalletLoaderServiceGrpc.WalletLoaderServiceFutureStub stub = WalletLoaderServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
+                    ByteString pw = ByteString.copyFromUtf8(DEFAULT_PASSPHRASE);
 
-            Api.CreateWalletRequest request = Api.CreateWalletRequest.newBuilder().setPrivatePassphrase(pw).setMnemonicSeed(mnemonic).build();
-            stub.createWallet(request);
-            listener.onWalletCreated(mnemonic);
+                    Api.CreateWalletRequest request = Api.CreateWalletRequest.newBuilder().setPrivatePassphrase(pw).setMnemonicSeed(mnemonicToSet).build();
+                    stub.createWallet(request);
+                    listener.onWalletCreated(mnemonicToSet);
+                    break;
+                } else {
+                    break;
+                }
+            } catch (Exception e) {}
         }
 
         Thread thread = new Thread(){

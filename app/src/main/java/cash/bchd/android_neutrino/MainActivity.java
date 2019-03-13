@@ -22,6 +22,7 @@ import android.nfc.NfcAdapter;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.preference.PreferenceManager;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -104,10 +105,11 @@ public class MainActivity extends CloseActivity {
 
         layoutManager = new LinearLayoutManager(this);
 
-        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         this.settings = new Settings(sharedPref);
         this.exchangeRates = new ExchangeRates();
         this.txStore = new TransactionStore(this);
+        this.mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
 
         TextView bchBalanceView = (TextView)findViewById(R.id.bchBalanceView);
         Amount lastBal = new Amount(this.settings.getLastBalance());
@@ -253,8 +255,6 @@ public class MainActivity extends CloseActivity {
             }
         });
 
-        mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
-
         Intent intent = getIntent();
         boolean launchDonationActivity = intent.getBooleanExtra("launchDonationActivity", false);
         if (launchDonationActivity) {
@@ -272,6 +272,7 @@ public class MainActivity extends CloseActivity {
                     bchdIP.equals(""), settings.getBlocksOnly(), addrs, settings.getBchdIP(), settings.getBchdUsername(),
                     settings.getBchdPassword(), settings.getBchdCert());
             wallet = new Wallet(this, cfg);
+            wallet.start();
             new StartWalletTask().execute(wallet);
         }
     }
@@ -482,147 +483,6 @@ public class MainActivity extends CloseActivity {
         }
     }
 
-    private class StartWalletTask extends AsyncTask<Wallet, Void, String> {
-        Wallet wallet;
-        protected String doInBackground(Wallet... wallets) {
-            wallet = wallets[0];
-            wallets[0].start();
-            return "";
-        }
-        protected void onPostExecute(String result) {
-            try {
-                WalletEventListener listener = new WalletEventListener() {
-                    @Override
-                    public void onWalletReady() {
-                        System.out.println("Wallet ready");
-                    }
-
-                    @Override
-                    public void onBalanceChange(long bal) {
-                        if (getApplicationContext() != null) {
-                            try {
-                                System.out.println("Updating balance");
-                                Amount amt = new Amount(bal);
-                                TextView bchBalanceView = (TextView) findViewById(R.id.bchBalanceView);
-                                String balanceStr = amt.toString() + " BCH";
-                                bchBalanceView.setText(balanceStr);
-                                String fiatAmount = exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(settings.getFiatCurrency()));
-                                TextView fiatBalanceView = (TextView) findViewById(R.id.fiatBalanceView);
-                                fiatBalanceView.setText(fiatAmount);
-                                settings.setLastBalance(bal);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void onWalletCreated(String seed) {
-                        settings.setWalletInitialized(true);
-                        settings.setMnemonic(seed);
-                    }
-
-                    @Override
-                    public void onGetTransactions(List<TransactionData> txs, int blockHeight) {
-                        if (getApplicationContext() != null) {
-                            Collections.sort(txs, Collections.reverseOrder());
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (txs.size() == 0) {
-                                        return;
-                                    }
-                                    TextView bchPlease = (TextView) findViewById(R.id.bchPlease);
-                                    bchPlease.setVisibility(View.GONE);
-                                    for (TransactionData tx : txs) {
-                                        String fiatCurrency = settings.getFiatCurrency();
-                                        tx.setFiatCurrency(fiatCurrency);
-                                        String formattedFiat = "";
-                                        try {
-                                            formattedFiat = exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
-                                        } catch (Exception e) {
-                                            e.printStackTrace();
-                                        }
-                                        tx.setFiatAmount(formattedFiat);
-                                        mAdapter.updateOrInsertTx(tx);
-                                    }
-                                    mAdapter.notifyDataSetChanged();
-                                    txStore.setData(mAdapter.getData());
-                                    try {
-                                        txStore.save(getApplicationContext());
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            });
-                        }
-                    }
-
-                    @Override
-                    public void onBlock(int blockHeight, String blockHash) {
-                        if (getApplicationContext() != null) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    mAdapter.setBlockHeight(blockHeight);
-                                    mAdapter.notifyDataSetChanged();
-                                    settings.setLastBlockHeight(blockHeight);
-                                    settings.setLastBlockHash(blockHash);
-                                }
-                            });
-                        }
-                    }
-
-                    @Override
-                    public void onTransaction(TransactionData tx) {
-                        if (getApplicationContext() != null) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    TextView bchPlease = (TextView) findViewById(R.id.bchPlease);
-                                    bchPlease.setVisibility(View.GONE);
-
-                                    String fiatCurrency = settings.getFiatCurrency();
-                                    tx.setFiatCurrency(fiatCurrency);
-                                    String formattedFiat = "";
-                                    try {
-                                        formattedFiat = exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                    tx.setFiatAmount(formattedFiat);
-                                    mAdapter.updateOrInsertTx(tx);
-                                    mAdapter.notifyDataSetChanged();
-
-                                    txStore.setData(mAdapter.getData());
-                                    try {
-                                        txStore.save(getApplicationContext());
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            });
-                        }
-                    }
-                };
-                wallet.loadWallet(listener);
-                mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-                    @Override
-                    public void onRefresh() {
-                        try {
-                            wallet.getTransactions(listener);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        mSwipeRefreshLayout.setRefreshing(false);
-                    }
-                });
-            } catch (Exception e){
-                e.printStackTrace();
-            }
-        }
-    }
-
     public static void sendViewToBack(final View child) {
         final ViewGroup parent = (ViewGroup)child.getParent();
         if (null != parent) {
@@ -749,11 +609,164 @@ public class MainActivity extends CloseActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        Intent mStartActivity = new Intent(this, MainActivity.class);
-        int mPendingIntentId = 123456;
-        PendingIntent mPendingIntent = PendingIntent.getActivity(this, mPendingIntentId,    mStartActivity, PendingIntent.FLAG_CANCEL_CURRENT);
-        AlarmManager mgr = (AlarmManager)this.getSystemService(Context.ALARM_SERVICE);
-        mgr.set(AlarmManager.RTC, System.currentTimeMillis(), mPendingIntent);
-        System.exit(0);
+       createWallet();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        try {
+            TextView fiatBalanceView = (TextView) findViewById(R.id.fiatBalanceView);
+            Amount amt = new Amount(settings.getLastBalance());
+            String formatted = exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(settings.getFiatCurrency()));
+            fiatBalanceView.setText(formatted);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private class StartWalletTask extends AsyncTask<Wallet, Void, String> {
+        Wallet wallet;
+
+        protected String doInBackground(Wallet... wallets) {
+            wallet = wallets[0];
+            wallets[0].start();
+            return "";
+        }
+
+        protected void onPostExecute(String result) {
+            try {
+                WalletEventListener listener = new WalletEventListener() {
+                    @Override
+                    public void onWalletReady() {
+                        System.out.println("Wallet ready");
+                    }
+
+                    @Override
+                    public void onBalanceChange(long bal) {
+                        if (getApplicationContext() != null) {
+                            try {
+                                System.out.println("Updating balance");
+                                Amount amt = new Amount(bal);
+                                TextView bchBalanceView = (TextView) findViewById(R.id.bchBalanceView);
+                                String balanceStr = amt.toString() + " BCH";
+                                bchBalanceView.setText(balanceStr);
+                                String fiatAmount = exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(settings.getFiatCurrency()));
+                                TextView fiatBalanceView = (TextView) findViewById(R.id.fiatBalanceView);
+                                fiatBalanceView.setText(fiatAmount);
+                                settings.setLastBalance(bal);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onWalletCreated(String seed) {
+                        settings.setWalletInitialized(true);
+                        System.out.println(seed);
+                        settings.setMnemonic(seed);
+                    }
+
+                    @Override
+                    public void onGetTransactions(List<TransactionData> txs, int blockHeight) {
+                        if (getApplicationContext() != null) {
+                            Collections.sort(txs, Collections.reverseOrder());
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (txs.size() == 0) {
+                                        return;
+                                    }
+                                    TextView bchPlease = (TextView) findViewById(R.id.bchPlease);
+                                    bchPlease.setVisibility(View.GONE);
+                                    for (TransactionData tx : txs) {
+                                        String fiatCurrency = settings.getFiatCurrency();
+                                        tx.setFiatCurrency(fiatCurrency);
+                                        String formattedFiat = "";
+                                        try {
+                                            formattedFiat = exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                        tx.setFiatAmount(formattedFiat);
+                                        mAdapter.updateOrInsertTx(tx);
+                                    }
+                                    mAdapter.notifyDataSetChanged();
+                                    txStore.setData(mAdapter.getData());
+                                    try {
+                                        txStore.save(getApplicationContext());
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void onBlock(int blockHeight, String blockHash) {
+                        if (getApplicationContext() != null) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mAdapter.setBlockHeight(blockHeight);
+                                    mAdapter.notifyDataSetChanged();
+                                    settings.setLastBlockHeight(blockHeight);
+                                    settings.setLastBlockHash(blockHash);
+                                }
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void onTransaction(TransactionData tx) {
+                        if (getApplicationContext() != null) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    TextView bchPlease = (TextView) findViewById(R.id.bchPlease);
+                                    bchPlease.setVisibility(View.GONE);
+
+                                    String fiatCurrency = settings.getFiatCurrency();
+                                    tx.setFiatCurrency(fiatCurrency);
+                                    String formattedFiat = "";
+                                    try {
+                                        formattedFiat = exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                    tx.setFiatAmount(formattedFiat);
+                                    mAdapter.updateOrInsertTx(tx);
+                                    mAdapter.notifyDataSetChanged();
+
+                                    txStore.setData(mAdapter.getData());
+                                    try {
+                                        txStore.save(getApplicationContext());
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            });
+                        }
+                    }
+                };
+                wallet.loadWallet(listener, settings.getMnemonic());
+                mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+                    @Override
+                    public void onRefresh() {
+                        try {
+                            wallet.getTransactions(listener);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        mSwipeRefreshLayout.setRefreshing(false);
+                    }
+                });
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+        }
     }
 }

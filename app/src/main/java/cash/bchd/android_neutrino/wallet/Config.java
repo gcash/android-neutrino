@@ -127,4 +127,8 @@ public class Config {
     public String getAuthToken() {
         return this.authToken;
     }
+
+    public String getDataDir() {
+        return this.dataDir;
+    }
 }
