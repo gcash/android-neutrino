@@ -169,8 +169,9 @@ public class RestoreActivity extends AppCompatActivity {
 
                                 Vibrator vibrator = (Vibrator)getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
                                 vibrator.vibrate(500);
+                                Wallet.getInstance().stop();
 
-                                System.exit(0);
+                                finish();
                                 break;
 
                             case DialogInterface.BUTTON_NEGATIVE:
