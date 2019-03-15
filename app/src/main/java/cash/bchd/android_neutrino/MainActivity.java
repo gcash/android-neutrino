@@ -544,7 +544,11 @@ public class MainActivity extends CloseActivity {
                 mainActivity.exchangeRates.fetchFormattedAmountInFiat(lastBal, Currency.getInstance(fiatCurrency), new ExchangeRates.Callback() {
                     @Override
                     public void onRateFetched(String formatted) {
-                        TextView fiatBalanceView = mainActivity.findViewById(R.id.fiatBalanceView);
+                        MainActivity mainActivity2 = mainActivityRef.get();
+                        if (mainActivity2 == null) {
+                            return;
+                        }
+                        TextView fiatBalanceView = mainActivity2.findViewById(R.id.fiatBalanceView);
                         fiatBalanceView.setText(formatted);
                     }
                 });
