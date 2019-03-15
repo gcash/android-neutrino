@@ -92,51 +92,38 @@ public class MainActivity extends CloseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         cancelCloseTimer();
-
         startService(new Intent(this, NotificationService.class));
-
         layoutManager = new LinearLayoutManager(this);
-
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         this.settings = new Settings(sharedPref);
         this.exchangeRates = new ExchangeRates();
         this.txStore = new TransactionStore(this);
         this.mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
-
         TextView bchBalanceView = findViewById(R.id.bchBalanceView);
         Amount lastBal = new Amount(this.settings.getLastBalance());
         bchBalanceView.setText(lastBal.toString() + " BCH");
         new Thread(new ExchangeRateFetcher(this, lastBal)).start();
-
         if (checkForPermissions()) {
             createWallet();
         }
-
         fab = findViewById(R.id.fab);
         fabSettings = findViewById(R.id.btnSettings);
         fabReceive = findViewById(R.id.btnReceive);
         fabSend = findViewById(R.id.btnSend);
         fabScan = findViewById(R.id.btnScan);
         fabQR = findViewById(R.id.btnQR);
-
-
         mCLayout = findViewById(R.id.coordinator_layout);
         ChangeTransform changeTransform = new ChangeTransform();
         changeTransform.setDuration(500);
         changeTransform.setInterpolator(new AccelerateInterpolator());
-        TransitionManager.beginDelayedTransition(mCLayout,changeTransform);
-
+        TransitionManager.beginDelayedTransition(mCLayout, changeTransform);
         RecyclerView recyclerView = findViewById(R.id.txRecylerView);
         recyclerView.setHasFixedSize(true);
         DividerItemDecoration decor = new DividerItemDecoration(getApplicationContext(), DividerItemDecoration.VERTICAL);
         recyclerView.addItemDecoration(decor);
-
         // use a linear layout manager
-
         recyclerView.setLayoutManager(layoutManager);
-
         // specify an adapter
         List<TransactionData> txs = txStore.getData();
         Collections.sort(txs, Collections.reverseOrder());
@@ -146,11 +133,9 @@ public class MainActivity extends CloseActivity {
         }
         mAdapter = new TransactionAdapter(txs, this, mCLayout, settings.getLastBlockHeight());
         recyclerView.setAdapter(mAdapter);
-
         fab.setOnClickListener(view -> toggleFABMenu());
-
         fab.setOnTouchListener((v, event) -> {
-            if(event.getAction() == MotionEvent.ACTION_DOWN) {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
                 toggleFABMenu();
                 lastDown = System.currentTimeMillis();
             } else if (event.getAction() == MotionEvent.ACTION_UP) {
@@ -182,33 +167,27 @@ public class MainActivity extends CloseActivity {
             }
             return true;
         });
-
         fabQR.setOnClickListener(v -> {
             fab.bringToFront();
             displayQRPopup();
             sendViewToBack(v);
         });
-
         fabScan.setOnClickListener(v -> {
             fab.bringToFront();
             displayQRScanner();
         });
-
         fabSend.setOnClickListener(v -> {
             fab.bringToFront();
             openSendActivity();
         });
-
         fabReceive.setOnClickListener(v -> {
             fab.bringToFront();
             openReceiveActivity();
         });
-
         fabSettings.setOnClickListener(v -> {
             fab.bringToFront();
             openSettingsActivity();
         });
-
         Intent intent = getIntent();
         boolean launchDonationActivity = intent.getBooleanExtra("launchDonationActivity", false);
         if (launchDonationActivity) {
@@ -290,7 +269,7 @@ public class MainActivity extends CloseActivity {
         }
         toggleFABMenu();
         LayoutInflater layoutInflater = (LayoutInflater) MainActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View customView = layoutInflater.inflate(R.layout.qrpopup,null);
+        View customView = layoutInflater.inflate(R.layout.qrpopup, null);
         PopupWindow popupWindow = new PopupWindow(customView, CoordinatorLayout.LayoutParams.WRAP_CONTENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT, true);
         popupWindow.showAtLocation(findViewById(R.id.coordinator_layout), Gravity.CENTER, 0, 0);
         popupWindow.setOutsideTouchable(true);
@@ -319,13 +298,10 @@ public class MainActivity extends CloseActivity {
             Bitmap bitmap = qrgEncoder.encodeAsBitmap();
             qrImage = customView.findViewById(R.id.qrCodeView);
             qrImage.setImageBitmap(bitmap);
-
             qrImage.setOnClickListener(v -> copyToClipboard(addr));
-
             addrText = customView.findViewById(R.id.address);
             addrText.setText(addr);
             addrText.setOnClickListener(v -> copyToClipboard(addr));
-
             NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(this);
             if (nfcAdapter != null) {
                 NdefRecord uriRecord = new NdefRecord(
@@ -334,41 +310,32 @@ public class MainActivity extends CloseActivity {
                         new byte[0], new byte[0]);
                 nfcAdapter.setNdefPushMessage(new NdefMessage(uriRecord), this);
             }
-
             wallet.listenAddress(addr, new AddressListener() {
                 @Override
                 public void onPaymentReceived(long amount) {
                     if (getApplicationContext() != null) {
                         runOnUiThread(() -> {
-
                             Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
                             if (vibrator != null) {
                                 vibrator.vibrate(500);
                             }
-
                             LinearLayout qrLayout = customView.findViewById(R.id.qrCodeLayout);
                             int h = qrLayout.getHeight();
                             qrLayout.setHorizontalGravity(Gravity.CENTER_HORIZONTAL);
                             qrLayout.setVerticalGravity(Gravity.CENTER_VERTICAL);
-
                             TextView addrHelperText = customView.findViewById(R.id.addrHelpText);
-
                             qrImage.setVisibility(View.GONE);
                             addrText.setVisibility(View.GONE);
                             addrHelperText.setVisibility(View.GONE);
                             final GifView showGifView = new GifView(getApplicationContext());
-
                             showGifView.setGifImageDrawableId(R.drawable.coinflip);
                             showGifView.drawGif();
                             showGifView.setForegroundGravity(Gravity.CENTER);
-
-
                             ViewGroup.LayoutParams params = qrLayout.getLayoutParams();
                             Double dh = (double) h;
                             Double truncatedH = dh * 0.8;
                             params.height = truncatedH.intValue();
                             params.width = h;
-
                             qrLayout.requestLayout();
                             qrLayout.addView(showGifView);
                         });
@@ -382,7 +349,7 @@ public class MainActivity extends CloseActivity {
 
     private void copyToClipboard(String data) {
         Object clipboardService = getSystemService(CLIPBOARD_SERVICE);
-        final ClipboardManager clipboardManager = (ClipboardManager)clipboardService;
+        final ClipboardManager clipboardManager = (ClipboardManager) clipboardService;
         ClipData clipData = ClipData.newPlainText("Source Text", data);
         clipboardManager.setPrimaryClip(clipData);
         Snackbar snackbar = Snackbar.make(mCLayout, "Address copied clipboard.", Snackbar.LENGTH_LONG);
@@ -391,14 +358,14 @@ public class MainActivity extends CloseActivity {
 
     private void toggleFABMenu() {
         toggleRotation(fab);
-        if(!isFabOpen){
+        if (!isFabOpen) {
             showFABMenu();
-        }else{
+        } else {
             closeFABMenu();
         }
     }
 
-    private void showFABMenu(){
+    private void showFABMenu() {
         isFabOpen = true;
         fabSettings.animate().translationY(-getResources().getDimension(R.dimen.standard_65));
         fabReceive.animate().translationY(-getResources().getDimension(R.dimen.standard_120));
@@ -407,7 +374,7 @@ public class MainActivity extends CloseActivity {
         fabQR.animate().translationY(-getResources().getDimension(R.dimen.standard_285));
     }
 
-    private void closeFABMenu(){
+    private void closeFABMenu() {
         isFabOpen = false;
         fabSettings.animate().translationY(0);
         fabReceive.animate().translationY(0);
@@ -417,16 +384,16 @@ public class MainActivity extends CloseActivity {
         fab.bringToFront();
     }
 
-    protected void toggleRotation(View v){
-        if(isFabOpen){
+    protected void toggleRotation(View v) {
+        if (isFabOpen) {
             v.setRotation(0.0f);
-        }else {
+        } else {
             v.setRotation(45.0f);
         }
     }
 
     public static void sendViewToBack(final View child) {
-        final ViewGroup parent = (ViewGroup)child.getParent();
+        final ViewGroup parent = (ViewGroup) child.getParent();
         if (null != parent) {
             parent.removeView(child);
             parent.addView(child, 0);
@@ -440,7 +407,7 @@ public class MainActivity extends CloseActivity {
                 if (data != null) {
                     String qrdata = data.getStringExtra("qrdata");
                     BitcoinPaymentURI uri = BitcoinPaymentURI.parse(qrdata);
-                    if (uri != null && uri.getR() != null){
+                    if (uri != null && uri.getR() != null) {
                         try {
                             Api.DownloadPaymentRequestResponse pr = wallet.downloadPaymentRequest(qrdata);
                             List<Api.CreateTransactionRequest.Output> outputs = new ArrayList<>();
@@ -452,7 +419,6 @@ public class MainActivity extends CloseActivity {
                             }
                             Amount totalAmt = new Amount(totalSatoshis);
                             String fiatFormatted = ExchangeRates.getInstance().getFormattedAmountInFiat(totalAmt, Currency.getInstance(settings.getFiatCurrency()));
-
                             if (totalSatoshis > wallet.balance()) {
                                 System.out.println(totalSatoshis);
                                 System.out.println(wallet.balance());
@@ -460,17 +426,14 @@ public class MainActivity extends CloseActivity {
                                 snackbar.show();
                                 return;
                             }
-
                             Api.CreateTransactionResponse tx = wallet.createTransaction(outputs, settings.getFeePerByte());
                             byte[] serializedTx = tx.getSerializedTransaction().toByteArray();
                             long txFee = tx.getFee();
                             List<Long> inputVals = tx.getInputValuesList();
-
                             ArrayList<String> inputStrings = new ArrayList<>();
                             for (Long val : inputVals) {
                                 inputStrings.add(String.valueOf(val));
                             }
-
                             Intent intent = new Intent(getApplicationContext(), ConfirmationActivity.class);
                             intent.putExtra("paymentAddress", outputs.get(0).getAddress());
                             intent.putExtra("amountBCH", totalAmt.toString());
@@ -480,7 +443,6 @@ public class MainActivity extends CloseActivity {
                             intent.putStringArrayListExtra("inputVals", inputStrings);
                             intent.putExtra("memo", pr.getMemo());
                             intent.putExtra("label", pr.getPayToName());
-
                             intent.putExtra("isPaymentRequest", true);
                             intent.putExtra("merchantData", pr.getMerchantData().toByteArray());
                             intent.putExtra("paymentURL", pr.getPaymentUrl());
@@ -502,12 +464,11 @@ public class MainActivity extends CloseActivity {
                         startActivity(intent);
                     }
                 }
-            } else if (resultCode != 0 ) {
+            } else if (resultCode != 0) {
                 Snackbar snackbar = Snackbar.make(mCLayout, "Barcode Read Error", Snackbar.LENGTH_LONG);
                 snackbar.show();
             }
-        }
-        else {
+        } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
     }
@@ -516,7 +477,6 @@ public class MainActivity extends CloseActivity {
         switch (item.getItemId()) {
             case android.R.id.home:
                 return true;
-
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -530,19 +490,16 @@ public class MainActivity extends CloseActivity {
             missingPermissions[0] = Manifest.permission.READ_EXTERNAL_STORAGE;
             hasAllPermissions = false;
         }
-
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
             missingPermissions[1] = Manifest.permission.WRITE_EXTERNAL_STORAGE;
             hasAllPermissions = false;
         }
-
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
             missingPermissions[2] = Manifest.permission.CAMERA;
             hasAllPermissions = false;
         }
-
         if (!hasAllPermissions) {
             ActivityCompat.requestPermissions(this, missingPermissions, 1);
         }
@@ -551,13 +508,12 @@ public class MainActivity extends CloseActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-       createWallet();
+        createWallet();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-
         try {
             TextView fiatBalanceView = findViewById(R.id.fiatBalanceView);
             Amount amt = new Amount(settings.getLastBalance());
@@ -628,7 +584,6 @@ public class MainActivity extends CloseActivity {
                             // perhaps print a warning.
                             return;
                         }
-
                         if (mainActivity.getApplicationContext() != null) {
                             try {
                                 System.out.println("Updating balance");
@@ -652,7 +607,6 @@ public class MainActivity extends CloseActivity {
                         if (mainActivity == null) {
                             return;
                         }
-
                         mainActivity.settings.setWalletInitialized(true);
                         System.out.println(seed);
                         mainActivity.settings.setMnemonic(seed);
@@ -664,10 +618,8 @@ public class MainActivity extends CloseActivity {
                         if (mainActivity == null) {
                             return;
                         }
-
                         if (mainActivity.getApplicationContext() != null) {
                             Collections.sort(txs, Collections.reverseOrder());
-
                             mainActivity.runOnUiThread(() -> {
                                 MainActivity mainActivity2 = mainActivityRef.get();
                                 if (mainActivity2 == null) {
@@ -713,7 +665,6 @@ public class MainActivity extends CloseActivity {
                                 if (mainActivity2 == null) {
                                     return;
                                 }
-
                                 mainActivity2.mAdapter.setBlockHeight(blockHeight);
                                 mainActivity2.mAdapter.notifyDataSetChanged();
                                 mainActivity2.settings.setLastBlockHeight(blockHeight);
@@ -728,17 +679,14 @@ public class MainActivity extends CloseActivity {
                         if (mainActivity == null) {
                             return;
                         }
-
                         if (mainActivity.getApplicationContext() != null) {
                             mainActivity.runOnUiThread(() -> {
                                 MainActivity mainActivity2 = mainActivityRef.get();
                                 if (mainActivity2 == null) {
                                     return;
                                 }
-
                                 TextView bchPlease = mainActivity2.findViewById(R.id.bchPlease);
                                 bchPlease.setVisibility(View.GONE);
-
                                 String fiatCurrency = mainActivity2.settings.getFiatCurrency();
                                 tx.setFiatCurrency(fiatCurrency);
                                 String formattedFiat = "";
@@ -750,7 +698,6 @@ public class MainActivity extends CloseActivity {
                                 tx.setFiatAmount(formattedFiat);
                                 mainActivity2.mAdapter.updateOrInsertTx(tx);
                                 mainActivity2.mAdapter.notifyDataSetChanged();
-
                                 mainActivity2.txStore.setData(mainActivity2.mAdapter.getData());
                                 try {
                                     mainActivity2.txStore.save(mainActivity2.getApplicationContext());
@@ -761,13 +708,10 @@ public class MainActivity extends CloseActivity {
                         }
                     }
                 };
-
-
                 MainActivity mainActivity = mainActivityRef.get();
                 if (mainActivity == null) {
                     return;
                 }
-
                 wallet.loadWallet(listener, mainActivity.settings.getMnemonic());
                 mainActivity.mSwipeRefreshLayout.setOnRefreshListener(() -> {
                     try {
@@ -777,7 +721,7 @@ public class MainActivity extends CloseActivity {
                     }
                     mainActivity.mSwipeRefreshLayout.setRefreshing(false);
                 });
-            } catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
