@@ -108,24 +108,7 @@ public class MainActivity extends CloseActivity {
         TextView bchBalanceView = findViewById(R.id.bchBalanceView);
         Amount lastBal = new Amount(this.settings.getLastBalance());
         bchBalanceView.setText(lastBal.toString() + " BCH");
-
-        Thread thread = new Thread() {
-            public void run() {
-                String fiatCurrency = settings.getFiatCurrency();
-                try {
-                    exchangeRates.fetchFormattedAmountInFiat(lastBal, Currency.getInstance(fiatCurrency), new ExchangeRates.Callback() {
-                        @Override
-                        public void onRateFetched(String formatted) {
-                            TextView fiatBalanceView = findViewById(R.id.fiatBalanceView);
-                            fiatBalanceView.setText(formatted);
-                        }
-                    });
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        thread.start();
+        new Thread(new ExchangeRateFetcher(this, lastBal)).start();
 
         if (checkForPermissions()) {
             createWallet();
@@ -582,6 +565,36 @@ public class MainActivity extends CloseActivity {
             fiatBalanceView.setText(formatted);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private static class ExchangeRateFetcher implements Runnable {
+        private final WeakReference<MainActivity> mainActivityRef;
+        private final Amount lastBal;
+
+        ExchangeRateFetcher(MainActivity mainActivity, Amount lastBal) {
+            mainActivityRef = new WeakReference<>(mainActivity);
+            this.lastBal = lastBal;
+        }
+
+        @Override
+        public void run() {
+            MainActivity mainActivity = mainActivityRef.get();
+            if (mainActivity == null) {
+                return;
+            }
+            String fiatCurrency = mainActivity.settings.getFiatCurrency();
+            try {
+                mainActivity.exchangeRates.fetchFormattedAmountInFiat(lastBal, Currency.getInstance(fiatCurrency), new ExchangeRates.Callback() {
+                    @Override
+                    public void onRateFetched(String formatted) {
+                        TextView fiatBalanceView = mainActivity.findViewById(R.id.fiatBalanceView);
+                        fiatBalanceView.setText(formatted);
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
