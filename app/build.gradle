@@ -7,8 +7,8 @@ android {
         applicationId "cash.bchd.android_neutrino"
         minSdkVersion 24
         targetSdkVersion 28
-        versionCode 4
-        versionName "v0.1.0-beta4"
+        versionCode 6
+        versionName "v0.1.0-beta6"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

@@ -277,6 +277,12 @@ public class ConfirmationActivity extends FingerprintActivity {
                         RelativeLayout rLayout = (RelativeLayout) findViewById(R.id.confirmationLayout);
                         CheckView checkView = (CheckView) findViewById(R.id.check);
                         LinearLayout checkLayout = (LinearLayout) findViewById(R.id.checkLayout);
+                        checkLayout.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                onBackPressed();
+                            }
+                        });
 
                         rLayout.setVisibility(View.GONE);
                         checkLayout.setVisibility(View.VISIBLE);
@@ -312,6 +318,12 @@ public class ConfirmationActivity extends FingerprintActivity {
                         RelativeLayout rLayout = (RelativeLayout) findViewById(R.id.confirmationLayout);
                         CheckView checkView = (CheckView) findViewById(R.id.check);
                         LinearLayout checkLayout = (LinearLayout) findViewById(R.id.checkLayout);
+                        checkLayout.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                onBackPressed();
+                            }
+                        });
 
                         rLayout.setVisibility(View.GONE);
                         checkLayout.setVisibility(View.VISIBLE);
