@@ -484,20 +484,10 @@ public class MainActivity extends CloseActivity {
 
     private boolean checkForPermissions() {
         boolean hasAllPermissions = true;
-        String[] missingPermissions = new String[3];
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-            missingPermissions[0] = Manifest.permission.READ_EXTERNAL_STORAGE;
-            hasAllPermissions = false;
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-            missingPermissions[1] = Manifest.permission.WRITE_EXTERNAL_STORAGE;
-            hasAllPermissions = false;
-        }
+        String[] missingPermissions = new String[1];
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
-            missingPermissions[2] = Manifest.permission.CAMERA;
+            missingPermissions[0] = Manifest.permission.CAMERA;
             hasAllPermissions = false;
         }
         if (!hasAllPermissions) {
