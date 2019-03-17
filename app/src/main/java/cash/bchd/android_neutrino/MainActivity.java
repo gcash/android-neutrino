@@ -1,10 +1,6 @@
 package cash.bchd.android_neutrino;
 
 import android.Manifest;
-import android.app.Activity;
-import android.app.ActivityManager;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -39,7 +35,6 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -51,12 +46,12 @@ import android.widget.TextView;
 
 import com.google.android.gms.common.api.CommonStatusCodes;
 
+import java.lang.ref.WeakReference;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Currency;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
 import androidmads.library.qrgenearator.QRGContents;
 import androidmads.library.qrgenearator.QRGEncoder;
@@ -92,169 +87,107 @@ public class MainActivity extends CloseActivity {
     RecyclerView.LayoutManager layoutManager;
     TransactionAdapter mAdapter;
     SwipeRefreshLayout mSwipeRefreshLayout;
-    CountDownLatch latch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         cancelCloseTimer();
-
         startService(new Intent(this, NotificationService.class));
-
         layoutManager = new LinearLayoutManager(this);
-
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         this.settings = new Settings(sharedPref);
         this.exchangeRates = new ExchangeRates();
         this.txStore = new TransactionStore(this);
-        this.mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
-
-        TextView bchBalanceView = (TextView)findViewById(R.id.bchBalanceView);
+        this.mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+        TextView bchBalanceView = findViewById(R.id.bchBalanceView);
         Amount lastBal = new Amount(this.settings.getLastBalance());
         bchBalanceView.setText(lastBal.toString() + " BCH");
-
-        Thread thread = new Thread() {
-            public void run() {
-                String fiatCurrency = settings.getFiatCurrency();
-                try {
-                    exchangeRates.fetchFormattedAmountInFiat(lastBal, Currency.getInstance(fiatCurrency), new ExchangeRates.Callback() {
-                        @Override
-                        public void onRateFetched(String formatted) {
-                            TextView fiatBalanceView = (TextView) findViewById(R.id.fiatBalanceView);
-                            fiatBalanceView.setText(formatted);
-                        }
-                    });
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        thread.start();
-
+        new Thread(new ExchangeRateFetcher(this, lastBal)).start();
         if (checkForPermissions()) {
             createWallet();
         }
-
         fab = findViewById(R.id.fab);
         fabSettings = findViewById(R.id.btnSettings);
         fabReceive = findViewById(R.id.btnReceive);
         fabSend = findViewById(R.id.btnSend);
         fabScan = findViewById(R.id.btnScan);
         fabQR = findViewById(R.id.btnQR);
-
-
-        mCLayout = (CoordinatorLayout) findViewById(R.id.coordinator_layout);
+        mCLayout = findViewById(R.id.coordinator_layout);
         ChangeTransform changeTransform = new ChangeTransform();
         changeTransform.setDuration(500);
         changeTransform.setInterpolator(new AccelerateInterpolator());
-        TransitionManager.beginDelayedTransition(mCLayout,changeTransform);
-
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.txRecylerView);
+        TransitionManager.beginDelayedTransition(mCLayout, changeTransform);
+        RecyclerView recyclerView = findViewById(R.id.txRecylerView);
         recyclerView.setHasFixedSize(true);
         DividerItemDecoration decor = new DividerItemDecoration(getApplicationContext(), DividerItemDecoration.VERTICAL);
         recyclerView.addItemDecoration(decor);
-
         // use a linear layout manager
-
         recyclerView.setLayoutManager(layoutManager);
-
         // specify an adapter
         List<TransactionData> txs = txStore.getData();
         Collections.sort(txs, Collections.reverseOrder());
         if (txs.size() > 0) {
-            TextView bchPlease = (TextView) findViewById(R.id.bchPlease);
+            TextView bchPlease = findViewById(R.id.bchPlease);
             bchPlease.setVisibility(View.GONE);
         }
         mAdapter = new TransactionAdapter(txs, this, mCLayout, settings.getLastBlockHeight());
         recyclerView.setAdapter(mAdapter);
-
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-               toggleFABMenu();
-            }
-        });
-
-        fab.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if(event.getAction() == MotionEvent.ACTION_DOWN) {
-                    toggleFABMenu();
-                    lastDown = System.currentTimeMillis();
-                } else if (event.getAction() == MotionEvent.ACTION_UP) {
-                    toggleFABMenu();
-                    if (System.currentTimeMillis() - lastDown < 500) {
-                        v.performClick();
-                    } else {
-                        if (inViewInBounds(fabQR, (int) event.getRawX(), (int) event.getRawY())) {
-                            displayQRPopup();
-                            toggleFABMenu();
-                        }
-                        if (inViewInBounds(fabScan, (int) event.getRawX(), (int) event.getRawY())) {
-                            displayQRScanner();
-                            toggleFABMenu();
-                        }
-                        if (inViewInBounds(fabSend, (int) event.getRawX(), (int) event.getRawY())) {
-                            openSendActivity();
-                            toggleFABMenu();
-                        }
-                        if (inViewInBounds(fabReceive, (int) event.getRawX(), (int) event.getRawY())) {
-                            openReceiveActivity();
-                            toggleFABMenu();
-                        }
-                        if (inViewInBounds(fabSettings, (int) event.getRawX(), (int) event.getRawY())) {
-                            openSettingsActivity();
-                            toggleFABMenu();
-                        }
+        fab.setOnClickListener(view -> toggleFABMenu());
+        fab.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                toggleFABMenu();
+                lastDown = System.currentTimeMillis();
+            } else if (event.getAction() == MotionEvent.ACTION_UP) {
+                toggleFABMenu();
+                if (System.currentTimeMillis() - lastDown < 500) {
+                    v.performClick();
+                } else {
+                    if (inViewInBounds(fabQR, (int) event.getRawX(), (int) event.getRawY())) {
+                        displayQRPopup();
+                        toggleFABMenu();
+                    }
+                    if (inViewInBounds(fabScan, (int) event.getRawX(), (int) event.getRawY())) {
+                        displayQRScanner();
+                        toggleFABMenu();
+                    }
+                    if (inViewInBounds(fabSend, (int) event.getRawX(), (int) event.getRawY())) {
+                        openSendActivity();
+                        toggleFABMenu();
+                    }
+                    if (inViewInBounds(fabReceive, (int) event.getRawX(), (int) event.getRawY())) {
+                        openReceiveActivity();
+                        toggleFABMenu();
+                    }
+                    if (inViewInBounds(fabSettings, (int) event.getRawX(), (int) event.getRawY())) {
+                        openSettingsActivity();
+                        toggleFABMenu();
                     }
                 }
-                return true;
             }
+            return true;
         });
-
-        fabQR.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                fab.bringToFront();
-                displayQRPopup();
-                sendViewToBack(v);
-            }
+        fabQR.setOnClickListener(v -> {
+            fab.bringToFront();
+            displayQRPopup();
+            sendViewToBack(v);
         });
-
-        fabScan.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                fab.bringToFront();
-                displayQRScanner();
-            }
+        fabScan.setOnClickListener(v -> {
+            fab.bringToFront();
+            displayQRScanner();
         });
-
-        fabSend.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                fab.bringToFront();
-                openSendActivity();
-            }
+        fabSend.setOnClickListener(v -> {
+            fab.bringToFront();
+            openSendActivity();
         });
-
-        fabReceive.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                fab.bringToFront();
-                openReceiveActivity();
-            }
+        fabReceive.setOnClickListener(v -> {
+            fab.bringToFront();
+            openReceiveActivity();
         });
-
-        fabSettings.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                fab.bringToFront();
-                openSettingsActivity();
-            }
+        fabSettings.setOnClickListener(v -> {
+            fab.bringToFront();
+            openSettingsActivity();
         });
-
         Intent intent = getIntent();
         boolean launchDonationActivity = intent.getBooleanExtra("launchDonationActivity", false);
         if (launchDonationActivity) {
@@ -273,7 +206,7 @@ public class MainActivity extends CloseActivity {
                     settings.getBchdPassword(), settings.getBchdCert());
             wallet = new Wallet(this, cfg);
             wallet.start();
-            new StartWalletTask().execute(wallet);
+            new StartWalletTask(this).execute(wallet);
         }
     }
 
@@ -336,7 +269,7 @@ public class MainActivity extends CloseActivity {
         }
         toggleFABMenu();
         LayoutInflater layoutInflater = (LayoutInflater) MainActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View customView = layoutInflater.inflate(R.layout.qrpopup,null);
+        View customView = layoutInflater.inflate(R.layout.qrpopup, null);
         PopupWindow popupWindow = new PopupWindow(customView, CoordinatorLayout.LayoutParams.WRAP_CONTENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT, true);
         popupWindow.showAtLocation(findViewById(R.id.coordinator_layout), Gravity.CENTER, 0, 0);
         popupWindow.setOutsideTouchable(true);
@@ -357,33 +290,18 @@ public class MainActivity extends CloseActivity {
             int width = point.x;
             int height = point.y;
             int smallerDimension = width < height ? width : height;
-            smallerDimension = smallerDimension;
-
             String addrURI = wallet.uriPrefix() + addr;
             QRGEncoder qrgEncoder = new QRGEncoder(
                     addrURI, null,
                     QRGContents.Type.TEXT,
                     smallerDimension);
             Bitmap bitmap = qrgEncoder.encodeAsBitmap();
-            qrImage = (ImageView) customView.findViewById(R.id.qrCodeView);
+            qrImage = customView.findViewById(R.id.qrCodeView);
             qrImage.setImageBitmap(bitmap);
-
-            qrImage.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    copyToClipboard(addr);
-                }
-            });
-
-            addrText = (TextView) customView.findViewById(R.id.address);
+            qrImage.setOnClickListener(v -> copyToClipboard(addr));
+            addrText = customView.findViewById(R.id.address);
             addrText.setText(addr);
-            addrText.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                   copyToClipboard(addr);
-                }
-            });
-
+            addrText.setOnClickListener(v -> copyToClipboard(addr));
             NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(this);
             if (nfcAdapter != null) {
                 NdefRecord uriRecord = new NdefRecord(
@@ -392,43 +310,34 @@ public class MainActivity extends CloseActivity {
                         new byte[0], new byte[0]);
                 nfcAdapter.setNdefPushMessage(new NdefMessage(uriRecord), this);
             }
-
             wallet.listenAddress(addr, new AddressListener() {
                 @Override
                 public void onPaymentReceived(long amount) {
                     if (getApplicationContext() != null) {
-                        runOnUiThread(new Runnable() {
-
-                            @Override
-                            public void run() {
-                                Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                        runOnUiThread(() -> {
+                            Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                            if (vibrator != null) {
                                 vibrator.vibrate(500);
-                                LinearLayout qrLayout = (LinearLayout) customView.findViewById(R.id.qrCodeLayout);
-                                int h = qrLayout.getHeight();
-                                qrLayout.setHorizontalGravity(Gravity.CENTER_HORIZONTAL);
-                                qrLayout.setVerticalGravity(Gravity.CENTER_VERTICAL);
-
-                                TextView addrHelperText = (TextView) customView.findViewById(R.id.addrHelpText);
-
-                                qrImage.setVisibility(View.GONE);
-                                addrText.setVisibility(View.GONE);
-                                addrHelperText.setVisibility(View.GONE);
-                                final GifView showGifView = new GifView(getApplicationContext());
-
-                                showGifView.setGifImageDrawableId(R.drawable.coinflip);
-                                showGifView.drawGif();
-                                showGifView.setForegroundGravity(Gravity.CENTER);
-
-
-                                ViewGroup.LayoutParams params = qrLayout.getLayoutParams();
-                                Double dh = new Double(h);
-                                Double truncatedH = dh * 0.8;
-                                params.height = truncatedH.intValue();
-                                params.width = h;
-
-                                qrLayout.requestLayout();
-                                qrLayout.addView(showGifView);
                             }
+                            LinearLayout qrLayout = customView.findViewById(R.id.qrCodeLayout);
+                            int h = qrLayout.getHeight();
+                            qrLayout.setHorizontalGravity(Gravity.CENTER_HORIZONTAL);
+                            qrLayout.setVerticalGravity(Gravity.CENTER_VERTICAL);
+                            TextView addrHelperText = customView.findViewById(R.id.addrHelpText);
+                            qrImage.setVisibility(View.GONE);
+                            addrText.setVisibility(View.GONE);
+                            addrHelperText.setVisibility(View.GONE);
+                            final GifView showGifView = new GifView(getApplicationContext());
+                            showGifView.setGifImageDrawableId(R.drawable.coinflip);
+                            showGifView.drawGif();
+                            showGifView.setForegroundGravity(Gravity.CENTER);
+                            ViewGroup.LayoutParams params = qrLayout.getLayoutParams();
+                            Double dh = (double) h;
+                            Double truncatedH = dh * 0.8;
+                            params.height = truncatedH.intValue();
+                            params.width = h;
+                            qrLayout.requestLayout();
+                            qrLayout.addView(showGifView);
                         });
                     }
                 }
@@ -440,7 +349,7 @@ public class MainActivity extends CloseActivity {
 
     private void copyToClipboard(String data) {
         Object clipboardService = getSystemService(CLIPBOARD_SERVICE);
-        final ClipboardManager clipboardManager = (ClipboardManager)clipboardService;
+        final ClipboardManager clipboardManager = (ClipboardManager) clipboardService;
         ClipData clipData = ClipData.newPlainText("Source Text", data);
         clipboardManager.setPrimaryClip(clipData);
         Snackbar snackbar = Snackbar.make(mCLayout, "Address copied clipboard.", Snackbar.LENGTH_LONG);
@@ -449,14 +358,14 @@ public class MainActivity extends CloseActivity {
 
     private void toggleFABMenu() {
         toggleRotation(fab);
-        if(!isFabOpen){
+        if (!isFabOpen) {
             showFABMenu();
-        }else{
+        } else {
             closeFABMenu();
         }
     }
 
-    private void showFABMenu(){
+    private void showFABMenu() {
         isFabOpen = true;
         fabSettings.animate().translationY(-getResources().getDimension(R.dimen.standard_65));
         fabReceive.animate().translationY(-getResources().getDimension(R.dimen.standard_120));
@@ -465,7 +374,7 @@ public class MainActivity extends CloseActivity {
         fabQR.animate().translationY(-getResources().getDimension(R.dimen.standard_285));
     }
 
-    private void closeFABMenu(){
+    private void closeFABMenu() {
         isFabOpen = false;
         fabSettings.animate().translationY(0);
         fabReceive.animate().translationY(0);
@@ -475,16 +384,16 @@ public class MainActivity extends CloseActivity {
         fab.bringToFront();
     }
 
-    protected void toggleRotation(View v){
-        if(isFabOpen){
+    protected void toggleRotation(View v) {
+        if (isFabOpen) {
             v.setRotation(0.0f);
-        }else {
+        } else {
             v.setRotation(45.0f);
         }
     }
 
     public static void sendViewToBack(final View child) {
-        final ViewGroup parent = (ViewGroup)child.getParent();
+        final ViewGroup parent = (ViewGroup) child.getParent();
         if (null != parent) {
             parent.removeView(child);
             parent.addView(child, 0);
@@ -498,10 +407,10 @@ public class MainActivity extends CloseActivity {
                 if (data != null) {
                     String qrdata = data.getStringExtra("qrdata");
                     BitcoinPaymentURI uri = BitcoinPaymentURI.parse(qrdata);
-                    if (uri != null && uri.getR() != null){
+                    if (uri != null && uri.getR() != null) {
                         try {
                             Api.DownloadPaymentRequestResponse pr = wallet.downloadPaymentRequest(qrdata);
-                            List<Api.CreateTransactionRequest.Output> outputs = new ArrayList<Api.CreateTransactionRequest.Output>();
+                            List<Api.CreateTransactionRequest.Output> outputs = new ArrayList<>();
                             long totalSatoshis = 0;
                             for (Api.DownloadPaymentRequestResponse.Output out : pr.getOutputsList()) {
                                 Api.CreateTransactionRequest.Output output = Api.CreateTransactionRequest.Output.newBuilder().setAmount(out.getAmount()).setAddress(out.getAddress()).build();
@@ -510,7 +419,6 @@ public class MainActivity extends CloseActivity {
                             }
                             Amount totalAmt = new Amount(totalSatoshis);
                             String fiatFormatted = ExchangeRates.getInstance().getFormattedAmountInFiat(totalAmt, Currency.getInstance(settings.getFiatCurrency()));
-
                             if (totalSatoshis > wallet.balance()) {
                                 System.out.println(totalSatoshis);
                                 System.out.println(wallet.balance());
@@ -518,17 +426,14 @@ public class MainActivity extends CloseActivity {
                                 snackbar.show();
                                 return;
                             }
-
                             Api.CreateTransactionResponse tx = wallet.createTransaction(outputs, settings.getFeePerByte());
                             byte[] serializedTx = tx.getSerializedTransaction().toByteArray();
                             long txFee = tx.getFee();
                             List<Long> inputVals = tx.getInputValuesList();
-
-                            ArrayList<String> inputStrings = new ArrayList<String>();
+                            ArrayList<String> inputStrings = new ArrayList<>();
                             for (Long val : inputVals) {
                                 inputStrings.add(String.valueOf(val));
                             }
-
                             Intent intent = new Intent(getApplicationContext(), ConfirmationActivity.class);
                             intent.putExtra("paymentAddress", outputs.get(0).getAddress());
                             intent.putExtra("amountBCH", totalAmt.toString());
@@ -538,7 +443,6 @@ public class MainActivity extends CloseActivity {
                             intent.putStringArrayListExtra("inputVals", inputStrings);
                             intent.putExtra("memo", pr.getMemo());
                             intent.putExtra("label", pr.getPayToName());
-
                             intent.putExtra("isPaymentRequest", true);
                             intent.putExtra("merchantData", pr.getMerchantData().toByteArray());
                             intent.putExtra("paymentURL", pr.getPaymentUrl());
@@ -560,12 +464,11 @@ public class MainActivity extends CloseActivity {
                         startActivity(intent);
                     }
                 }
-            } else if (resultCode != 0 ) {
+            } else if (resultCode != 0) {
                 Snackbar snackbar = Snackbar.make(mCLayout, "Barcode Read Error", Snackbar.LENGTH_LONG);
                 snackbar.show();
             }
-        }
-        else {
+        } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
     }
@@ -574,7 +477,6 @@ public class MainActivity extends CloseActivity {
         switch (item.getItemId()) {
             case android.R.id.home:
                 return true;
-
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -588,19 +490,16 @@ public class MainActivity extends CloseActivity {
             missingPermissions[0] = Manifest.permission.READ_EXTERNAL_STORAGE;
             hasAllPermissions = false;
         }
-
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
             missingPermissions[1] = Manifest.permission.WRITE_EXTERNAL_STORAGE;
             hasAllPermissions = false;
         }
-
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
             missingPermissions[2] = Manifest.permission.CAMERA;
             hasAllPermissions = false;
         }
-
         if (!hasAllPermissions) {
             ActivityCompat.requestPermissions(this, missingPermissions, 1);
         }
@@ -609,15 +508,14 @@ public class MainActivity extends CloseActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-       createWallet();
+        createWallet();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-
         try {
-            TextView fiatBalanceView = (TextView) findViewById(R.id.fiatBalanceView);
+            TextView fiatBalanceView = findViewById(R.id.fiatBalanceView);
             Amount amt = new Amount(settings.getLastBalance());
             String formatted = exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(settings.getFiatCurrency()));
             fiatBalanceView.setText(formatted);
@@ -626,8 +524,47 @@ public class MainActivity extends CloseActivity {
         }
     }
 
-    private class StartWalletTask extends AsyncTask<Wallet, Void, String> {
-        Wallet wallet;
+    private static class ExchangeRateFetcher implements Runnable {
+        private final WeakReference<MainActivity> mainActivityRef;
+        private final Amount lastBal;
+
+        ExchangeRateFetcher(MainActivity mainActivity, Amount lastBal) {
+            mainActivityRef = new WeakReference<>(mainActivity);
+            this.lastBal = lastBal;
+        }
+
+        @Override
+        public void run() {
+            MainActivity mainActivity = mainActivityRef.get();
+            if (mainActivity == null) {
+                return;
+            }
+            String fiatCurrency = mainActivity.settings.getFiatCurrency();
+            try {
+                mainActivity.exchangeRates.fetchFormattedAmountInFiat(lastBal, Currency.getInstance(fiatCurrency), new ExchangeRates.Callback() {
+                    @Override
+                    public void onRateFetched(String formatted) {
+                        MainActivity mainActivity2 = mainActivityRef.get();
+                        if (mainActivity2 == null) {
+                            return;
+                        }
+                        TextView fiatBalanceView = mainActivity2.findViewById(R.id.fiatBalanceView);
+                        fiatBalanceView.setText(formatted);
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static class StartWalletTask extends AsyncTask<Wallet, Void, String> {
+        private Wallet wallet;
+        private final WeakReference<MainActivity> mainActivityRef;
+
+        StartWalletTask(MainActivity mainActivity) {
+            mainActivityRef = new WeakReference<>(mainActivity);
+        }
 
         protected String doInBackground(Wallet... wallets) {
             wallet = wallets[0];
@@ -645,17 +582,23 @@ public class MainActivity extends CloseActivity {
 
                     @Override
                     public void onBalanceChange(long bal) {
-                        if (getApplicationContext() != null) {
+                        MainActivity mainActivity = mainActivityRef.get();
+                        if (mainActivity == null) {
+                            // no can do if we no longer have a reference to MainActivity.
+                            // perhaps print a warning.
+                            return;
+                        }
+                        if (mainActivity.getApplicationContext() != null) {
                             try {
                                 System.out.println("Updating balance");
                                 Amount amt = new Amount(bal);
-                                TextView bchBalanceView = (TextView) findViewById(R.id.bchBalanceView);
+                                TextView bchBalanceView = mainActivity.findViewById(R.id.bchBalanceView);
                                 String balanceStr = amt.toString() + " BCH";
                                 bchBalanceView.setText(balanceStr);
-                                String fiatAmount = exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(settings.getFiatCurrency()));
-                                TextView fiatBalanceView = (TextView) findViewById(R.id.fiatBalanceView);
+                                String fiatAmount = mainActivity.exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(mainActivity.settings.getFiatCurrency()));
+                                TextView fiatBalanceView = mainActivity.findViewById(R.id.fiatBalanceView);
                                 fiatBalanceView.setText(fiatAmount);
-                                settings.setLastBalance(bal);
+                                mainActivity.settings.setLastBalance(bal);
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -664,42 +607,51 @@ public class MainActivity extends CloseActivity {
 
                     @Override
                     public void onWalletCreated(String seed) {
-                        settings.setWalletInitialized(true);
+                        MainActivity mainActivity = mainActivityRef.get();
+                        if (mainActivity == null) {
+                            return;
+                        }
+                        mainActivity.settings.setWalletInitialized(true);
                         System.out.println(seed);
-                        settings.setMnemonic(seed);
+                        mainActivity.settings.setMnemonic(seed);
                     }
 
                     @Override
                     public void onGetTransactions(List<TransactionData> txs, int blockHeight) {
-                        if (getApplicationContext() != null) {
+                        MainActivity mainActivity = mainActivityRef.get();
+                        if (mainActivity == null) {
+                            return;
+                        }
+                        if (mainActivity.getApplicationContext() != null) {
                             Collections.sort(txs, Collections.reverseOrder());
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (txs.size() == 0) {
-                                        return;
-                                    }
-                                    TextView bchPlease = (TextView) findViewById(R.id.bchPlease);
-                                    bchPlease.setVisibility(View.GONE);
-                                    for (TransactionData tx : txs) {
-                                        String fiatCurrency = settings.getFiatCurrency();
-                                        tx.setFiatCurrency(fiatCurrency);
-                                        String formattedFiat = "";
-                                        try {
-                                            formattedFiat = exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
-                                        } catch (Exception e) {
-                                            e.printStackTrace();
-                                        }
-                                        tx.setFiatAmount(formattedFiat);
-                                        mAdapter.updateOrInsertTx(tx);
-                                    }
-                                    mAdapter.notifyDataSetChanged();
-                                    txStore.setData(mAdapter.getData());
+                            mainActivity.runOnUiThread(() -> {
+                                MainActivity mainActivity2 = mainActivityRef.get();
+                                if (mainActivity2 == null) {
+                                    return;
+                                }
+                                if (txs.size() == 0) {
+                                    return;
+                                }
+                                TextView bchPlease = mainActivity2.findViewById(R.id.bchPlease);
+                                bchPlease.setVisibility(View.GONE);
+                                for (TransactionData tx : txs) {
+                                    String fiatCurrency = mainActivity2.settings.getFiatCurrency();
+                                    tx.setFiatCurrency(fiatCurrency);
+                                    String formattedFiat = "";
                                     try {
-                                        txStore.save(getApplicationContext());
+                                        formattedFiat = mainActivity2.exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
                                     } catch (Exception e) {
                                         e.printStackTrace();
                                     }
+                                    tx.setFiatAmount(formattedFiat);
+                                    mainActivity2.mAdapter.updateOrInsertTx(tx);
+                                }
+                                mainActivity2.mAdapter.notifyDataSetChanged();
+                                mainActivity2.txStore.setData(mainActivity2.mAdapter.getData());
+                                try {
+                                    mainActivity2.txStore.save(mainActivity2.getApplicationContext());
+                                } catch (Exception e) {
+                                    e.printStackTrace();
                                 }
                             });
                         }
@@ -707,64 +659,73 @@ public class MainActivity extends CloseActivity {
 
                     @Override
                     public void onBlock(int blockHeight, String blockHash) {
-                        if (getApplicationContext() != null) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    mAdapter.setBlockHeight(blockHeight);
-                                    mAdapter.notifyDataSetChanged();
-                                    settings.setLastBlockHeight(blockHeight);
-                                    settings.setLastBlockHash(blockHash);
+                        MainActivity mainActivity = mainActivityRef.get();
+                        if (mainActivity == null) {
+                            return;
+                        }
+                        if (mainActivity.getApplicationContext() != null) {
+                            mainActivity.runOnUiThread(() -> {
+                                MainActivity mainActivity2 = mainActivityRef.get();
+                                if (mainActivity2 == null) {
+                                    return;
                                 }
+                                mainActivity2.mAdapter.setBlockHeight(blockHeight);
+                                mainActivity2.mAdapter.notifyDataSetChanged();
+                                mainActivity2.settings.setLastBlockHeight(blockHeight);
+                                mainActivity2.settings.setLastBlockHash(blockHash);
                             });
                         }
                     }
 
                     @Override
                     public void onTransaction(TransactionData tx) {
-                        if (getApplicationContext() != null) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    TextView bchPlease = (TextView) findViewById(R.id.bchPlease);
-                                    bchPlease.setVisibility(View.GONE);
-
-                                    String fiatCurrency = settings.getFiatCurrency();
-                                    tx.setFiatCurrency(fiatCurrency);
-                                    String formattedFiat = "";
-                                    try {
-                                        formattedFiat = exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                    tx.setFiatAmount(formattedFiat);
-                                    mAdapter.updateOrInsertTx(tx);
-                                    mAdapter.notifyDataSetChanged();
-
-                                    txStore.setData(mAdapter.getData());
-                                    try {
-                                        txStore.save(getApplicationContext());
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
+                        MainActivity mainActivity = mainActivityRef.get();
+                        if (mainActivity == null) {
+                            return;
+                        }
+                        if (mainActivity.getApplicationContext() != null) {
+                            mainActivity.runOnUiThread(() -> {
+                                MainActivity mainActivity2 = mainActivityRef.get();
+                                if (mainActivity2 == null) {
+                                    return;
+                                }
+                                TextView bchPlease = mainActivity2.findViewById(R.id.bchPlease);
+                                bchPlease.setVisibility(View.GONE);
+                                String fiatCurrency = mainActivity2.settings.getFiatCurrency();
+                                tx.setFiatCurrency(fiatCurrency);
+                                String formattedFiat = "";
+                                try {
+                                    formattedFiat = mainActivity2.exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                                tx.setFiatAmount(formattedFiat);
+                                mainActivity2.mAdapter.updateOrInsertTx(tx);
+                                mainActivity2.mAdapter.notifyDataSetChanged();
+                                mainActivity2.txStore.setData(mainActivity2.mAdapter.getData());
+                                try {
+                                    mainActivity2.txStore.save(mainActivity2.getApplicationContext());
+                                } catch (Exception e) {
+                                    e.printStackTrace();
                                 }
                             });
                         }
                     }
                 };
-                wallet.loadWallet(listener, settings.getMnemonic());
-                mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-                    @Override
-                    public void onRefresh() {
-                        try {
-                            wallet.getTransactions(listener);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        mSwipeRefreshLayout.setRefreshing(false);
+                MainActivity mainActivity = mainActivityRef.get();
+                if (mainActivity == null) {
+                    return;
+                }
+                wallet.loadWallet(listener, mainActivity.settings.getMnemonic());
+                mainActivity.mSwipeRefreshLayout.setOnRefreshListener(() -> {
+                    try {
+                        wallet.getTransactions(listener);
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
+                    mainActivity.mSwipeRefreshLayout.setRefreshing(false);
                 });
-            } catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
