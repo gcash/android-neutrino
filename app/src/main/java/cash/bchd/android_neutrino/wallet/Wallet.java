@@ -33,6 +33,8 @@ public class Wallet implements Serializable {
 
     private static Wallet instance;
 
+    private Config config;
+
     private String getConfigFilePath;
     private final String host = "127.0.0.1";
     private final int port = 8332;
@@ -58,6 +60,7 @@ public class Wallet implements Serializable {
      * path and appdatadir.
      */
     public Wallet(Context context, Config config) {
+        this.config = config;
         this.getConfigFilePath = config.getConfigFilePath();
         this.creds = new AuthCredentials(config.getAuthToken());
         this.channel = ManagedChannelBuilder.forAddress(this.host, this.port).usePlaintext().build();

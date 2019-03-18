@@ -2,7 +2,11 @@ package cash.bchd.android_neutrino.wallet;
 
 import android.content.Context;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import com.google.common.io.BaseEncoding;
 
@@ -13,6 +17,9 @@ public class Config {
 
     // The filename for the config file
     private static final String CONFIG_FILE_NAME = "bchwallet.conf";
+
+    // The filename for the bchd cert
+    private static final String CERT_FILE_NAME = "rpc.cert";
 
     // This is to determine whether or not we should start the wallet or block startup so we can
     // create the wallet.
@@ -55,10 +62,10 @@ public class Config {
         this.bchdPassword = bchdPassword;
         this.noInitialLoad = noInitialLoad;
         this.caFilePath = "";
-        this.cert = cert;
+        this.cert = cert + "\n";
 
         if (!cert.equals("")) {
-            this.caFilePath = this.dataDir + "/files/bchd.cert";
+            this.caFilePath = this.dataDir + "/files/" + this.CERT_FILE_NAME;
         }
 
         SecureRandom random = new SecureRandom();
@@ -73,13 +80,14 @@ public class Config {
      */
     public String getConfigData() {
         String configFileContents = "[Application Options]\n\nappdata="+this.dataDir+"\nlogdir="+ this.dataDir+
-                "/logs\nexperimentalrpclisten=127.0.0.1\nnoservertls=1\nauthtoken="+ this.authToken+ "\nconnect=35.202.172.160:8333\n";
+                "/logs\nexperimentalrpclisten=127.0.0.1\nnoservertls=1\nauthtoken="+ this.authToken+ "\n";
 
         if (this.noInitialLoad) {
             configFileContents += "noinitialload=1\n";
         }
         if (this.useSPV) {
             configFileContents += "usespv=1\n";
+            configFileContents += "connect=35.202.172.160:8333\n";
         }
         if (this.blocksOnly) {
             configFileContents += "blocksonly=1\n";
@@ -111,10 +119,11 @@ public class Config {
      */
     public void save(Context context) throws Exception {
         if (!this.caFilePath.equals("")) {
-            FileOutputStream certOutputSgtream = context.openFileOutput(this.caFilePath, Context.MODE_PRIVATE);
+            FileOutputStream certOutputSgtream = context.openFileOutput(this.CERT_FILE_NAME, Context.MODE_PRIVATE);
             certOutputSgtream.write(this.cert.getBytes());
             certOutputSgtream.close();
         }
+
         FileOutputStream outputStream = context.openFileOutput(this.CONFIG_FILE_NAME, Context.MODE_PRIVATE);
         outputStream.write(this.getConfigData().getBytes());
         outputStream.close();
@@ -130,5 +139,25 @@ public class Config {
 
     public String getDataDir() {
         return this.dataDir;
+    }
+
+    public String getCaFilePath() {
+        return this.caFilePath;
+    }
+
+    public String getCertificate() {
+        return this.cert;
+    }
+
+    public String getBchdUsername() {
+        return this.bchdUsername;
+    }
+
+    public String getBchdPassword() {
+        return this.bchdPassword;
+    }
+
+    public String getRpcConnect() {
+        return this.rpcConnect;
     }
 }
