@@ -164,6 +164,7 @@ public class RestoreActivity extends AppCompatActivity {
                                 Settings settings = Settings.getInstance();
                                 settings.setMnemonic(mnemonic);
                                 settings.setWalletInitialized(false);
+                                settings.setEncryptionType(EncryptionType.UNENCRYPTED);
 
                                 deleteRecursive(new File(getDataDir().getPath()));
 
