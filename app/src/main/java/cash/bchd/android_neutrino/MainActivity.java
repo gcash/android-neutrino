@@ -196,8 +196,8 @@ public class MainActivity extends CloseActivity {
             openSettingsActivity();
         });
         Intent intent = getIntent();
-        boolean launchDonationActivity = intent.getBooleanExtra("launchDonationActivity", false);
-        if (launchDonationActivity) {
+        boolean launchLoveActivity = intent.getBooleanExtra("launchLoveActivity", false);
+        if (launchLoveActivity) {
             Intent newIntent = new Intent();
             newIntent.putExtra("qrdata", SettingsFragment.DONATE_URI);
             this.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, newIntent);

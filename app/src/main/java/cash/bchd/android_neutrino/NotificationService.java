@@ -71,17 +71,17 @@ public class NotificationService extends Service {
                     if (settings.getLastNotification() + NOTIFICATION_INTERVAL < System.currentTimeMillis()) {
 
                         Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                        intent.putExtra("launchDonationActivity", true);
+                        intent.putExtra("launchLoveActivity", true);
                         PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, 0);
 
                         Notification notification = new NotificationCompat.Builder(getApplicationContext(), "default")
                                 .setSmallIcon(R.drawable.neutrino_small)
                                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                                .setContentTitle("Donate to the BCHD Project")
+                                .setContentTitle("Show Some Love To BCHD")
                                 .setContentIntent(pendingIntent)
                                 .setDefaults(Notification.DEFAULT_SOUND|Notification.DEFAULT_LIGHTS|Notification.DEFAULT_VIBRATE)
                                 .setStyle(new NotificationCompat.BigTextStyle()
-                                        .bigText("The Neutrino wallet is part of a larger suite of open source software which helps power the Bitcoin Cash network. The developers donate their time and expertise to bring awesome software to you for free. Please consider donating back to the project."))
+                                        .bigText("The Neutrino wallet is part of a larger suite of open source software which helps power the Bitcoin Cash network. The developers donate their time and expertise to bring awesome software to you for free."))
                                 .build();
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -94,7 +94,7 @@ public class NotificationService extends Service {
                             // or other notification behaviors after this
                             NotificationManager notificationManager = getSystemService(NotificationManager.class);
                             notificationManager.createNotificationChannel(channel);
-                            //notificationManager.notify(1234, notification);
+                            notificationManager.notify(1234, notification);
                         }
 
                         settings.setLastNotification(System.currentTimeMillis());

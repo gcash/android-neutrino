@@ -18,7 +18,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
     public static final String FRAGMENT_TAG = "my_preference_fragment";
 
-    public static final String DONATE_URI = "bitcoincash:qrhea03074073ff3zv9whh0nggxc7k03ssh8jv9mkx?label=The%20bchd%20project&message=BCHD%20Donation";
+    public static final String DONATE_URI = "bitcoincash:qrhea03074073ff3zv9whh0nggxc7k03ssh8jv9mkx?label=The%20bchd%20project&message=<3%20BCHD";
 
     private static Settings settings;
     private static Wallet wallet;
@@ -159,9 +159,9 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 }
             });
 
-            Preference donatePref = (Preference) findPreference("donate");
-            prefScreen.removePreference(donatePref);
-            donatePref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            Preference lovePref = (Preference) findPreference("love");
+            //prefScreen.removePreference(lovePref);
+            lovePref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
 

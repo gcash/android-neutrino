@@ -135,7 +135,7 @@ public class Settings {
     }
 
     public int getFeePerByte() {
-        int fee = prefs.getInt(FEE_PER_BYTE_KEY, 50);
+        int fee = prefs.getInt(FEE_PER_BYTE_KEY, 25);
         return fee;
     }
 

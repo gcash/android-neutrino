@@ -137,9 +137,9 @@
     </android.support.v7.preference.PreferenceScreen>
 
     <android.support.v7.preference.Preference
-        android:key="donate"
+        android:key="love"
         android:title="Show Some Love"
         android:icon="@drawable/bitcoin_icon_small"
-        app:summary="Donate to the bchd project."/>
+        app:summary="Keep BCH awesome"/>
 
 </android.support.v7.preference.PreferenceScreen>
