@@ -74,7 +74,6 @@ public class NotificationService extends Service {
                         intent.putExtra("launchDonationActivity", true);
                         PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, 0);
 
-                        Bitmap myBitmap = BitmapFactory.decodeResource(getApplicationContext().getResources(), R.drawable.bchd_logo);
                         Notification notification = new NotificationCompat.Builder(getApplicationContext(), "default")
                                 .setSmallIcon(R.drawable.neutrino_small)
                                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -95,7 +94,7 @@ public class NotificationService extends Service {
                             // or other notification behaviors after this
                             NotificationManager notificationManager = getSystemService(NotificationManager.class);
                             notificationManager.createNotificationChannel(channel);
-                            notificationManager.notify(1234, notification);
+                            //notificationManager.notify(1234, notification);
                         }
 
                         settings.setLastNotification(System.currentTimeMillis());

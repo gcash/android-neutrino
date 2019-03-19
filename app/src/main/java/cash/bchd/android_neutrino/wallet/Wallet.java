@@ -180,7 +180,9 @@ public class Wallet implements Serializable {
                     }
                 }
 
+                boolean hasUnMinedTransactions = false;
                 if (value.getUnminedTransactionsCount() > 0 || hasMinedTransactions) {
+                    hasUnMinedTransactions = true;
                     for (Api.TransactionDetails tx : value.getUnminedTransactionsList()) {
                         for (Api.TransactionDetails.Output output : tx.getCreditsList()) {
                             AddressListener addrListener = (AddressListener) addressListeners.get(output.getAddress());
@@ -191,6 +193,9 @@ public class Wallet implements Serializable {
                         TransactionData td = extractTransactionData(tx, 0, System.currentTimeMillis()/1000);
                         listener.onTransaction(td);
                     }
+                }
+
+                if (hasMinedTransactions || hasUnMinedTransactions) {
                     try {
                         long bal = balance();
                         listener.onBalanceChange(bal);

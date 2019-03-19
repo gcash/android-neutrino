@@ -25,6 +25,7 @@ public class Settings {
     private static final String ENCRYPTED_PASSWORD_KEY = "EncryptedPassword";
     private static final String FINGERPRINT_IV_KEY = "FingerprintIV";
     private static final String LAST_NOTIFICATION_KEY = "LastNotification";
+    private static final String BACKUP_REMINDER_KEY = "BackupReminder";
 
     SharedPreferences prefs;
 
@@ -268,5 +269,16 @@ public class Settings {
     public long getLastNotification() {
         long timestamp = prefs.getLong(LAST_NOTIFICATION_KEY, 0);
         return timestamp;
+    }
+
+    public void setBackupReminder(boolean reminded) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putBoolean(BACKUP_REMINDER_KEY, reminded);
+        editor.apply();
+    }
+
+    public Boolean getBackupReminder() {
+        boolean reminded = prefs.getBoolean(BACKUP_REMINDER_KEY, false);
+        return reminded;
     }
 }

@@ -8,6 +8,7 @@ import android.support.v7.preference.Preference;
 import com.takisoft.fix.support.v7.preference.PreferenceFragmentCompat;
 import android.support.v7.preference.PreferenceScreen;
 import android.support.v7.preference.SwitchPreferenceCompat;
+import android.view.View;
 
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
@@ -159,6 +160,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             });
 
             Preference donatePref = (Preference) findPreference("donate");
+            prefScreen.removePreference(donatePref);
             donatePref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {

@@ -1,6 +1,10 @@
 package cash.bchd.android_neutrino;
 
 import android.Manifest;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -8,6 +12,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -16,6 +21,7 @@ import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
@@ -23,6 +29,7 @@ import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DividerItemDecoration;
@@ -548,6 +555,37 @@ public class MainActivity extends CloseActivity {
         }
     }
 
+    private void maybeSendBackupReminder() {
+        if (!settings.getBackupReminder() && !settings.getMnemonic().equals("")) {
+            Intent intent = new Intent(getApplicationContext(), BackupActivity.class);
+            PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, 0);
+
+            Notification notification = new NotificationCompat.Builder(getApplicationContext(), "default")
+                    .setSmallIcon(R.drawable.neutrino_small)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setContentTitle("Backup Your Wallet")
+                    .setContentIntent(pendingIntent)
+                    .setDefaults(Notification.DEFAULT_SOUND|Notification.DEFAULT_LIGHTS|Notification.DEFAULT_VIBRATE)
+                    .setStyle(new NotificationCompat.BigTextStyle()
+                            .bigText("Now that you've received some money it's a good time to back up your wallet recovery phrase."))
+                    .build();
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                CharSequence name = "default";
+                String description = "default channel";
+                int importance = NotificationManager.IMPORTANCE_DEFAULT;
+                NotificationChannel channel = new NotificationChannel("default", name, importance);
+                channel.setDescription(description);
+                // Register the channel with the system; you can't change the importance
+                // or other notification behaviors after this
+                NotificationManager notificationManager = getSystemService(NotificationManager.class);
+                notificationManager.createNotificationChannel(channel);
+                notificationManager.notify(5678, notification);
+            }
+            settings.setBackupReminder(true);
+        }
+    }
+
     private static class StartWalletTask extends AsyncTask<Wallet, Void, String> {
         private Wallet wallet;
         private final WeakReference<MainActivity> mainActivityRef;
@@ -580,7 +618,6 @@ public class MainActivity extends CloseActivity {
                         }
                         if (mainActivity.getApplicationContext() != null) {
                             try {
-                                System.out.println("Updating balance");
                                 Amount amt = new Amount(bal);
                                 TextView bchBalanceView = mainActivity.findViewById(R.id.bchBalanceView);
                                 String balanceStr = amt.toString() + " BCH";
@@ -589,6 +626,9 @@ public class MainActivity extends CloseActivity {
                                 TextView fiatBalanceView = mainActivity.findViewById(R.id.fiatBalanceView);
                                 fiatBalanceView.setText(fiatAmount);
                                 mainActivity.settings.setLastBalance(bal);
+                                if (bal > 0) {
+                                    mainActivity.maybeSendBackupReminder();
+                                }
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }

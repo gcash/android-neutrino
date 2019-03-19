@@ -123,7 +123,7 @@ public class Config {
             certOutputSgtream.write(this.cert.getBytes());
             certOutputSgtream.close();
         }
-        
+
         FileOutputStream outputStream = context.openFileOutput(this.CONFIG_FILE_NAME, Context.MODE_PRIVATE);
         outputStream.write(this.getConfigData().getBytes());
         outputStream.close();
