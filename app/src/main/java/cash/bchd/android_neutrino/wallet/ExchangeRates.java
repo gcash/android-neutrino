@@ -82,6 +82,10 @@ public class ExchangeRates {
                 fiatStr = fiatStr + "0";
             }
         }
+        String s = String.format("%.12f", 12.345);
+        if (s.contains(",")) {
+            fiatStr = fiatStr.replace(".", ",");
+        }
         return currencyCode.getSymbol() + fiatStr;
     }
 
@@ -106,6 +110,10 @@ public class ExchangeRates {
         String fiatStr = String.valueOf(fiat);
         if (fiatStr.indexOf(".") == fiatStr.length()-2) {
             fiatStr += "0";
+        }
+        String s = String.format("%.12f", 12.345);
+        if (s.contains(",")) {
+            fiatStr = fiatStr.replace(".", ",");
         }
         String formatted = currencyCode.getSymbol() + fiatStr;
         cb.onRateFetched(formatted);

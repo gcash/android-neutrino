@@ -143,7 +143,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             holder.txDescription.setText("Received Bitcoin Cash");
             holder.arrowImage.setImageResource(R.drawable.receive_arrow);
             holder.bchAmount.setTextColor(ctx.getResources().getColor(R.color.darkGreen));
-            if (tx.getMemo().equals("")){
+            if (tx.getMemo().equals("")) {
                 holder.txMemo.setText("From Bitcoin Cash Address");
             } else {
                 holder.txMemo.setText(tx.getMemo());
@@ -152,7 +152,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             holder.arrowImage.setImageResource(R.drawable.send_arrow);
             holder.txDescription.setText("Sent Bitcoin Cash");
             holder.bchAmount.setTextColor(ctx.getResources().getColor(R.color.neonPurple));
-            if (tx.getMemo() == null || tx.getMemo().equals("")){
+            if (tx.getMemo() == null || tx.getMemo().equals("")) {
                 String to = "Sent to " + tx.getToAddress();
                 holder.txMemo.setText(to);
             } else {
@@ -160,7 +160,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             }
         }
 
-        holder.layout.setOnClickListener(new LinearLayout.OnClickListener(){
+        holder.layout.setOnClickListener(new LinearLayout.OnClickListener() {
             @Override
             public void onClick(View v) {
                 View customView = LayoutInflater.from(ctx).inflate(R.layout.txdetailspopup, null);
@@ -218,7 +218,6 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
                 link.setText(url);
             }
         });
-
     }
 
     // Return the size of your dataset (invoked by the layout manager)

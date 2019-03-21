@@ -29,7 +29,18 @@ public class Amount {
 
     private static String removeTrailingZeros(double d) {
         String s = String.format("%.12f", d);
+        boolean euroStyle = false;
+        if (s.contains(",")) {
+            euroStyle = true;
+            s = s.replace(",", ".");
+        }
         BigDecimal stripedVal = new BigDecimal(s).stripTrailingZeros();
+        if (stripedVal.toString().contains("E")) {
+            return String.format("%.0f", stripedVal);
+        }
+        if (euroStyle) {
+            return stripedVal.toString().replace(".", ",");
+        }
         return stripedVal.toString();
     }
 
