@@ -204,10 +204,10 @@ public class SendActivity extends AppCompatActivity {
                         return;
                     }
                     if (showingFiat) {
-                        double fiatAmount = Double.valueOf(inputAmount.getText().toString());
+                        double fiatAmount = Double.valueOf(inputAmount.getText().toString().replace(",", "."));
                         toSpend = new Amount(ExchangeRates.getInstance().convertToBCH(fiatAmount, Currency.getInstance(fiatCurrency)));
                     } else {
-                        double bchAmount = Double.valueOf(inputAmount.getText().toString());
+                        double bchAmount = Double.valueOf(inputAmount.getText().toString().replace(",", "."));
                         toSpend = new Amount(bchAmount);
                     }
                     if (toSpend.getSatoshis() == 0 || toSpend.getSatoshis() > balance.getSatoshis()) {
@@ -301,7 +301,7 @@ public class SendActivity extends AppCompatActivity {
             symbolLabel.setText("₿");
 
 
-            String amt = inputAmount.getText().toString();
+            String amt = inputAmount.getText().toString().replace(",", ".");
             if (!amt.equals("")) {
                 try {
                     Amount bchRate = new Amount(ExchangeRates.getInstance().convertToBCH(Double.valueOf(amt), Currency.getInstance(fiatCurrency)));
@@ -319,7 +319,7 @@ public class SendActivity extends AppCompatActivity {
                 balanceTxtView.setText(balanceStr);
                 symbolLabel.setText(Currency.getInstance(fiatCurrency).getSymbol());
 
-                String amt = inputAmount.getText().toString();
+                String amt = inputAmount.getText().toString().replace(",", ".");
                 if (!amt.equals("")) {
                     try {
                         Amount bchRate = new Amount(Double.valueOf(amt));
@@ -340,12 +340,12 @@ public class SendActivity extends AppCompatActivity {
 
     public void updateAlternateAmount() {
         if (showingFiat) {
-            if (inputAmount.getText().toString().equals("") || inputAmount.getText().toString().equals(".")) {
+            if (inputAmount.getText().toString().equals("") || inputAmount.getText().toString().equals(".") || inputAmount.getText().toString().equals(",")) {
                 String zeroBCH = "0 BCH";
                 conversionRate.setText(zeroBCH);
                 return;
             }
-            double fiatAmount = Double.valueOf(inputAmount.getText().toString());
+            double fiatAmount = Double.valueOf(inputAmount.getText().toString().replace(",", "."));
             try {
                 Amount bchRate = new Amount(ExchangeRates.getInstance().convertToBCH(fiatAmount, Currency.getInstance(fiatCurrency)));
                 String bchRateStr = bchRate.toString() + " BCH";
@@ -354,12 +354,12 @@ public class SendActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         } else {
-            if (inputAmount.getText().toString().equals("") || inputAmount.getText().toString().equals(".")) {
+            if (inputAmount.getText().toString().equals("") || inputAmount.getText().toString().equals(".") || inputAmount.getText().toString().equals(",")) {
                 String zeroFiat = Currency.getInstance(fiatCurrency).getSymbol() + "0";
                 conversionRate.setText(zeroFiat);
                 return;
             }
-            double bchAmount = Double.valueOf(inputAmount.getText().toString());
+            double bchAmount = Double.valueOf(inputAmount.getText().toString().replace(",", "."));
             try {
                 Amount bchRate = new Amount(bchAmount);
                 String formatted = ExchangeRates.getInstance().getFormattedAmountInFiat(bchRate, Currency.getInstance(fiatCurrency));

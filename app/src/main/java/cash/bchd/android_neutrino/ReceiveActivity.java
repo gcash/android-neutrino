@@ -186,12 +186,12 @@ public class ReceiveActivity extends AppCompatActivity {
 
     public void updateAlternateAmount() {
         if (showingFiat) {
-            if (receiveAmountInput.getText().toString().equals("") || receiveAmountInput.getText().toString().equals(".")) {
+            if (receiveAmountInput.getText().toString().equals("") || receiveAmountInput.getText().toString().equals(".") || receiveAmountInput.getText().toString().equals(",")) {
                 String zeroBCH = "0 BCH";
                 conversionRate.setText(zeroBCH);
                 return;
             }
-            double fiatAmount = Double.valueOf(receiveAmountInput.getText().toString());
+            double fiatAmount = Double.valueOf(receiveAmountInput.getText().toString().replace(",", "."));
             try {
                 Amount bchRate = new Amount(ExchangeRates.getInstance().convertToBCH(fiatAmount, Currency.getInstance(fiatCurrency)));
                 String bchRateStr = bchRate.toString() + " BCH";
@@ -200,12 +200,12 @@ public class ReceiveActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         } else {
-            if (receiveAmountInput.getText().toString().equals("") || receiveAmountInput.getText().toString().equals(".")) {
+            if (receiveAmountInput.getText().toString().equals("") || receiveAmountInput.getText().toString().equals(".") || receiveAmountInput.getText().toString().equals(",")) {
                 String zeroFiat = Currency.getInstance(fiatCurrency).getSymbol() + "0";
                 conversionRate.setText(zeroFiat);
                 return;
             }
-            double bchAmount = Double.valueOf(receiveAmountInput.getText().toString());
+            double bchAmount = Double.valueOf(receiveAmountInput.getText().toString().replace(",", "."));
             try {
                 Amount bchRate = new Amount(bchAmount);
                 String formatted = ExchangeRates.getInstance().getFormattedAmountInFiat(bchRate, Currency.getInstance(fiatCurrency));
@@ -257,11 +257,11 @@ public class ReceiveActivity extends AppCompatActivity {
             Amount requestAmount = null;
             if (receiveAmountInput.getText() != null && !receiveAmountInput.getText().toString().equals("")) {
                 if (showingFiat) {
-                    double bchAmount = ExchangeRates.getInstance().convertToBCH(Double.valueOf(receiveAmountInput.getText().toString()), Currency.getInstance(fiatCurrency));
+                    double bchAmount = ExchangeRates.getInstance().convertToBCH(Double.valueOf(receiveAmountInput.getText().toString().replace(",", ".")), Currency.getInstance(fiatCurrency));
                     requestAmount = new Amount(bchAmount);
                     builder.amount(bchAmount);
                 } else {
-                    double bchAmount = Double.valueOf(receiveAmountInput.getText().toString());
+                    double bchAmount = Double.valueOf(receiveAmountInput.getText().toString().replace(",", "."));
                     requestAmount = new Amount(bchAmount);
                     builder.amount(bchAmount);
                 }
