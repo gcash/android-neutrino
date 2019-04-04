@@ -146,6 +146,8 @@ public class Wallet implements Serializable {
         }
         blockchainListeners.add(listener);
 
+        listenRescan(listener);
+
         WalletServiceGrpc.WalletServiceStub stub = WalletServiceGrpc.newStub(channel).withCallCredentials(creds);
         Api.TransactionNotificationsRequest request = Api.TransactionNotificationsRequest.newBuilder().build();
         stub.transactionNotifications(request, new StreamObserver<Api.TransactionNotificationsResponse>() {
@@ -427,6 +429,35 @@ public class Wallet implements Serializable {
             @Override
             public void onFailure(Throwable t) {
                 t.printStackTrace();
+            }
+        });
+    }
+
+    private void listenRescan(WalletEventListener listener) {
+        WalletServiceGrpc.WalletServiceStub stub = WalletServiceGrpc.newStub(channel).withCallCredentials(creds);
+        Api.RescanNotificationsRequest request = Api.RescanNotificationsRequest.newBuilder().build();
+        stub.rescanNotifications(request, new StreamObserver<Api.RescanNotificationsResponse>() {
+            @Override
+            public void onNext(Api.RescanNotificationsResponse value) {
+               if (value.getFinished()) {
+                   try {
+                       getTransactions(listener);
+                       listener.onBalanceChange(balance());
+                   } catch (Exception e) {
+                       e.printStackTrace();
+                   }
+
+               }
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                t.printStackTrace();
+            }
+
+            @Override
+            public void onCompleted() {
+
             }
         });
     }
