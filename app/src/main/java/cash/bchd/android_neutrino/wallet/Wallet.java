@@ -96,7 +96,11 @@ public class Wallet implements Serializable {
                     WalletLoaderServiceGrpc.WalletLoaderServiceFutureStub stub = WalletLoaderServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
                     ByteString pw = ByteString.copyFromUtf8(DEFAULT_PASSPHRASE);
 
-                    Api.CreateWalletRequest request = Api.CreateWalletRequest.newBuilder().setPrivatePassphrase(pw).setMnemonicSeed(mnemonicToSet).build();
+                    Api.CreateWalletRequest request = Api.CreateWalletRequest.newBuilder()
+                            .setPrivatePassphrase(pw)
+                            .setMnemonicSeed(mnemonicToSet)
+                            .setWalletBirthday(this.config.getBirthday())
+                            .build();
                     stub.createWallet(request);
                     listener.onWalletCreated(mnemonicToSet);
                     break;

@@ -208,9 +208,14 @@ public class MainActivity extends CloseActivity {
         if (Wallet.getInstance() == null) {
             String[] addrs = new String[0];
             String bchdIP = settings.getBchdIP();
+            long birthday = settings.getWalletBirthday();
+            if (birthday == 0) {
+                birthday = System.currentTimeMillis() / 1000;
+                settings.setWalletBirthday(birthday);
+            }
             Config cfg = new Config(getDataDir().getPath(), !settings.getWalletInitialized(),
                     bchdIP.equals(""), settings.getBlocksOnly(), addrs, settings.getBchdIP(), settings.getBchdUsername(),
-                    settings.getBchdPassword(), settings.getBchdCert());
+                    settings.getBchdPassword(), settings.getBchdCert(), birthday);
             wallet = new Wallet(this, cfg);
             wallet.start();
             new StartWalletTask(this).execute(wallet);

@@ -1,14 +1,10 @@
 package cash.bchd.android_neutrino;
 
-import android.app.AlarmManager;
 import android.app.AlertDialog;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.preference.PreferenceScreen;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -20,6 +16,9 @@ import java.io.File;
 import cash.bchd.android_neutrino.wallet.Wallet;
 
 public class RestoreActivity extends AppCompatActivity {
+
+    final long GENESIS_TIMESTAMP = 1231006505;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -164,6 +163,7 @@ public class RestoreActivity extends AppCompatActivity {
                                 Settings settings = Settings.getInstance();
                                 settings.setMnemonic(mnemonic);
                                 settings.setWalletInitialized(false);
+                                settings.setWalletBirthday(GENESIS_TIMESTAMP);
                                 settings.setEncryptionType(EncryptionType.UNENCRYPTED);
 
                                 deleteRecursive(new File(getDataDir().getPath()));

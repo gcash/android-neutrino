@@ -48,11 +48,14 @@ public class Config {
     // The authentication token to use with the gRPC API
     private String authToken;
 
+    private long birthday;
+
     /**
      * Construct the config file.
      */
     public Config(String dataDir, Boolean noInitialLoad, Boolean useSPV, Boolean blocksOnly, String[] connect, String rpcConnect,
-                  String bchdUsername, String bchdPassword, String cert) {
+                  String bchdUsername, String bchdPassword, String cert, long birthday) {
+        this.birthday = birthday;
         this.dataDir = dataDir;
         this.useSPV = useSPV;
         this.blocksOnly = blocksOnly;
@@ -87,7 +90,7 @@ public class Config {
         }
         if (this.useSPV) {
             configFileContents += "usespv=1\n";
-            configFileContents += "connect=35.202.172.160:8333\n";
+            configFileContents += "addpeer=35.202.172.160:8333\n";
         }
         if (this.blocksOnly) {
             configFileContents += "blocksonly=1\n";
@@ -159,5 +162,9 @@ public class Config {
 
     public String getRpcConnect() {
         return this.rpcConnect;
+    }
+
+    public long getBirthday() {
+        return this.birthday;
     }
 }

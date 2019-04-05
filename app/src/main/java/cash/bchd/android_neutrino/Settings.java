@@ -26,6 +26,7 @@ public class Settings {
     private static final String FINGERPRINT_IV_KEY = "FingerprintIV";
     private static final String LAST_NOTIFICATION_KEY = "LastNotification";
     private static final String BACKUP_REMINDER_KEY = "BackupReminder";
+    private static final String WALLET_BIRTHDAY_KEY = "WalletBirthday";
 
     SharedPreferences prefs;
 
@@ -280,5 +281,16 @@ public class Settings {
     public Boolean getBackupReminder() {
         boolean reminded = prefs.getBoolean(BACKUP_REMINDER_KEY, false);
         return reminded;
+    }
+
+    public void setWalletBirthday(long timestamp) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putLong(WALLET_BIRTHDAY_KEY, timestamp);
+        editor.apply();
+    }
+
+    public long getWalletBirthday() {
+        long timestamp = prefs.getLong(WALLET_BIRTHDAY_KEY, 0);
+        return timestamp;
     }
 }
