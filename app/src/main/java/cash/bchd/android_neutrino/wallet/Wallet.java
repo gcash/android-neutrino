@@ -375,6 +375,12 @@ public class Wallet implements Serializable {
         return reply.getSpendable();
     }
 
+    public void rescan() {
+        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
+        Api.RescanRequest request = Api.RescanRequest.newBuilder().build();
+        stub.rescan(request);
+    }
+
     public boolean validateAddress(String addr) throws Exception {
         WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
         Api.ValidateAddressRequest request = Api.ValidateAddressRequest.newBuilder().setAddress(addr).build();

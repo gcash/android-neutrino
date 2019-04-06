@@ -62,6 +62,12 @@
         android:icon="@drawable/key_icon_small"
         app:summary="Decrypt wallet and return to unencrypted state."/>
 
+    <cash.bchd.android_neutrino.DialogPreference
+        app:key="rescan"
+        app:title="Rescan Blocks"
+        app:icon="@drawable/rescan_icon_small"
+        app:summary="Rescan blocks for missing transactions." />
+
     <android.support.v7.preference.SwitchPreferenceCompat
         app:key="blocksonly"
         app:icon="@drawable/block_icon_small"

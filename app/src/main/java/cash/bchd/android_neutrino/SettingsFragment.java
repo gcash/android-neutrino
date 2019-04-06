@@ -1,9 +1,11 @@
 package cash.bchd.android_neutrino;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import com.takisoft.fix.support.v7.preference.EditTextPreference;
 
+import android.support.v7.app.AlertDialog;
 import android.support.v7.preference.Preference;
 import com.takisoft.fix.support.v7.preference.PreferenceFragmentCompat;
 import android.support.v7.preference.PreferenceScreen;
@@ -276,6 +278,30 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             });
         } else if (rootKey.equals("encryption")) {
             activeScreen = "encryption";
+        }
+    }
+
+    @Override
+    public void onDisplayPreferenceDialog(Preference preference) {
+        if (preference.getKey().equals("rescan")) {
+            AlertDialog.Builder alert = new AlertDialog.Builder(getContext());
+            alert.setTitle("Rescan");
+
+            alert.setMessage("Rescan from wallet birthday?");
+            alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    // Canceled.
+                }
+            });
+            alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    wallet.rescan();
+                }
+            });
+            alert.setCancelable(true);
+            alert.show();
+        } else {
+            super.onDisplayPreferenceDialog(preference);
         }
     }
 }
