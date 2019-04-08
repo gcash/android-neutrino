@@ -90,7 +90,7 @@ public class Config {
         }
         if (this.useSPV) {
             configFileContents += "usespv=1\n";
-            configFileContents += "addpeer=35.202.172.160:8333\n";
+            configFileContents += "connect=35.202.172.160\n";
         }
         if (this.blocksOnly) {
             configFileContents += "blocksonly=1\n";

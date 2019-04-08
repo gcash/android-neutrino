@@ -17,7 +17,7 @@ import cash.bchd.android_neutrino.wallet.Wallet;
 
 public class RestoreActivity extends AppCompatActivity {
 
-    final long GENESIS_TIMESTAMP = 1231006505;
+    final long BETA_RELEASE_TIMESTAMP = 1551398400;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -163,7 +163,7 @@ public class RestoreActivity extends AppCompatActivity {
                                 Settings settings = Settings.getInstance();
                                 settings.setMnemonic(mnemonic);
                                 settings.setWalletInitialized(false);
-                                settings.setWalletBirthday(GENESIS_TIMESTAMP);
+                                settings.setWalletBirthday(BETA_RELEASE_TIMESTAMP);
                                 settings.setEncryptionType(EncryptionType.UNENCRYPTED);
 
                                 deleteRecursive(new File(getDataDir().getPath()));

@@ -449,8 +449,10 @@ public class Wallet implements Serializable {
         stub.rescanNotifications(request, new StreamObserver<Api.RescanNotificationsResponse>() {
             @Override
             public void onNext(Api.RescanNotificationsResponse value) {
-               if (value.getFinished()) {
+                if (value.getFinished()) {
                    try {
+                       Api.NetworkResponse net = network();
+                       listener.onBlock(net.getBestHeight(), net.getBestBlock());
                        getTransactions(listener);
                        listener.onBalanceChange(balance());
                    } catch (Exception e) {

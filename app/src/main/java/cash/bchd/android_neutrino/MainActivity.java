@@ -754,6 +754,8 @@ public class MainActivity extends CloseActivity {
                 wallet.loadWallet(listener, mainActivity.settings.getMnemonic());
                 mainActivity.mSwipeRefreshLayout.setOnRefreshListener(() -> {
                     try {
+                        Api.NetworkResponse net = wallet.network();
+                        listener.onBlock(net.getBestHeight(), net.getBestBlock());
                         wallet.getTransactions(listener);
                     } catch (Exception e) {
                         e.printStackTrace();
