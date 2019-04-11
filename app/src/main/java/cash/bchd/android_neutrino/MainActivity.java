@@ -67,6 +67,7 @@ import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.BitcoinPaymentURI;
 import cash.bchd.android_neutrino.wallet.Config;
 import cash.bchd.android_neutrino.wallet.ExchangeRates;
+import cash.bchd.android_neutrino.wallet.Migration;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
@@ -213,6 +214,11 @@ public class MainActivity extends CloseActivity {
                 birthday = System.currentTimeMillis() / 1000;
                 settings.setWalletBirthday(birthday);
             }
+
+            Migration migration = new Migration(settings.getRepoVersion());
+            int newRepoVersion = migration.MigrateUp(this);
+            settings.setRepoVersion(newRepoVersion);
+
             Config cfg = new Config(getDataDir().getPath(), !settings.getWalletInitialized(),
                     bchdIP.equals(""), settings.getBlocksOnly(), addrs, settings.getBchdIP(), settings.getBchdUsername(),
                     settings.getBchdPassword(), settings.getBchdCert(), birthday);

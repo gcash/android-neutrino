@@ -27,6 +27,7 @@ public class Settings {
     private static final String LAST_NOTIFICATION_KEY = "LastNotification";
     private static final String BACKUP_REMINDER_KEY = "BackupReminder";
     private static final String WALLET_BIRTHDAY_KEY = "WalletBirthday";
+    private static final String REPO_VERSION_KEY = "RepoVersion";
 
     SharedPreferences prefs;
 
@@ -292,5 +293,16 @@ public class Settings {
     public long getWalletBirthday() {
         long timestamp = prefs.getLong(WALLET_BIRTHDAY_KEY, 0);
         return timestamp;
+    }
+
+    public void setRepoVersion(int version) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putInt(REPO_VERSION_KEY, version);
+        editor.apply();
+    }
+
+    public int getRepoVersion() {
+        int version = prefs.getInt(REPO_VERSION_KEY, 0);
+        return version;
     }
 }
