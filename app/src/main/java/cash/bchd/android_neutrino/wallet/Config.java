@@ -90,7 +90,6 @@ public class Config {
         }
         if (this.useSPV) {
             configFileContents += "usespv=1\n";
-            configFileContents += "connect=73.234.127.31\nconnect=35.202.172.160\n";
         }
         if (this.blocksOnly) {
             configFileContents += "blocksonly=1\n";
