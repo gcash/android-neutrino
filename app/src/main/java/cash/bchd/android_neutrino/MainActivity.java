@@ -12,7 +12,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -110,7 +109,7 @@ public class MainActivity extends CloseActivity {
         this.mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         TextView bchBalanceView = findViewById(R.id.bchBalanceView);
         Amount lastBal = new Amount(this.settings.getLastBalance());
-        bchBalanceView.setText(lastBal.toString() + " BCH");
+        bchBalanceView.setText( getString(R.string.bch_amount, lastBal.toString()));
         new Thread(new ExchangeRateFetcher(this, lastBal)).start();
         if (checkForPermissions()) {
             createWallet();
@@ -369,9 +368,11 @@ public class MainActivity extends CloseActivity {
         Object clipboardService = getSystemService(CLIPBOARD_SERVICE);
         final ClipboardManager clipboardManager = (ClipboardManager) clipboardService;
         ClipData clipData = ClipData.newPlainText("Source Text", data);
-        clipboardManager.setPrimaryClip(clipData);
-        Snackbar snackbar = Snackbar.make(mCLayout, "Address copied clipboard.", Snackbar.LENGTH_LONG);
-        snackbar.show();
+        if (clipboardManager != null) {
+            clipboardManager.setPrimaryClip(clipData);
+            Snackbar snackbar = Snackbar.make(mCLayout, "Address copied clipboard.", Snackbar.LENGTH_LONG);
+            snackbar.show();
+        }
     }
 
     private void toggleFABMenu() {
@@ -590,8 +591,10 @@ public class MainActivity extends CloseActivity {
                 // Register the channel with the system; you can't change the importance
                 // or other notification behaviors after this
                 NotificationManager notificationManager = getSystemService(NotificationManager.class);
-                notificationManager.createNotificationChannel(channel);
-                notificationManager.notify(5678, notification);
+                if (notificationManager != null) {
+                    notificationManager.createNotificationChannel(channel);
+                    notificationManager.notify(5678, notification);
+                }
             }
             settings.setBackupReminder(true);
         }
@@ -631,8 +634,7 @@ public class MainActivity extends CloseActivity {
                             try {
                                 Amount amt = new Amount(bal);
                                 TextView bchBalanceView = mainActivity.findViewById(R.id.bchBalanceView);
-                                String balanceStr = amt.toString() + " BCH";
-                                bchBalanceView.setText(balanceStr);
+                                bchBalanceView.setText(mainActivity.getString(R.string.bch_amount, amt.toString()));
                                 String fiatAmount = mainActivity.exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(mainActivity.settings.getFiatCurrency()));
                                 TextView fiatBalanceView = mainActivity.findViewById(R.id.fiatBalanceView);
                                 fiatBalanceView.setText(fiatAmount);

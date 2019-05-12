@@ -4,13 +4,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.fingerprint.FingerprintManager;
-import android.media.Image;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.CardView;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.ImageView;
@@ -18,14 +15,11 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.ebanx.swipebtn.OnStateChangeListener;
 import com.ebanx.swipebtn.SwipeButton;
 import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-
-import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,11 +54,11 @@ public class ConfirmationActivity extends FingerprintActivity {
 
         Intent intent = getIntent();
         encType = Settings.getInstance().getEncryptionType();
-        swipeButton = (SwipeButton) findViewById(R.id.swipe_btn);
+        swipeButton = findViewById(R.id.swipe_btn);
         if (encType == EncryptionType.PIN) {
             swipeButton.setVisibility(View.VISIBLE);
         } else if (encType == EncryptionType.FINGERPRINT) {
-            ImageView fingerprint = (ImageView) findViewById(R.id.fingerprint);
+            ImageView fingerprint = findViewById(R.id.fingerprint);
             fingerprint.setVisibility(View.VISIBLE);
         } else {
             swipeButton.setVisibility(View.VISIBLE);
@@ -84,7 +78,7 @@ public class ConfirmationActivity extends FingerprintActivity {
         refundAddress = intent.getStringExtra("refundAddress");
         refundAmount = intent.getLongExtra("refundAmount", 0);
 
-        inputVals = new ArrayList<Long>();
+        inputVals = new ArrayList<>();
         for (String s : inputStrings) {
             inputVals.add(Long.valueOf(s));
         }
@@ -92,22 +86,22 @@ public class ConfirmationActivity extends FingerprintActivity {
         memo = intent.getStringExtra("memo");
         String label = intent.getStringExtra("label");
 
-        TextView amountTxtView = (TextView) findViewById(R.id.confirmBchAmount);
-        amountTxtView.setText(bchAmount + " BCH");
+        TextView amountTxtView = findViewById(R.id.confirmBchAmount);
+        amountTxtView.setText(getString(R.string.bch_amount, bchAmount));
 
-        TextView fiatAmountTxtView = (TextView) findViewById(R.id.confirmFiatAmount);
+        TextView fiatAmountTxtView = findViewById(R.id.confirmFiatAmount);
         fiatAmountTxtView.setText(formattedFiat);
 
-        TextView payTo = (TextView) findViewById(R.id.payTo);
+        TextView payTo = findViewById(R.id.payTo);
         if (label != null && !label.equals("")) {
             payTo.setText(label);
         } else {
-            TextView payToLabel = (TextView) findViewById(R.id.payToLabel);
-            View div7 = (View) findViewById(R.id.divider7);
+            TextView payToLabel = findViewById(R.id.payToLabel);
+            View div7 = findViewById(R.id.divider7);
             payTo.setVisibility(View.GONE);
             payToLabel.setVisibility(View.GONE);
             div7.setVisibility(View.GONE);
-            TextView paymentAddrLabel = (TextView) findViewById(R.id.paymentAddrLabel);
+            TextView paymentAddrLabel = findViewById(R.id.paymentAddrLabel);
             LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) paymentAddrLabel.getLayoutParams();
             params.setMargins(params.leftMargin, 30, params.rightMargin, params.bottomMargin);
             paymentAddrLabel.setLayoutParams(params);
@@ -116,49 +110,44 @@ public class ConfirmationActivity extends FingerprintActivity {
             payTo.setCompoundDrawablesWithIntrinsicBounds(R.drawable.small_shield, 0, 0, 0);
         }
 
-        TextView paymentAddress = (TextView) findViewById(R.id.paymentAddress);
+        TextView paymentAddress = findViewById(R.id.paymentAddress);
         paymentAddress.setText(paymentAddr);
 
-        TextView networkFee = (TextView) findViewById(R.id.networkFee);
-        networkFee.setText(new Amount(txFee).toString() + " BCH");
+        TextView networkFee = findViewById(R.id.networkFee);
+        networkFee.setText(getString(R.string.bch_amount, new Amount(txFee).toString()));
 
-        TextView memoTxtView = (TextView) findViewById(R.id.memoConfirmation);
+        TextView memoTxtView = findViewById(R.id.memoConfirmation);
         if (memo != null && !memo.equals("")) {
             memoTxtView.setText(memo);
         } else {
-            TextView memoLabel = (TextView) findViewById(R.id.memoLabel);
+            TextView memoLabel = findViewById(R.id.memoLabel);
             memoTxtView.setVisibility(View.GONE);
             memoLabel.setVisibility(View.GONE);
         }
 
 
-        CardView detailsCardView = (CardView) findViewById(R.id.detailsCard);
-
-        swipeButton.setOnStateChangeListener(new OnStateChangeListener() {
-            @Override
-            public void onStateChange(boolean active) {
-                if (active) {
-                    if (encType == EncryptionType.PIN) {
-                        Settings settings = Settings.getInstance();
-                        if (settings.getInvalidPinCount() >= 3 && settings.getLastInvalidPin() + 300000 > System.currentTimeMillis()) {
-                            CoordinatorLayout layout = (CoordinatorLayout) findViewById(R.id.confirmationMainLayout);
-                            Snackbar snackbar = Snackbar.make(layout, "Too many invalid pin attempts. Wait five minutes.", Snackbar.LENGTH_LONG);
-                            snackbar.show();
-                            return;
-                        }
-
-                        Intent intent = new Intent(ConfirmationActivity.this, PinActivity.class);
-                        intent.putExtra("enterOnly", true);
-                        startActivityForResult(intent, 1234);
+        swipeButton.setOnStateChangeListener(active -> {
+            if (active) {
+                if (encType == EncryptionType.PIN) {
+                    Settings settings = Settings.getInstance();
+                    if (settings.getInvalidPinCount() >= 3 && settings.getLastInvalidPin() + 300000 > System.currentTimeMillis()) {
+                        CoordinatorLayout layout = findViewById(R.id.confirmationMainLayout);
+                        Snackbar snackbar = Snackbar.make(layout, "Too many invalid pin attempts. Wait five minutes.", Snackbar.LENGTH_LONG);
+                        snackbar.show();
                         return;
                     }
-                    signTransaction(serializedTx, paymentAddr, memo, inputVals, Wallet.DEFAULT_PASSPHRASE);
+
+                    Intent intent1 = new Intent(ConfirmationActivity.this, PinActivity.class);
+                    intent1.putExtra("enterOnly", true);
+                    startActivityForResult(intent1, 1234);
+                    return;
                 }
+                signTransaction(serializedTx, paymentAddr, memo, inputVals, Wallet.DEFAULT_PASSPHRASE);
             }
         });
 
         if (encType == EncryptionType.FINGERPRINT) {
-            CoordinatorLayout layout = (CoordinatorLayout) findViewById(R.id.confirmationMainLayout);
+            CoordinatorLayout layout = findViewById(R.id.confirmationMainLayout);
             try {
                 this.initFingerprintScanner(false);
                 FingerprintHandler handler = new FingerprintHandler(this) {
@@ -207,7 +196,7 @@ public class ConfirmationActivity extends FingerprintActivity {
 
     @Override
     public void onBackPressed() {
-        LinearLayout checkLayout = (LinearLayout) findViewById(R.id.checkLayout);
+        LinearLayout checkLayout = findViewById(R.id.checkLayout);
         if (checkLayout.getVisibility() == View.VISIBLE) {
             finish();
             SendActivity.fa.finish();
@@ -218,8 +207,7 @@ public class ConfirmationActivity extends FingerprintActivity {
 
     private void signTransaction(byte[] serializedTx, String paymentAddr, String memo, List<Long> inputVals, String password) {
         Wallet wallet = Wallet.getInstance();
-        byte[] signedTx = null;
-        CoordinatorLayout layout = (CoordinatorLayout) findViewById(R.id.confirmationMainLayout);
+        CoordinatorLayout layout = findViewById(R.id.confirmationMainLayout);
         ListenableFuture<Api.SignTransactionResponse> res = wallet.signTransactionAsync(serializedTx, inputVals, password);
         Futures.addCallback(res, new FutureCallback<Api.SignTransactionResponse>() {
             @Override
@@ -240,27 +228,24 @@ public class ConfirmationActivity extends FingerprintActivity {
 
             @Override
             public void onFailure(Throwable t) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Status status = Status.fromThrowable(t);
-                        String errStr = status.getDescription();
-                        if (status.getDescription().equals("invalid passphrase for master private key")) {
-                            errStr = "Invalid Pin";
-                            if (encType == EncryptionType.FINGERPRINT) {
-                                errStr = "Invalid Fingerprint";
-                            } else if (encType == EncryptionType.PIN) {
-                                Settings settings = Settings.getInstance();
-                                int invalidCount = settings.getInvalidPinCount();
-                                invalidCount++;
-                                settings.setInvalidPinCount(invalidCount);
-                                settings.setLastInvalidPin(System.currentTimeMillis());
-                            }
+                runOnUiThread(() -> {
+                    Status status = Status.fromThrowable(t);
+                    String errStr = status.getDescription();
+                    if (status.getDescription() != null && status.getDescription().equals("invalid passphrase for master private key")) {
+                        errStr = "Invalid Pin";
+                        if (encType == EncryptionType.FINGERPRINT) {
+                            errStr = "Invalid Fingerprint";
+                        } else if (encType == EncryptionType.PIN) {
+                            Settings settings = Settings.getInstance();
+                            int invalidCount = settings.getInvalidPinCount();
+                            invalidCount++;
+                            settings.setInvalidPinCount(invalidCount);
+                            settings.setLastInvalidPin(System.currentTimeMillis());
                         }
-                        Snackbar snackbar = Snackbar.make(layout, errStr, Snackbar.LENGTH_LONG);
-                        snackbar.show();
-                        swipeButton.setHasActivationState(false);
                     }
+                    Snackbar snackbar = Snackbar.make(layout, errStr, Snackbar.LENGTH_LONG);
+                    snackbar.show();
+                    swipeButton.setHasActivationState(false);
                 });
             }
         });
@@ -271,23 +256,16 @@ public class ConfirmationActivity extends FingerprintActivity {
         Futures.addCallback(resp, new FutureCallback<Api.PublishTransactionResponse>() {
             @Override
             public void onSuccess(Api.PublishTransactionResponse result) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        RelativeLayout rLayout = (RelativeLayout) findViewById(R.id.confirmationLayout);
-                        CheckView checkView = (CheckView) findViewById(R.id.check);
-                        LinearLayout checkLayout = (LinearLayout) findViewById(R.id.checkLayout);
-                        checkLayout.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                onBackPressed();
-                            }
-                        });
-
-                        rLayout.setVisibility(View.GONE);
-                        checkLayout.setVisibility(View.VISIBLE);
-                        checkView.check();
-                        Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                runOnUiThread(() -> {
+                    RelativeLayout rLayout = findViewById(R.id.confirmationLayout);
+                    CheckView checkView = findViewById(R.id.check);
+                    LinearLayout checkLayout = findViewById(R.id.checkLayout);
+                    checkLayout.setOnClickListener(v -> onBackPressed());
+                    rLayout.setVisibility(View.GONE);
+                    checkLayout.setVisibility(View.VISIBLE);
+                    checkView.check();
+                    Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                    if (vibrator != null) {
                         vibrator.vibrate(500);
                     }
                 });
@@ -295,10 +273,9 @@ public class ConfirmationActivity extends FingerprintActivity {
 
             @Override
             public void onFailure(Throwable t) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Status status = Status.fromThrowable(t);
+                runOnUiThread(() -> {
+                    Status status = Status.fromThrowable(t);
+                    if (status.getDescription() != null) {
                         Snackbar snackbar = Snackbar.make(layout, status.getDescription(), Snackbar.LENGTH_LONG);
                         snackbar.show();
                     }
@@ -312,34 +289,25 @@ public class ConfirmationActivity extends FingerprintActivity {
         Futures.addCallback(resp, new FutureCallback<Api.PostPaymentResponse>() {
             @Override
             public void onSuccess(Api.PostPaymentResponse result) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        RelativeLayout rLayout = (RelativeLayout) findViewById(R.id.confirmationLayout);
-                        CheckView checkView = (CheckView) findViewById(R.id.check);
-                        LinearLayout checkLayout = (LinearLayout) findViewById(R.id.checkLayout);
-                        checkLayout.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                onBackPressed();
-                            }
-                        });
+                runOnUiThread(() -> {
+                    RelativeLayout rLayout = findViewById(R.id.confirmationLayout);
+                    CheckView checkView = findViewById(R.id.check);
+                    LinearLayout checkLayout = findViewById(R.id.checkLayout);
+                    checkLayout.setOnClickListener(v -> onBackPressed());
 
-                        rLayout.setVisibility(View.GONE);
-                        checkLayout.setVisibility(View.VISIBLE);
-                        checkView.check();
-                        Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-                        vibrator.vibrate(500);
-                    }
+                    rLayout.setVisibility(View.GONE);
+                    checkLayout.setVisibility(View.VISIBLE);
+                    checkView.check();
+                    Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                    vibrator.vibrate(500);
                 });
             }
 
             @Override
             public void onFailure(Throwable t) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Status status = Status.fromThrowable(t);
+                runOnUiThread(() -> {
+                    Status status = Status.fromThrowable(t);
+                    if (status.getDescription() != null) {
                         Snackbar snackbar = Snackbar.make(layout, status.getDescription(), Snackbar.LENGTH_LONG);
                         snackbar.show();
                     }

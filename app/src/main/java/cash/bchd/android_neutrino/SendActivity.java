@@ -80,31 +80,30 @@ public class SendActivity extends AppCompatActivity {
         wallet = Wallet.getInstance();
 
 
-        Toolbar myToolbar = (Toolbar) findViewById(R.id.sendToolbar);
+        Toolbar myToolbar = findViewById(R.id.sendToolbar);
         setSupportActionBar(myToolbar);
 
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
 
-        sendLayout = (LinearLayout) findViewById(R.id.sendLayout);
+        sendLayout = findViewById(R.id.sendLayout);
 
-        balanceTxtView = (TextView) findViewById(R.id.sendBalance);
+        balanceTxtView = findViewById(R.id.sendBalance);
         try {
             balance = new Amount(wallet.balance());
-            String balanceStr = "Balance: " + ExchangeRates.getInstance().getFormattedAmountInFiat(balance, Currency.getInstance(fiatCurrency));
-            balanceTxtView.setText(balanceStr);
+            balanceTxtView.setText(getString(R.string.balance_fiat_amount, ExchangeRates.getInstance().getFormattedAmountInFiat(balance, Currency.getInstance(fiatCurrency))));
 
         } catch(Exception e) {
             e.printStackTrace();
         }
 
-        symbolLabel = (TextView) findViewById(R.id.symbolLabel);
+        symbolLabel = findViewById(R.id.symbolLabel);
 
         symbolLabel.setText(Currency.getInstance(fiatCurrency).getSymbol());
 
-        inputAmount = (TextInputEditText) findViewById(R.id.amountInput);
-        conversionRate = (TextView) findViewById(R.id.conversionRate);
+        inputAmount = findViewById(R.id.amountInput);
+        conversionRate = findViewById(R.id.conversionRate);
         inputAmount.addTextChangedListener(new TextWatcher() {
 
             @Override
@@ -119,21 +118,16 @@ public class SendActivity extends AppCompatActivity {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 updateAlternateAmount();
                 if (!inputAmount.getText().toString().equals("")) {
-                    TextInputEditText etAmount = (TextInputEditText) findViewById(R.id.amountInput);
+                    TextInputEditText etAmount = findViewById(R.id.amountInput);
                     etAmount.setError(null);
                 }
             }
         });
 
-        ImageView toggle = (ImageView) findViewById(R.id.toggleImage);
-        toggle.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                toggleBchFiat();
-            }
-        });
+        ImageView toggle = findViewById(R.id.toggleImage);
+        toggle.setOnClickListener(v -> toggleBchFiat());
 
-        address = (TextInputEditText) findViewById(R.id.addressInput);
+        address = findViewById(R.id.addressInput);
         address.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -150,9 +144,9 @@ public class SendActivity extends AppCompatActivity {
             }
         });
 
-        memo = (TextInputEditText) findViewById(R.id.memoInput);
+        memo = findViewById(R.id.memoInput);
 
-        TextView feeText = (TextView) findViewById(R.id.feeText);
+        TextView feeText = findViewById(R.id.feeText);
         String feeStr = "Network Fee: " + satPerByte + " sat/byte";
         feeText.setText(feeStr);
 
@@ -180,103 +174,98 @@ public class SendActivity extends AppCompatActivity {
             }
         });
 
-        Button send = (Button) findViewById(R.id.sendBtn);
-        send.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                TextInputLayout layout = (TextInputLayout) findViewById(R.id.addressLayout);
-                try {
-                    boolean inputError = false;
-                    boolean valid = wallet.validateAddress(address.getText().toString());
-                    if (!valid) {
-                        layout.setError("INVALID BITCOIN CASH ADDRESS");
-                        inputError = true;
-                    } else {
-                        layout.setError(null);
-                    }
-                    Amount toSpend;
-                    if (inputAmount.getText().toString().equals("")) {
-                        TextInputEditText etAmount = (TextInputEditText) findViewById(R.id.amountInput);
-                        etAmount.setError("INVALID AMOUNT");
-                        inputError = true;
-                    }
-                    if (inputError) {
-                        return;
-                    }
-                    if (showingFiat) {
-                        double fiatAmount = Double.valueOf(inputAmount.getText().toString().replace(",", "."));
-                        toSpend = new Amount(ExchangeRates.getInstance().convertToBCH(fiatAmount, Currency.getInstance(fiatCurrency)));
-                    } else {
-                        double bchAmount = Double.valueOf(inputAmount.getText().toString().replace(",", "."));
-                        toSpend = new Amount(bchAmount);
-                    }
-                    if (toSpend.getSatoshis() == 0 || toSpend.getSatoshis() > balance.getSatoshis()) {
-                        TextInputEditText etAmount = (TextInputEditText) findViewById(R.id.amountInput);
-                        etAmount.setError("INVALID AMOUNT");
-                        return;
-                    }
-                    byte[] serializedTx = null;
-                    long txFee = 0;
-                    List<Long> inputVals = null;
-                    if (sendAll) {
-                        Api.SweepAccountResponse tx = wallet.sweepAccount(address.getText().toString(), satPerByte);
-                        serializedTx = tx.getSerializedTransaction().toByteArray();
-                        txFee = tx.getFee();
-                        inputVals = tx.getInputValuesList();
-
-                    } else {
-                        Api.CreateTransactionResponse tx = wallet.createTransaction(address.getText().toString(), toSpend.getSatoshis(), satPerByte);
-                        serializedTx = tx.getSerializedTransaction().toByteArray();
-                        txFee = tx.getFee();
-                        inputVals = tx.getInputValuesList();
-                    }
-
-                    String fiatFormatted = ExchangeRates.getInstance().getFormattedAmountInFiat(toSpend, Currency.getInstance(fiatCurrency));
-                    ArrayList<String> inputStrings = new ArrayList<String>();
-                    for (Long val : inputVals) {
-                        inputStrings.add(String.valueOf(val));
-                    }
-
-                    Intent intent = new Intent(getApplicationContext(), ConfirmationActivity.class);
-                    intent.putExtra("paymentAddress", address.getText().toString());
-                    intent.putExtra("amountBCH", toSpend.toString());
-                    intent.putExtra("amountFiat", fiatFormatted);
-                    intent.putExtra("fee", txFee);
-                    intent.putExtra("serializedTransaction", serializedTx);
-                    intent.putStringArrayListExtra("inputVals", inputStrings);
-
-                    if (memo.getText() != null && !memo.getText().toString().equals("")) {
-                        intent.putExtra("memo", memo.getText().toString());
-                    }
-                    if (label != null && !label.equals("")) {
-                        intent.putExtra("label", label);
-                    }
-                    startActivity(intent);
-                } catch (Exception e) {
-                    Snackbar snackbar = Snackbar.make(sendLayout, "Error creating transaction.", Snackbar.LENGTH_LONG);
-                    snackbar.show();
-                    e.printStackTrace();
+        Button send = findViewById(R.id.sendBtn);
+        send.setOnClickListener(v -> {
+            TextInputLayout layout = findViewById(R.id.addressLayout);
+            try {
+                boolean inputError = false;
+                boolean valid = wallet.validateAddress(address.getText().toString());
+                if (!valid) {
+                    layout.setError("INVALID BITCOIN CASH ADDRESS");
+                    inputError = true;
+                } else {
+                    layout.setError(null);
                 }
+                Amount toSpend;
+                if (inputAmount.getText().toString().equals("")) {
+                    TextInputEditText etAmount = findViewById(R.id.amountInput);
+                    etAmount.setError("INVALID AMOUNT");
+                    inputError = true;
+                }
+                if (inputError) {
+                    return;
+                }
+                if (showingFiat) {
+                    double fiatAmount = Double.valueOf(inputAmount.getText().toString().replace(",", "."));
+                    toSpend = new Amount(ExchangeRates.getInstance().convertToBCH(fiatAmount, Currency.getInstance(fiatCurrency)));
+                } else {
+                    double bchAmount = Double.valueOf(inputAmount.getText().toString().replace(",", "."));
+                    toSpend = new Amount(bchAmount);
+                }
+                if (toSpend.getSatoshis() == 0 || toSpend.getSatoshis() > balance.getSatoshis()) {
+                    TextInputEditText etAmount = findViewById(R.id.amountInput);
+                    etAmount.setError("INVALID AMOUNT");
+                    return;
+                }
+                byte[] serializedTx;
+                long txFee = 0;
+                List<Long> inputVals;
+                if (sendAll) {
+                    Api.SweepAccountResponse tx = wallet.sweepAccount(address.getText().toString(), satPerByte);
+                    serializedTx = tx.getSerializedTransaction().toByteArray();
+                    txFee = tx.getFee();
+                    inputVals = tx.getInputValuesList();
+
+                } else {
+                    Api.CreateTransactionResponse tx = wallet.createTransaction(address.getText().toString(), toSpend.getSatoshis(), satPerByte);
+                    serializedTx = tx.getSerializedTransaction().toByteArray();
+                    txFee = tx.getFee();
+                    inputVals = tx.getInputValuesList();
+                }
+
+                String fiatFormatted = ExchangeRates.getInstance().getFormattedAmountInFiat(toSpend, Currency.getInstance(fiatCurrency));
+                ArrayList<String> inputStrings = new ArrayList<String>();
+                for (Long val : inputVals) {
+                    inputStrings.add(String.valueOf(val));
+                }
+
+                Intent intent1 = new Intent(getApplicationContext(), ConfirmationActivity.class);
+                intent1.putExtra("paymentAddress", address.getText().toString());
+                intent1.putExtra("amountBCH", toSpend.toString());
+                intent1.putExtra("amountFiat", fiatFormatted);
+                intent1.putExtra("fee", txFee);
+                intent1.putExtra("serializedTransaction", serializedTx);
+                intent1.putStringArrayListExtra("inputVals", inputStrings);
+
+                if (memo.getText() != null && !memo.getText().toString().equals("")) {
+                    intent1.putExtra("memo", memo.getText().toString());
+                }
+                if (label != null && !label.equals("")) {
+                    intent1.putExtra("label", label);
+                }
+                startActivity(intent1);
+            } catch (Exception e) {
+                Snackbar snackbar = Snackbar.make(sendLayout, "Error creating transaction.", Snackbar.LENGTH_LONG);
+                snackbar.show();
+                e.printStackTrace();
             }
         });
 
-        ToggleButton sendAllBtn = (ToggleButton) findViewById(R.id.sendAllBtn);
-        sendAllBtn.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    if (showingFiat) {
-                        toggleBchFiat();
-                    }
-                    inputAmount.setText(balance.toString());
-                    inputAmount.setEnabled(false);
-                    updateAlternateAmount();
-                    sendAll = true;
-                } else {
-                    inputAmount.setText("");
-                    updateAlternateAmount();
-                    sendAll = false;
-                    inputAmount.setEnabled(true);
+        ToggleButton sendAllBtn = findViewById(R.id.sendAllBtn);
+        sendAllBtn.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                if (showingFiat) {
+                    toggleBchFiat();
                 }
+                inputAmount.setText(balance.toString());
+                inputAmount.setEnabled(false);
+                updateAlternateAmount();
+                sendAll = true;
+            } else {
+                inputAmount.setText("");
+                updateAlternateAmount();
+                sendAll = false;
+                inputAmount.setEnabled(true);
             }
         });
 
@@ -296,10 +285,8 @@ public class SendActivity extends AppCompatActivity {
 
     public void toggleBchFiat() {
         if (showingFiat) {
-            String bchBalance = "Balance: " + balance.toString() + " BCH";
-            balanceTxtView.setText(bchBalance);
+            balanceTxtView.setText(getString(R.string.balance_bch_amount, balance.toString()));
             symbolLabel.setText("₿");
-
 
             String amt = inputAmount.getText().toString().replace(",", ".");
             if (!amt.equals("")) {
@@ -315,8 +302,7 @@ public class SendActivity extends AppCompatActivity {
             updateAlternateAmount();
         } else {
             try {
-                String balanceStr = "Balance: " + ExchangeRates.getInstance().getFormattedAmountInFiat(balance, Currency.getInstance(fiatCurrency));
-                balanceTxtView.setText(balanceStr);
+                balanceTxtView.setText(getString(R.string.balance_fiat_amount, ExchangeRates.getInstance().getFormattedAmountInFiat(balance, Currency.getInstance(fiatCurrency))));
                 symbolLabel.setText(Currency.getInstance(fiatCurrency).getSymbol());
 
                 String amt = inputAmount.getText().toString().replace(",", ".");
@@ -341,15 +327,13 @@ public class SendActivity extends AppCompatActivity {
     public void updateAlternateAmount() {
         if (showingFiat) {
             if (inputAmount.getText().toString().equals("") || inputAmount.getText().toString().equals(".") || inputAmount.getText().toString().equals(",")) {
-                String zeroBCH = "0 BCH";
-                conversionRate.setText(zeroBCH);
+                conversionRate.setText(getString(R.string.bch_amount, "0"));
                 return;
             }
             double fiatAmount = Double.valueOf(inputAmount.getText().toString().replace(",", "."));
             try {
                 Amount bchRate = new Amount(ExchangeRates.getInstance().convertToBCH(fiatAmount, Currency.getInstance(fiatCurrency)));
-                String bchRateStr = bchRate.toString() + " BCH";
-                conversionRate.setText(bchRateStr);
+                conversionRate.setText(getString(R.string.bch_amount, bchRate.toString()));
             } catch (Exception e) {
                 e.printStackTrace();
             }

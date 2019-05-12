@@ -194,8 +194,7 @@ public class ReceiveActivity extends AppCompatActivity {
             double fiatAmount = Double.valueOf(receiveAmountInput.getText().toString().replace(",", "."));
             try {
                 Amount bchRate = new Amount(ExchangeRates.getInstance().convertToBCH(fiatAmount, Currency.getInstance(fiatCurrency)));
-                String bchRateStr = bchRate.toString() + " BCH";
-                conversionRate.setText(bchRateStr);
+                conversionRate.setText(getString(R.string.bch_amount, bchRate.toString()));
             } catch (Exception e) {
                 e.printStackTrace();
             }
