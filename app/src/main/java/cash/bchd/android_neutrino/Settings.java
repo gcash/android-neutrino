@@ -43,9 +43,7 @@ public class Settings {
     }
 
     void setWalletInitialized(boolean initialized) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putBoolean(INITIALIZED_KEY, initialized);
-        editor.apply();
+        putBoolean(INITIALIZED_KEY, initialized);
     }
 
     Boolean getWalletInitialized() {
@@ -53,9 +51,7 @@ public class Settings {
     }
 
     public void setMnemonic(String mnemonic) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(MNEMONIC_KEY, mnemonic);
-        editor.apply();
+        putString(MNEMONIC_KEY, mnemonic);
     }
 
     public String getMnemonic() {
@@ -63,9 +59,7 @@ public class Settings {
     }
 
     void setBlocksOnly(boolean blocksOnly) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putBoolean(BLOCKS_ONLY_KEY, blocksOnly);
-        editor.apply();
+        putBoolean(BLOCKS_ONLY_KEY, blocksOnly);
     }
 
     Boolean getBlocksOnly() {
@@ -73,9 +67,7 @@ public class Settings {
     }
 
     void setLastBalance(long balance) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putLong(LAST_BALANCE_KEY, balance);
-        editor.apply();
+        putLong(LAST_BALANCE_KEY, balance);
     }
 
     long getLastBalance() {
@@ -83,9 +75,7 @@ public class Settings {
     }
 
     void setFiatCurrency(String currency) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(FIAT_CURRENCY_KEY, currency);
-        editor.apply();
+        putString(FIAT_CURRENCY_KEY, currency);
     }
 
     String getFiatCurrency() {
@@ -93,9 +83,7 @@ public class Settings {
     }
 
     void setLastAddress(String addr) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(LAST_ADDRESS_KEY, addr);
-        editor.apply();
+        putString(LAST_ADDRESS_KEY, addr);
     }
 
     String getLastAddress() {
@@ -103,9 +91,7 @@ public class Settings {
     }
 
     void setLastBlockHeight(int blockHeight) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putInt(LAST_BLOCK_HEIGHT_KEY, blockHeight);
-        editor.apply();
+        putInt(LAST_BLOCK_HEIGHT_KEY, blockHeight);
     }
 
     int getLastBlockHeight() {
@@ -113,9 +99,7 @@ public class Settings {
     }
 
     void setLastBlockHash(String blockHash) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(LAST_BLOCK_HASH_KEY, blockHash);
-        editor.apply();
+        putString(LAST_BLOCK_HASH_KEY, blockHash);
     }
 
     String getLastBlockHash() {
@@ -123,9 +107,7 @@ public class Settings {
     }
 
     void setFeePerByte(int satPerByte) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putInt(FEE_PER_BYTE_KEY, satPerByte);
-        editor.apply();
+        putInt(FEE_PER_BYTE_KEY, satPerByte);
     }
 
     int getFeePerByte() {
@@ -133,9 +115,7 @@ public class Settings {
     }
 
     void setDefaultLabel(String label) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(DEFAULT_LABEL_KEY, label);
-        editor.apply();
+        putString(DEFAULT_LABEL_KEY, label);
     }
 
     String getDefaultLabel() {
@@ -143,9 +123,7 @@ public class Settings {
     }
 
     void setDefaultMemo(String memo) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(DEFAULT_MEMO_KEY, memo);
-        editor.apply();
+        putString(DEFAULT_MEMO_KEY, memo);
     }
 
     String getDefaultMemo() {
@@ -153,9 +131,7 @@ public class Settings {
     }
 
     void setBchdIP(String ip) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(BCHD_IP_KEY, ip);
-        editor.apply();
+        putString(BCHD_IP_KEY, ip);
     }
 
     String getBchdIP() {
@@ -163,9 +139,7 @@ public class Settings {
     }
 
     void setBchdUsername(String username) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(BCHD_USERNAME_KEY, username);
-        editor.apply();
+        putString(BCHD_USERNAME_KEY, username);
     }
 
     String getBchdUsername() {
@@ -173,9 +147,7 @@ public class Settings {
     }
 
     void setBchdPassword(String password) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(BCHD_PASSWORD_KEY, password);
-        editor.apply();
+        putString(BCHD_PASSWORD_KEY, password);
     }
 
     String getBchdPassword() {
@@ -183,9 +155,7 @@ public class Settings {
     }
 
     void setBchdCert(String cert) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(BCHD_CERT_KEY, cert);
-        editor.apply();
+        putString(BCHD_CERT_KEY, cert);
     }
 
     String getBchdCert() {
@@ -193,9 +163,7 @@ public class Settings {
     }
 
     void setEncryptionType(EncryptionType et) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(ENCRYPTION_TYPE_KEY, et.toString());
-        editor.apply();
+        putString(ENCRYPTION_TYPE_KEY, et.toString());
     }
 
     EncryptionType getEncryptionType() {
@@ -204,9 +172,7 @@ public class Settings {
     }
 
     void setInvalidPinCount(int count) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putInt(INVALID_PIN_COUNT_KEY, count);
-        editor.apply();
+        putInt(INVALID_PIN_COUNT_KEY, count);
     }
 
     int getInvalidPinCount() {
@@ -214,9 +180,7 @@ public class Settings {
     }
 
     void setLastInvalidPin(long timestamp) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putLong(LAST_INVALID_PIN_KEY, timestamp);
-        editor.apply();
+        putLong(LAST_INVALID_PIN_KEY, timestamp);
     }
 
     long getLastInvalidPin() {
@@ -224,9 +188,7 @@ public class Settings {
     }
 
     void setEncryptedPassword(String pw) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(ENCRYPTED_PASSWORD_KEY, pw);
-        editor.apply();
+        putString(ENCRYPTED_PASSWORD_KEY, pw);
     }
 
     String getEncryptedPassword() {
@@ -234,9 +196,7 @@ public class Settings {
     }
 
     void setFingerprintIv(String iv) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(FINGERPRINT_IV_KEY, iv);
-        editor.apply();
+        putString(FINGERPRINT_IV_KEY, iv);
     }
 
     String getFingerprintIv() {
@@ -244,9 +204,7 @@ public class Settings {
     }
 
     void setLastNotification(long timestamp) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putLong(LAST_NOTIFICATION_KEY, timestamp);
-        editor.apply();
+        putLong(LAST_NOTIFICATION_KEY, timestamp);
     }
 
     long getLastNotification() {
@@ -254,9 +212,7 @@ public class Settings {
     }
 
     void setBackupReminder(boolean reminded) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putBoolean(BACKUP_REMINDER_KEY, reminded);
-        editor.apply();
+        putBoolean(BACKUP_REMINDER_KEY, reminded);
     }
 
     Boolean getBackupReminder() {
@@ -264,9 +220,7 @@ public class Settings {
     }
 
     public void setWalletBirthday(long timestamp) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putLong(WALLET_BIRTHDAY_KEY, timestamp);
-        editor.apply();
+        putLong(WALLET_BIRTHDAY_KEY, timestamp);
     }
 
     public long getWalletBirthday() {
@@ -274,12 +228,26 @@ public class Settings {
     }
 
     void setRepoVersion(int version) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putInt(REPO_VERSION_KEY, version);
-        editor.apply();
+        putInt(REPO_VERSION_KEY, version);
     }
 
     int getRepoVersion() {
         return prefs.getInt(REPO_VERSION_KEY, 0);
+    }
+
+    private void putBoolean(final String key, final boolean val) {
+        prefs.edit().putBoolean(key, val).apply();
+    }
+
+    private void putInt(final String key, final int val) {
+        prefs.edit().putInt(key, val).apply();
+    }
+
+    private void putLong(final String key, final long val) {
+        prefs.edit().putLong(key, val).apply();
+    }
+
+    private void putString(final String key, final String val) {
+        prefs.edit().putString(key, val).apply();
     }
 }
