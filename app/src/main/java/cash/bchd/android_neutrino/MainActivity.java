@@ -109,7 +109,7 @@ public class MainActivity extends CloseActivity {
         this.mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         TextView bchBalanceView = findViewById(R.id.bchBalanceView);
         Amount lastBal = new Amount(this.settings.getLastBalance());
-        bchBalanceView.setText( getString(R.string.bch_amount, lastBal.toString()));
+        bchBalanceView.setText(getString(R.string.bch_amount, lastBal.toString()));
         new Thread(new ExchangeRateFetcher(this, lastBal)).start();
         if (checkForPermissions()) {
             createWallet();
