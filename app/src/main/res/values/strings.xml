@@ -7,4 +7,18 @@
     <string name="unconfirmed">Unconfirmed</string>
     <string name="pending">Pending</string>
     <string name="confirmed">Confirmed</string>
+    <string name="address_copied_to_clipboard">Address copied to clipboard.</string>
+    <string name="insufficient_funds">Insufficient Funds</string>
+    <string name="invalid_payment_request">Invalid Payment Request</string>
+    <string name="barcode_read_error">Barcode Read Error</string>
+    <string name="backup_your_wallet">Backup Your Wallet</string>
+    <string name="backup_recovery_phrase_suggestion">Now that you\'ve received some money it\'s a good time to back up your wallet recovery phrase.</string>
+    <string name="wallet_is_not_loaded_yet">Wallet isn\'t loaded yet.</string>
+    <string name="source_text">Source Text</string>
+    <string name="error_creating_transaction">Error creating transaction.</string>
+    <string name="invalid_amount">INVALID AMOUNT</string>
+    <string name="invalid_bitcoin_cash_address">INVALID BITCOIN CASH ADDRESS</string>
+    <string name="network_fee_sat_per_byte">Network Fee: %1$d sat/byte</string>
+    <string name="uri_copied_to_clipboard">URI copied to clipboard.</string>
+    <string name="send_bch_to">Send %1$s BCH To:</string>
 </resources>
