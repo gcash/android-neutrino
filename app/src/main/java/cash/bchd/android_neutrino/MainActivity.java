@@ -279,7 +279,7 @@ public class MainActivity extends CloseActivity {
         if (!wallet.isRunning()) {
             lastAddr = settings.getLastAddress();
             if (lastAddr.equals("")) {
-                Snackbar snackbar = Snackbar.make(mCLayout, "Wallet isn't loaded yet.", Snackbar.LENGTH_LONG);
+                Snackbar snackbar = Snackbar.make(mCLayout, R.string.wallet_is_not_loaded_yet, Snackbar.LENGTH_LONG);
                 snackbar.show();
                 return;
             }
@@ -367,10 +367,10 @@ public class MainActivity extends CloseActivity {
     private void copyToClipboard(String data) {
         Object clipboardService = getSystemService(CLIPBOARD_SERVICE);
         final ClipboardManager clipboardManager = (ClipboardManager) clipboardService;
-        ClipData clipData = ClipData.newPlainText("Source Text", data);
+        ClipData clipData = ClipData.newPlainText(getString(R.string.source_text), data);
         if (clipboardManager != null) {
             clipboardManager.setPrimaryClip(clipData);
-            Snackbar snackbar = Snackbar.make(mCLayout, "Address copied clipboard.", Snackbar.LENGTH_LONG);
+            Snackbar snackbar = Snackbar.make(mCLayout, R.string.address_copied_to_clipboard, Snackbar.LENGTH_LONG);
             snackbar.show();
         }
     }
@@ -404,11 +404,7 @@ public class MainActivity extends CloseActivity {
     }
 
     protected void toggleRotation(View v) {
-        if (isFabOpen) {
-            v.setRotation(0.0f);
-        } else {
-            v.setRotation(45.0f);
-        }
+        v.setRotation(isFabOpen ? 0.0f : 45.0f);
     }
 
     public static void sendViewToBack(final View child) {
@@ -441,7 +437,7 @@ public class MainActivity extends CloseActivity {
                             if (totalSatoshis > wallet.balance()) {
                                 System.out.println(totalSatoshis);
                                 System.out.println(wallet.balance());
-                                Snackbar snackbar = Snackbar.make(mCLayout, "Insufficient Funds", Snackbar.LENGTH_LONG);
+                                Snackbar snackbar = Snackbar.make(mCLayout, R.string.insufficient_funds, Snackbar.LENGTH_LONG);
                                 snackbar.show();
                                 return;
                             }
@@ -470,7 +466,7 @@ public class MainActivity extends CloseActivity {
                             startActivity(intent);
 
                         } catch (Exception e) {
-                            Snackbar snackbar = Snackbar.make(mCLayout, "Invalid Payment Request", Snackbar.LENGTH_LONG);
+                            Snackbar snackbar = Snackbar.make(mCLayout, R.string.invalid_payment_request, Snackbar.LENGTH_LONG);
                             snackbar.show();
                             e.printStackTrace();
                         }
@@ -483,8 +479,8 @@ public class MainActivity extends CloseActivity {
                         startActivity(intent);
                     }
                 }
-            } else if (resultCode != 0) {
-                Snackbar snackbar = Snackbar.make(mCLayout, "Barcode Read Error", Snackbar.LENGTH_LONG);
+            } else {
+                Snackbar snackbar = Snackbar.make(mCLayout, R.string.barcode_read_error, Snackbar.LENGTH_LONG);
                 snackbar.show();
             }
         } else {
@@ -493,12 +489,10 @@ public class MainActivity extends CloseActivity {
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+        if (item.getItemId() == android.R.id.home) {
+            return true;
         }
+        return super.onOptionsItemSelected(item);
     }
 
     private boolean checkForPermissions() {
@@ -575,11 +569,11 @@ public class MainActivity extends CloseActivity {
             Notification notification = new NotificationCompat.Builder(getApplicationContext(), "default")
                     .setSmallIcon(R.drawable.neutrino_small)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                    .setContentTitle("Backup Your Wallet")
+                    .setContentTitle(getString(R.string.backup_your_wallet))
                     .setContentIntent(pendingIntent)
                     .setDefaults(Notification.DEFAULT_SOUND|Notification.DEFAULT_LIGHTS|Notification.DEFAULT_VIBRATE)
                     .setStyle(new NotificationCompat.BigTextStyle()
-                            .bigText("Now that you've received some money it's a good time to back up your wallet recovery phrase."))
+                            .bigText(getString(R.string.backup_recovery_phrase_suggestion)))
                     .build();
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
