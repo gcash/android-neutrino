@@ -1,13 +1,10 @@
 package cash.bchd.android_neutrino;
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v7.widget.RecyclerView;
-import android.text.Html;
-import android.text.method.LinkMovementMethod;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,8 +13,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
-
-import org.w3c.dom.Text;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -170,50 +165,50 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
                 popupWindow.setFocusable(true);
                 popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
-                ImageView arrow = (ImageView) customView.findViewById(R.id.txDetailsArrow);
+                ImageView arrow = customView.findViewById(R.id.txDetailsArrow);
                 if (tx.getIncoming()) {
                     arrow.setImageResource(R.drawable.receive_arrow);
                 } else {
                     arrow.setImageResource(R.drawable.send_arrow);
                 }
-                TextView bchAmount = (TextView) customView.findViewById(R.id.txDetailsBchAmount);
-                String detailsAmount = new Amount(tx.getAmount()).toString() + " BCH";
+                TextView bchAmount = customView.findViewById(R.id.txDetailsBchAmount);
+                String detailsAmount = ctx.getString(R.string.bch_amount, new Amount(tx.getAmount()).toString());
                 bchAmount.setText(detailsAmount);
 
-                TextView fiatAmount = (TextView) customView.findViewById(R.id.txDetailsFiatAmount);
+                TextView fiatAmount = customView.findViewById(R.id.txDetailsFiatAmount);
                 fiatAmount.setText(tx.getFiatAmount());
 
-                TextView dateView = (TextView) customView.findViewById(R.id.txDetailsDate);
+                TextView dateView = customView.findViewById(R.id.txDetailsDate);
                 Date date = new Date(tx.getTimestamp() * 1000);
                 DateFormat formatter = new SimpleDateFormat("hh:mm a - MMM dd, yyyy");
                 String dateFormatted = formatter.format(date);
                 dateView.setText(dateFormatted);
 
-                TextView status = (TextView) customView.findViewById(R.id.txDetailsStatus);
-                ImageView circle = (ImageView) customView.findViewById(R.id.confirmationCircle);
+                TextView status = customView.findViewById(R.id.txDetailsStatus);
+                ImageView circle = customView.findViewById(R.id.confirmationCircle);
 
                 int confirmations = 0;
                 if (tx.getHeight() > 0) {
                     confirmations = blockHeight - tx.getHeight() + 1;
                 }
                 if (confirmations <= 0) {
-                    status.setText("Unconfirmed");
+                    status.setText(R.string.unconfirmed);
                     circle.setImageResource(R.drawable.red_circle);
                 } else if (confirmations < 10) {
-                    status.setText("Pending");
+                    status.setText(R.string.pending);
                     circle.setImageResource(R.drawable.yellow_circle);
                 } else {
-                    status.setText("Confirmed");
+                    status.setText(R.string.confirmed);
                     circle.setImageResource(R.drawable.green_circle);
                 }
 
-                TextView memo = (TextView) customView.findViewById(R.id.txDetailsMemo);
+                TextView memo = customView.findViewById(R.id.txDetailsMemo);
                 memo.setText(tx.getMemo());
 
-                TextView txid = (TextView) customView.findViewById(R.id.txDetailsTxid);
+                TextView txid = customView.findViewById(R.id.txDetailsTxid);
                 txid.setText(tx.getTxid());
 
-                TextView link = (TextView) customView.findViewById(R.id.txDetailsLink);
+                TextView link = customView.findViewById(R.id.txDetailsLink);
                 String url = "https://www.blockchain.com/bch/tx/" + tx.getTxid();
                 link.setText(url);
             }

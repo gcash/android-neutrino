@@ -12,7 +12,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -110,7 +109,7 @@ public class MainActivity extends CloseActivity {
         this.mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         TextView bchBalanceView = findViewById(R.id.bchBalanceView);
         Amount lastBal = new Amount(this.settings.getLastBalance());
-        bchBalanceView.setText(lastBal.toString() + " BCH");
+        bchBalanceView.setText(getString(R.string.bch_amount, lastBal.toString()));
         new Thread(new ExchangeRateFetcher(this, lastBal)).start();
         if (checkForPermissions()) {
             createWallet();
@@ -280,7 +279,7 @@ public class MainActivity extends CloseActivity {
         if (!wallet.isRunning()) {
             lastAddr = settings.getLastAddress();
             if (lastAddr.equals("")) {
-                Snackbar snackbar = Snackbar.make(mCLayout, "Wallet isn't loaded yet.", Snackbar.LENGTH_LONG);
+                Snackbar snackbar = Snackbar.make(mCLayout, R.string.wallet_is_not_loaded_yet, Snackbar.LENGTH_LONG);
                 snackbar.show();
                 return;
             }
@@ -368,10 +367,12 @@ public class MainActivity extends CloseActivity {
     private void copyToClipboard(String data) {
         Object clipboardService = getSystemService(CLIPBOARD_SERVICE);
         final ClipboardManager clipboardManager = (ClipboardManager) clipboardService;
-        ClipData clipData = ClipData.newPlainText("Source Text", data);
-        clipboardManager.setPrimaryClip(clipData);
-        Snackbar snackbar = Snackbar.make(mCLayout, "Address copied clipboard.", Snackbar.LENGTH_LONG);
-        snackbar.show();
+        ClipData clipData = ClipData.newPlainText(getString(R.string.source_text), data);
+        if (clipboardManager != null) {
+            clipboardManager.setPrimaryClip(clipData);
+            Snackbar snackbar = Snackbar.make(mCLayout, R.string.address_copied_to_clipboard, Snackbar.LENGTH_LONG);
+            snackbar.show();
+        }
     }
 
     private void toggleFABMenu() {
@@ -403,11 +404,7 @@ public class MainActivity extends CloseActivity {
     }
 
     protected void toggleRotation(View v) {
-        if (isFabOpen) {
-            v.setRotation(0.0f);
-        } else {
-            v.setRotation(45.0f);
-        }
+        v.setRotation(isFabOpen ? 0.0f : 45.0f);
     }
 
     public static void sendViewToBack(final View child) {
@@ -440,7 +437,7 @@ public class MainActivity extends CloseActivity {
                             if (totalSatoshis > wallet.balance()) {
                                 System.out.println(totalSatoshis);
                                 System.out.println(wallet.balance());
-                                Snackbar snackbar = Snackbar.make(mCLayout, "Insufficient Funds", Snackbar.LENGTH_LONG);
+                                Snackbar snackbar = Snackbar.make(mCLayout, R.string.insufficient_funds, Snackbar.LENGTH_LONG);
                                 snackbar.show();
                                 return;
                             }
@@ -469,7 +466,7 @@ public class MainActivity extends CloseActivity {
                             startActivity(intent);
 
                         } catch (Exception e) {
-                            Snackbar snackbar = Snackbar.make(mCLayout, "Invalid Payment Request", Snackbar.LENGTH_LONG);
+                            Snackbar snackbar = Snackbar.make(mCLayout, R.string.invalid_payment_request, Snackbar.LENGTH_LONG);
                             snackbar.show();
                             e.printStackTrace();
                         }
@@ -482,8 +479,8 @@ public class MainActivity extends CloseActivity {
                         startActivity(intent);
                     }
                 }
-            } else if (resultCode != 0) {
-                Snackbar snackbar = Snackbar.make(mCLayout, "Barcode Read Error", Snackbar.LENGTH_LONG);
+            } else {
+                Snackbar snackbar = Snackbar.make(mCLayout, R.string.barcode_read_error, Snackbar.LENGTH_LONG);
                 snackbar.show();
             }
         } else {
@@ -492,12 +489,10 @@ public class MainActivity extends CloseActivity {
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+        if (item.getItemId() == android.R.id.home) {
+            return true;
         }
+        return super.onOptionsItemSelected(item);
     }
 
     private boolean checkForPermissions() {
@@ -574,11 +569,11 @@ public class MainActivity extends CloseActivity {
             Notification notification = new NotificationCompat.Builder(getApplicationContext(), "default")
                     .setSmallIcon(R.drawable.neutrino_small)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                    .setContentTitle("Backup Your Wallet")
+                    .setContentTitle(getString(R.string.backup_your_wallet))
                     .setContentIntent(pendingIntent)
                     .setDefaults(Notification.DEFAULT_SOUND|Notification.DEFAULT_LIGHTS|Notification.DEFAULT_VIBRATE)
                     .setStyle(new NotificationCompat.BigTextStyle()
-                            .bigText("Now that you've received some money it's a good time to back up your wallet recovery phrase."))
+                            .bigText(getString(R.string.backup_recovery_phrase_suggestion)))
                     .build();
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -590,8 +585,10 @@ public class MainActivity extends CloseActivity {
                 // Register the channel with the system; you can't change the importance
                 // or other notification behaviors after this
                 NotificationManager notificationManager = getSystemService(NotificationManager.class);
-                notificationManager.createNotificationChannel(channel);
-                notificationManager.notify(5678, notification);
+                if (notificationManager != null) {
+                    notificationManager.createNotificationChannel(channel);
+                    notificationManager.notify(5678, notification);
+                }
             }
             settings.setBackupReminder(true);
         }
@@ -631,8 +628,7 @@ public class MainActivity extends CloseActivity {
                             try {
                                 Amount amt = new Amount(bal);
                                 TextView bchBalanceView = mainActivity.findViewById(R.id.bchBalanceView);
-                                String balanceStr = amt.toString() + " BCH";
-                                bchBalanceView.setText(balanceStr);
+                                bchBalanceView.setText(mainActivity.getString(R.string.bch_amount, amt.toString()));
                                 String fiatAmount = mainActivity.exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(mainActivity.settings.getFiatCurrency()));
                                 TextView fiatBalanceView = mainActivity.findViewById(R.id.fiatBalanceView);
                                 fiatBalanceView.setText(fiatAmount);
