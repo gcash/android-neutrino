@@ -29,7 +29,7 @@ public class Settings {
     private static final String WALLET_BIRTHDAY_KEY = "WalletBirthday";
     private static final String REPO_VERSION_KEY = "RepoVersion";
 
-    SharedPreferences prefs;
+    private final SharedPreferences prefs;
 
     private static Settings instance;
 
@@ -42,267 +42,212 @@ public class Settings {
         return instance;
     }
 
-    public void setWalletInitialized(boolean initialized) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putBoolean(INITIALIZED_KEY, initialized);
-        editor.apply();
+    void setWalletInitialized(boolean initialized) {
+        putBoolean(INITIALIZED_KEY, initialized);
     }
 
-    public Boolean getWalletInitialized() {
-        boolean initialized = prefs.getBoolean(INITIALIZED_KEY, false);
-        return initialized;
+    Boolean getWalletInitialized() {
+        return prefs.getBoolean(INITIALIZED_KEY, false);
     }
 
     public void setMnemonic(String mnemonic) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(MNEMONIC_KEY, mnemonic);
-        editor.apply();
+        putString(MNEMONIC_KEY, mnemonic);
     }
 
     public String getMnemonic() {
-        String mnemonic = prefs.getString(MNEMONIC_KEY, "");
-        return mnemonic;
+        return prefs.getString(MNEMONIC_KEY, "");
     }
 
-    public void setBlocksOnly(boolean blocksOnly) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putBoolean(BLOCKS_ONLY_KEY, blocksOnly);
-        editor.apply();
+    void setBlocksOnly(boolean blocksOnly) {
+        putBoolean(BLOCKS_ONLY_KEY, blocksOnly);
     }
 
-    public Boolean getBlocksOnly() {
-        boolean blocksOnly = prefs.getBoolean(BLOCKS_ONLY_KEY, false);
-        return blocksOnly;
+    Boolean getBlocksOnly() {
+        return prefs.getBoolean(BLOCKS_ONLY_KEY, false);
     }
 
-    public void setLastBalance(long balance) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putLong(LAST_BALANCE_KEY, balance);
-        editor.apply();
+    void setLastBalance(long balance) {
+        putLong(LAST_BALANCE_KEY, balance);
     }
 
-    public long getLastBalance() {
-        long balance = prefs.getLong(LAST_BALANCE_KEY, 0);
-        return balance;
+    long getLastBalance() {
+        return prefs.getLong(LAST_BALANCE_KEY, 0);
     }
 
-    public void setFiatCurrency(String currency) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(FIAT_CURRENCY_KEY, currency);
-        editor.apply();
+    void setFiatCurrency(String currency) {
+        putString(FIAT_CURRENCY_KEY, currency);
     }
 
-    public String getFiatCurrency() {
-        String currency = prefs.getString(FIAT_CURRENCY_KEY, "usd");
-        return currency;
+    String getFiatCurrency() {
+        return prefs.getString(FIAT_CURRENCY_KEY, "usd");
     }
 
-    public void setLastAddress(String addr) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(LAST_ADDRESS_KEY, addr);
-        editor.apply();
+    void setLastAddress(String addr) {
+        putString(LAST_ADDRESS_KEY, addr);
     }
 
-    public String getLastAddress() {
-        String addr = prefs.getString(LAST_ADDRESS_KEY, "");
-        return addr;
+    String getLastAddress() {
+        return prefs.getString(LAST_ADDRESS_KEY, "");
     }
 
-    public void setLastBlockHeight(int blockHeight) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putInt(LAST_BLOCK_HEIGHT_KEY, blockHeight);
-        editor.apply();
+    void setLastBlockHeight(int blockHeight) {
+        putInt(LAST_BLOCK_HEIGHT_KEY, blockHeight);
     }
 
-    public int getLastBlockHeight() {
-        int height = prefs.getInt(LAST_BLOCK_HEIGHT_KEY, 0);
-        return height;
+    int getLastBlockHeight() {
+        return prefs.getInt(LAST_BLOCK_HEIGHT_KEY, 0);
     }
 
-    public void setLastBlockHash(String blockHash) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(LAST_BLOCK_HASH_KEY, blockHash);
-        editor.apply();
+    void setLastBlockHash(String blockHash) {
+        putString(LAST_BLOCK_HASH_KEY, blockHash);
     }
 
-    public String getLastBlockHash() {
-        String hash = prefs.getString(LAST_BLOCK_HASH_KEY, "");
-        return hash;
+    String getLastBlockHash() {
+        return prefs.getString(LAST_BLOCK_HASH_KEY, "");
     }
 
-    public void setFeePerByte(int satPerByte) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putInt(FEE_PER_BYTE_KEY, satPerByte);
-        editor.apply();
+    void setFeePerByte(int satPerByte) {
+        putInt(FEE_PER_BYTE_KEY, satPerByte);
     }
 
-    public int getFeePerByte() {
-        int fee = prefs.getInt(FEE_PER_BYTE_KEY, 15);
-        return fee;
+    int getFeePerByte() {
+        return prefs.getInt(FEE_PER_BYTE_KEY, 15);
     }
 
-    public void setDefaultLabel(String label) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(DEFAULT_LABEL_KEY, label);
-        editor.apply();
+    void setDefaultLabel(String label) {
+        putString(DEFAULT_LABEL_KEY, label);
     }
 
-    public String getDefaultLabel() {
-        String label = prefs.getString(DEFAULT_LABEL_KEY, "");
-        return label;
+    String getDefaultLabel() {
+        return prefs.getString(DEFAULT_LABEL_KEY, "");
     }
 
-    public void setDefaultMemo(String memo) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(DEFAULT_MEMO_KEY, memo);
-        editor.apply();
+    void setDefaultMemo(String memo) {
+        putString(DEFAULT_MEMO_KEY, memo);
     }
 
-    public String getDefaultMemo() {
-        String memo = prefs.getString(DEFAULT_MEMO_KEY, "");
-        return memo;
+    String getDefaultMemo() {
+        return prefs.getString(DEFAULT_MEMO_KEY, "");
     }
 
-    public void setBchdIP(String ip) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(BCHD_IP_KEY, ip);
-        editor.apply();
+    void setBchdIP(String ip) {
+        putString(BCHD_IP_KEY, ip);
     }
 
-    public String getBchdIP() {
-        String ip = prefs.getString(BCHD_IP_KEY, "");
-        return ip;
+    String getBchdIP() {
+        return prefs.getString(BCHD_IP_KEY, "");
     }
 
-    public void setBchdUsername(String username) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(BCHD_USERNAME_KEY, username);
-        editor.apply();
+    void setBchdUsername(String username) {
+        putString(BCHD_USERNAME_KEY, username);
     }
 
-    public String getBchdUsername() {
-        String username = prefs.getString(BCHD_USERNAME_KEY, "");
-        return username;
+    String getBchdUsername() {
+        return prefs.getString(BCHD_USERNAME_KEY, "");
     }
 
-    public void setBchdPassword(String password) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(BCHD_PASSWORD_KEY, password);
-        editor.apply();
+    void setBchdPassword(String password) {
+        putString(BCHD_PASSWORD_KEY, password);
     }
 
-    public String getBchdPassword() {
-        String password = prefs.getString(BCHD_PASSWORD_KEY, "");
-        return password;
+    String getBchdPassword() {
+        return prefs.getString(BCHD_PASSWORD_KEY, "");
     }
 
-    public void setBchdCert(String cert) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(BCHD_CERT_KEY, cert);
-        editor.apply();
+    void setBchdCert(String cert) {
+        putString(BCHD_CERT_KEY, cert);
     }
 
-    public String getBchdCert() {
-        String cert = prefs.getString(BCHD_CERT_KEY, "");
-        return cert;
+    String getBchdCert() {
+        return prefs.getString(BCHD_CERT_KEY, "");
     }
 
-    public void setEncryptionType(EncryptionType et) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(ENCRYPTION_TYPE_KEY, et.toString());
-        editor.apply();
+    void setEncryptionType(EncryptionType et) {
+        putString(ENCRYPTION_TYPE_KEY, et.toString());
     }
 
-    public EncryptionType getEncryptionType() {
+    EncryptionType getEncryptionType() {
         String t = prefs.getString(ENCRYPTION_TYPE_KEY, "unencrypted");
         return EncryptionType.fromString(t);
     }
 
-    public void setInvalidPinCount(int count) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putInt(INVALID_PIN_COUNT_KEY, count);
-        editor.apply();
+    void setInvalidPinCount(int count) {
+        putInt(INVALID_PIN_COUNT_KEY, count);
     }
 
-    public int getInvalidPinCount() {
-        int count = prefs.getInt(INVALID_PIN_COUNT_KEY, 0);
-        return count;
+    int getInvalidPinCount() {
+        return prefs.getInt(INVALID_PIN_COUNT_KEY, 0);
     }
 
-    public void setLastInvalidPin(long timestamp) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putLong(LAST_INVALID_PIN_KEY, timestamp);
-        editor.apply();
+    void setLastInvalidPin(long timestamp) {
+        putLong(LAST_INVALID_PIN_KEY, timestamp);
     }
 
-    public long getLastInvalidPin() {
-        long timestamp = prefs.getLong(LAST_INVALID_PIN_KEY, 0);
-        return timestamp;
+    long getLastInvalidPin() {
+        return prefs.getLong(LAST_INVALID_PIN_KEY, 0);
     }
 
-    public void setEncryptedPassword(String pw) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(ENCRYPTED_PASSWORD_KEY, pw);
-        editor.apply();
+    void setEncryptedPassword(String pw) {
+        putString(ENCRYPTED_PASSWORD_KEY, pw);
     }
 
-    public String getEncryptedPassword() {
-        String pw = prefs.getString(ENCRYPTED_PASSWORD_KEY, "");
-        return pw;
+    String getEncryptedPassword() {
+        return prefs.getString(ENCRYPTED_PASSWORD_KEY, "");
     }
 
-    public void setFingerprintIv(String iv) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putString(FINGERPRINT_IV_KEY, iv);
-        editor.apply();
+    void setFingerprintIv(String iv) {
+        putString(FINGERPRINT_IV_KEY, iv);
     }
 
-    public String getFingerprintIv() {
-        String iv = prefs.getString(FINGERPRINT_IV_KEY, "");
-        return iv;
+    String getFingerprintIv() {
+        return prefs.getString(FINGERPRINT_IV_KEY, "");
     }
 
-    public void setLastNotification(long timestamp) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putLong(LAST_NOTIFICATION_KEY, timestamp);
-        editor.apply();
+    void setLastNotification(long timestamp) {
+        putLong(LAST_NOTIFICATION_KEY, timestamp);
     }
 
-    public long getLastNotification() {
-        long timestamp = prefs.getLong(LAST_NOTIFICATION_KEY, 0);
-        return timestamp;
+    long getLastNotification() {
+        return prefs.getLong(LAST_NOTIFICATION_KEY, 0);
     }
 
-    public void setBackupReminder(boolean reminded) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putBoolean(BACKUP_REMINDER_KEY, reminded);
-        editor.apply();
+    void setBackupReminder(boolean reminded) {
+        putBoolean(BACKUP_REMINDER_KEY, reminded);
     }
 
-    public Boolean getBackupReminder() {
-        boolean reminded = prefs.getBoolean(BACKUP_REMINDER_KEY, false);
-        return reminded;
+    Boolean getBackupReminder() {
+        return prefs.getBoolean(BACKUP_REMINDER_KEY, false);
     }
 
     public void setWalletBirthday(long timestamp) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putLong(WALLET_BIRTHDAY_KEY, timestamp);
-        editor.apply();
+        putLong(WALLET_BIRTHDAY_KEY, timestamp);
     }
 
     public long getWalletBirthday() {
-        long timestamp = prefs.getLong(WALLET_BIRTHDAY_KEY, 0);
-        return timestamp;
+        return prefs.getLong(WALLET_BIRTHDAY_KEY, 0);
     }
 
-    public void setRepoVersion(int version) {
-        SharedPreferences.Editor editor = this.prefs.edit();
-        editor.putInt(REPO_VERSION_KEY, version);
-        editor.apply();
+    void setRepoVersion(int version) {
+        putInt(REPO_VERSION_KEY, version);
     }
 
-    public int getRepoVersion() {
-        int version = prefs.getInt(REPO_VERSION_KEY, 0);
-        return version;
+    int getRepoVersion() {
+        return prefs.getInt(REPO_VERSION_KEY, 0);
+    }
+
+    private void putBoolean(final String key, final boolean val) {
+        prefs.edit().putBoolean(key, val).apply();
+    }
+
+    private void putInt(final String key, final int val) {
+        prefs.edit().putInt(key, val).apply();
+    }
+
+    private void putLong(final String key, final long val) {
+        prefs.edit().putLong(key, val).apply();
+    }
+
+    private void putString(final String key, final String val) {
+        prefs.edit().putString(key, val).apply();
     }
 }
