@@ -10,8 +10,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Orbot is now configured and will route Neutrino traffic (and only Neutrino traffic) through Tor when Orbot is running. You can optionally set Orbot to start on boot and run in the background."
-        android:textSize="20sp"
-        android:layout_marginTop="30dp"
+        android:textSize="18sp"
+        android:layout_marginTop="40dp"
         android:layout_marginLeft="40dp"
         android:layout_marginRight="40dp"
         android:textAlignment="center"/>

@@ -6,27 +6,27 @@
     android:orientation="vertical"
     android:gravity="center_horizontal">
 
+    <ImageView
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="40dp"
+        android:src="@drawable/pencil"/>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Backup your wallet"
         android:textStyle="bold"
         android:textSize="20sp"
-        android:layout_marginTop="90dp"/>
-
-    <ImageView
-        android:layout_width="200dp"
-        android:layout_height="200dp"
-        android:layout_marginTop="20dp"
-        android:src="@drawable/pencil"/>
+        android:layout_marginTop="10dp"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Backing up your wallet is the only way to restore your funds if you ever lose access to your device."
-        android:textSize="20sp"
-        android:layout_marginStart="50dp"
-        android:layout_marginEnd="50dp"
+        android:textSize="18sp"
+        android:layout_marginStart="40dp"
+        android:layout_marginEnd="40dp"
         android:textAlignment="center"
         android:layout_marginTop="20dp"/>
 
@@ -34,9 +34,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="All you need is a paper and pen to jot down your recovery phrase. When you're ready, continue to the next step."
-        android:textSize="20sp"
-        android:layout_marginStart="50dp"
-        android:layout_marginEnd="50dp"
+        android:textSize="18sp"
+        android:layout_marginStart="40dp"
+        android:layout_marginEnd="40dp"
         android:textAlignment="center"
         android:layout_marginTop="20dp"/>
 

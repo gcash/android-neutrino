@@ -12,15 +12,15 @@
         android:text="Your recovery phrase"
         android:textStyle="bold"
         android:textSize="20sp"
-        android:layout_marginTop="90dp"/>
+        android:layout_marginTop="40dp"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Write down each word in order."
-        android:textSize="20sp"
-        android:layout_marginStart="50dp"
-        android:layout_marginEnd="50dp"
+        android:textSize="18sp"
+        android:layout_marginStart="30dp"
+        android:layout_marginEnd="30dp"
         android:textAlignment="center"
         android:layout_marginTop="20dp"/>
 
@@ -29,7 +29,7 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="25dp"
+        android:layout_margin="20dp"
         android:layout_gravity="center_horizontal"
         app:flexWrap="wrap"
         app:alignItems="stretch"
@@ -42,8 +42,8 @@
             android:text="word"
             android:paddingTop="5dp"
             android:paddingBottom="5dp"
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:layout_margin="5dp"
             android:textSize="15sp"
             android:background="@drawable/textview_border"/>
@@ -55,8 +55,8 @@
             android:text="word"
             android:paddingTop="5dp"
             android:paddingBottom="5dp"
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:layout_margin="5dp"
             android:textSize="15sp"
             android:background="@drawable/textview_border"/>
@@ -68,8 +68,8 @@
             android:text="word"
             android:paddingTop="5dp"
             android:paddingBottom="5dp"
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:layout_margin="5dp"
             android:textSize="15sp"
             android:background="@drawable/textview_border"/>
@@ -81,8 +81,8 @@
             android:text="word"
             android:paddingTop="5dp"
             android:paddingBottom="5dp"
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:layout_margin="5dp"
             android:textSize="15sp"
             android:background="@drawable/textview_border"/>
@@ -94,8 +94,8 @@
             android:text="word"
             android:paddingTop="5dp"
             android:paddingBottom="5dp"
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:layout_margin="5dp"
             android:textSize="15sp"
             android:background="@drawable/textview_border"/>
@@ -107,8 +107,8 @@
             android:text="word"
             android:paddingTop="5dp"
             android:paddingBottom="5dp"
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:layout_margin="5dp"
             android:textSize="15sp"
             android:background="@drawable/textview_border"/>
@@ -120,8 +120,8 @@
             android:text="word"
             android:paddingTop="5dp"
             android:paddingBottom="5dp"
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:layout_margin="5dp"
             android:textSize="15sp"
             android:background="@drawable/textview_border"/>
@@ -133,8 +133,8 @@
             android:text="word"
             android:paddingTop="5dp"
             android:paddingBottom="5dp"
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:layout_margin="5dp"
             android:textSize="15sp"
             android:background="@drawable/textview_border"/>
@@ -146,8 +146,8 @@
             android:text="word"
             android:paddingTop="5dp"
             android:paddingBottom="5dp"
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:layout_margin="5dp"
             android:textSize="15sp"
             android:background="@drawable/textview_border"/>
@@ -159,8 +159,8 @@
             android:text="word"
             android:paddingTop="5dp"
             android:paddingBottom="5dp"
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:layout_margin="5dp"
             android:textSize="15sp"
             android:background="@drawable/textview_border"/>
@@ -172,8 +172,8 @@
             android:text="word"
             android:paddingTop="5dp"
             android:paddingBottom="5dp"
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:layout_margin="5dp"
             android:textSize="15sp"
             android:background="@drawable/textview_border"/>
@@ -185,8 +185,8 @@
             android:text="word"
             android:paddingTop="5dp"
             android:paddingBottom="5dp"
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:layout_margin="5dp"
             android:textSize="15sp"
             android:background="@drawable/textview_border"/>
@@ -198,20 +198,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Keep your recovery phrase safe. If you ever lose or replace your phone, you can use it to recover your funds."
-        android:textSize="20sp"
-        android:layout_marginStart="50dp"
-        android:layout_marginEnd="50dp"
-        android:textAlignment="center"
-        android:layout_marginTop="20dp"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Never share your recovery phrase with anyone. To be safe, avoid screenshots and don't store it on your mobile device."
-        android:textSize="20sp"
-        android:layout_marginStart="50dp"
-        android:layout_marginEnd="50dp"
-        android:textAlignment="center"
-        android:layout_marginTop="20dp"/>
+        android:textSize="16sp"
+        android:layout_marginStart="40dp"
+        android:layout_marginEnd="40dp"
+        android:textAlignment="center" />
 
 </LinearLayout>

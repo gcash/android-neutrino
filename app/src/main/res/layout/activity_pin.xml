@@ -15,12 +15,12 @@
         android:textAlignment="center"
         android:textSize="20sp"
         android:text="Enter New Pin"
-        android:layout_marginTop="100dp"
+        android:layout_marginTop="40dp"
         app:layout_anchorGravity="center_horizontal" />
 
     <com.andrognito.pinlockview.IndicatorDots
         android:id="@+id/pinIndicatorDots"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="30dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:dotEmptyBackground="@drawable/dot_empty"
@@ -33,7 +33,7 @@
         android:textAlignment="center"
         android:textSize="15sp"
         android:text="Incorrect Pin"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="10dp"
         android:textColor="@android:color/holo_red_dark"
         android:visibility="gone"
         app:layout_anchorGravity="center_horizontal" />
@@ -41,7 +41,7 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="30dp"
         android:gravity="center_horizontal">
 
         <com.andrognito.pinlockview.PinLockView
@@ -49,8 +49,8 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             app:keypadTextColor="@color/darkGreyCircle"
-            app:keypadHorizontalSpacing="60dp"
-            app:keypadVerticalSpacing="60dp" />
+            app:keypadHorizontalSpacing="30dp"
+            app:keypadVerticalSpacing="30dp" />
     </RelativeLayout>
 
 </LinearLayout>

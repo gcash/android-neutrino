@@ -9,21 +9,25 @@
         android:id="@+id/fingerprintTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Scan Fingerprint"
-        android:textStyle="bold"
-        android:textSize="20sp"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="90dp"/>
+        android:layout_marginTop="40dp"
+        android:text="Scan Fingerprint"
+        android:textSize="20sp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/fingerprintDesc"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/fingerprintTitle"
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="40dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="40dp"
+        android:layout_marginBottom="40dp"
         android:text="Your wallet's encryption key will be stored in a secure key store that can only be accessed with your fingerprint."
-        android:textSize="20sp"
-        android:layout_margin="50dp"
-        android:layout_centerHorizontal="true" />
+        android:textAlignment="center"
+        android:textSize="18sp" />
 
     <ImageView
         android:layout_width="150dp"
