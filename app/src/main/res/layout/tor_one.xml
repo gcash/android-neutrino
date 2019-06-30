@@ -10,7 +10,7 @@
     <ImageView
         android:layout_width="60dp"
         android:layout_height="60dp"
-        android:layout_marginTop="30dp"
+        android:layout_marginTop="40dp"
         android:layout_marginBottom="10dp"
         android:src="@drawable/orbot" />
 
@@ -24,7 +24,9 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="20dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="40dp"
+        android:layout_marginEnd="40dp"
         android:text="Neutrino Wallet does an excellent job of preventing your peers from learning of your incoming payments. However, outgoing spends are still sent sent in the clear meaning your remote peers could potentially associate your spends with your IP address. This tutorial will show you how to set up Orbot to enhance the privacy of your spends."
         android:textSize="18sp"
         android:textAlignment="center"/>
