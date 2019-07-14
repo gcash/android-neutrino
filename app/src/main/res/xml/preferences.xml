@@ -1,151 +1,151 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.v7.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:key="preferenceScreen"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:key="preferenceScreen">
 
-    <android.support.v7.preference.Preference
-        app:key="blockchain"
-        app:title="Blockchain"
+    <Preference
         app:icon="@drawable/chain_icon_small"
-        />
+        app:key="blockchain"
+        app:title="Blockchain" />
 
-    <android.support.v7.preference.Preference
+    <Preference
+        android:icon="@drawable/seed_icon_small"
         android:key="backup"
         android:title="Backup Wallet"
-        android:icon="@drawable/seed_icon_small"
         app:summary="Write down your wallet's recovery seed.">
 
-        <intent android:action="launchBackupFromSettings"/>
-    </android.support.v7.preference.Preference>
+        <intent android:action="launchBackupFromSettings" />
+    </Preference>
 
-    <android.support.v7.preference.Preference
+    <Preference
+        android:icon="@drawable/restore_icon_small"
         android:key="restore"
         android:title="Recover Wallet"
-        android:icon="@drawable/restore_icon_small"
         app:summary="Recover a wallet from a seed backup.">
 
-        <intent android:action="launchRestoreFromSettings"/>
-    </android.support.v7.preference.Preference>
+        <intent android:action="launchRestoreFromSettings" />
+    </Preference>
 
-    <android.support.v7.preference.PreferenceScreen
-        android:persistent="false"
-        android:key="encryption"
-        android:title="Wallet Encryption"
+    <PreferenceScreen
         android:icon="@drawable/key_icon_small"
+        android:key="encryption"
+        android:persistent="false"
+        android:title="Wallet Encryption"
         app:summary="Set up encryption of the wallet's private keys.">
 
-        <android.support.v7.preference.Preference
+        <Preference
+            android:icon="@drawable/pin_icon_small"
             android:key="pin"
             android:title="Pin Encryption"
-            android:icon="@drawable/pin_icon_small"
             app:summary="Enter a pin to encrypt the wallet with.">
 
-            <intent android:action="launchPinFromSettings"/>
-        </android.support.v7.preference.Preference>
+            <intent android:action="launchPinFromSettings" />
+        </Preference>
 
-        <android.support.v7.preference.Preference
+        <Preference
+            android:icon="@drawable/fingerprint_icon_small"
             android:key="fingerprint"
             android:title="Fingerprint Authentication"
-            android:icon="@drawable/fingerprint_icon_small"
             app:summary="Set up fingerprint based encryption.">
 
-            <intent android:action="launchFingerprintFromSettings"/>
-        </android.support.v7.preference.Preference>
+            <intent android:action="launchFingerprintFromSettings" />
+        </Preference>
 
-    </android.support.v7.preference.PreferenceScreen>
+    </PreferenceScreen>
 
-    <android.support.v7.preference.Preference
+    <Preference
+        android:icon="@drawable/key_icon_small"
         android:key="removeEncryption"
         android:title="Remove Encryption"
-        android:icon="@drawable/key_icon_small"
-        app:summary="Decrypt wallet and return to unencrypted state."/>
+        app:summary="Decrypt wallet and return to unencrypted state." />
 
     <cash.bchd.android_neutrino.DialogPreference
-        app:key="rescan"
-        app:title="Rescan Blocks"
         app:icon="@drawable/rescan_icon_small"
-        app:summary="Rescan blocks for missing transactions." />
+        app:key="rescan"
+        app:summary="Rescan blocks for missing transactions."
+        app:title="Rescan Blocks" />
 
-    <android.support.v7.preference.SwitchPreferenceCompat
-        app:key="blocksonly"
+    <SwitchPreferenceCompat
         app:icon="@drawable/block_icon_small"
-        app:title="Blocks Only"
-        app:summary="Disable downloading unconfirmed transactions from the mempool. This will use less bandwidth but you will only detect transactions when they are mined."/>
+        app:key="blocksonly"
+        app:summary="Disable downloading unconfirmed transactions from the mempool. This will use less bandwidth but you will only detect transactions when they are mined."
+        app:title="Blocks Only" />
 
-    <android.support.v7.preference.ListPreference
-        android:key="currency_preference"
-        android:title="Fiat Currency"
-        android:icon="@drawable/currency_icon_small"
+    <ListPreference
         android:entries="@array/CurrencyCodes"
         android:entryValues="@array/CurrencyCodes"
-        app:summary="Set the fiat currency to use for viewing the BCH exchange rate."/>
+        android:icon="@drawable/currency_icon_small"
+        android:key="currency_preference"
+        android:title="Fiat Currency"
+        app:summary="Set the fiat currency to use for viewing the BCH exchange rate." />
 
-    <com.takisoft.fix.support.v7.preference.EditTextPreference
-        android:key="fee"
-        android:title="Network Fee"
+    <EditTextPreference
         android:icon="@drawable/fees_icon_small"
         android:inputType="phone"
+        android:key="fee"
+        android:title="Network Fee"
         app:summary="Set the network fee per byte to apply to your transactions." />
 
-    <android.support.v7.preference.EditTextPreference
+    <EditTextPreference
+        android:icon="@drawable/label_icon_small"
         android:key="label"
         android:title="Default Label"
-        android:icon="@drawable/label_icon_small"
-        app:summary="Pre-populate the label field in the payment request with the value entered here. Typically this field is your name or your business' name."/>
+        app:summary="Pre-populate the label field in the payment request with the value entered here. Typically this field is your name or your business' name." />
 
-    <android.support.v7.preference.EditTextPreference
+    <EditTextPreference
+        android:icon="@drawable/memo_icon_small"
         android:key="memo"
         android:title="Default Memo"
-        android:icon="@drawable/memo_icon_small"
-        app:summary="Pre-populate the memo field in the payment request with the value entered here. Typically this field describes what the payment is for."/>
+        app:summary="Pre-populate the memo field in the payment request with the value entered here. Typically this field describes what the payment is for." />
 
-    <android.support.v7.preference.Preference
+    <Preference
+        android:icon="@drawable/tor_icon_small"
         android:key="tor"
         android:title="Tor"
-        android:icon="@drawable/tor_icon_small"
         app:summary="Learn how to connect Neutrino wallet to Tor for enhanced privacy.">
 
-        <intent android:action="launchTorFromSettings"/>
-    </android.support.v7.preference.Preference>
+        <intent android:action="launchTorFromSettings" />
+    </Preference>
 
-    <android.support.v7.preference.PreferenceScreen
-        android:persistent="false"
-        android:key="bchd"
-        android:title="BCHD"
+    <PreferenceScreen
         android:icon="@drawable/bchd_icon_small"
+        android:key="bchd"
+        android:persistent="false"
+        android:title="BCHD"
         app:summary="Enter credentials to RPC connect to a bchd full node rather than using SPV mode.">
 
-        <android.support.v7.preference.EditTextPreference
+        <EditTextPreference
+            android:icon="@drawable/ip_icon_small"
             android:key="ip"
             android:title="IP Address"
-            android:icon="@drawable/ip_icon_small"
-            app:summary="Enter the IP address (IP:Port) of the bchd full node"/>
+            app:summary="Enter the IP address (IP:Port) of the bchd full node" />
 
-        <android.support.v7.preference.EditTextPreference
+        <EditTextPreference
+            android:icon="@drawable/username_icon_small"
             android:key="username"
             android:title="Username"
-            android:icon="@drawable/username_icon_small"
-            app:summary="Enter the bchd RPC username"/>
+            app:summary="Enter the bchd RPC username" />
 
-        <android.support.v7.preference.EditTextPreference
+        <EditTextPreference
+            android:icon="@drawable/password_icon_small"
             android:key="password"
             android:title="Password"
-            android:icon="@drawable/password_icon_small"
-            app:summary="Enter the bchd RPC password"/>
+            app:summary="Enter the bchd RPC password" />
 
-        <android.support.v7.preference.EditTextPreference
+        <EditTextPreference
+            android:icon="@drawable/cert_icon_small"
             android:key="cert"
             android:title="Certificate"
-            android:icon="@drawable/cert_icon_small"
-            app:summary="Paste the contents of the bchd rpc.cert file for authentication"/>
-    </android.support.v7.preference.PreferenceScreen>
+            app:summary="Paste the contents of the bchd rpc.cert file for authentication" />
 
-    <android.support.v7.preference.Preference
+    </PreferenceScreen>
+
+    <Preference
+        android:icon="@drawable/bitcoin_icon_small"
         android:key="love"
         android:title="Show Some Love"
-        android:icon="@drawable/bitcoin_icon_small"
-        app:summary="Keep BCH awesome"/>
+        app:summary="Keep BCH awesome" />
 
-</android.support.v7.preference.PreferenceScreen>
+</PreferenceScreen>

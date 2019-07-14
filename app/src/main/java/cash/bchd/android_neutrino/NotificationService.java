@@ -5,17 +5,14 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
-import android.support.v4.app.NotificationCompat;
-import android.widget.Toast;
+
+import androidx.core.app.NotificationCompat;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -79,7 +76,7 @@ public class NotificationService extends Service {
                                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                                 .setContentTitle("Show Some Love To BCHD")
                                 .setContentIntent(pendingIntent)
-                                .setDefaults(Notification.DEFAULT_SOUND|Notification.DEFAULT_LIGHTS|Notification.DEFAULT_VIBRATE)
+                                .setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS | Notification.DEFAULT_VIBRATE)
                                 .setStyle(new NotificationCompat.BigTextStyle()
                                         .bigText("The Neutrino wallet is part of a larger suite of open source software which helps power the Bitcoin Cash network. The developers donate their time and expertise to bring awesome software to you for free."))
                                 .build();

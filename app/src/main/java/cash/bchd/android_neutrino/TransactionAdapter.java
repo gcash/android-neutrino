@@ -3,8 +3,6 @@ package cash.bchd.android_neutrino;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.support.design.widget.CoordinatorLayout;
-import android.support.v7.widget.RecyclerView;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +11,9 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
+
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -23,10 +24,11 @@ import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 
 public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.TxViewHolder> {
+
     private List<TransactionData> mDataset;
-    Context ctx;
-    CoordinatorLayout cLayout;
-    int blockHeight;
+    private Context ctx;
+    private CoordinatorLayout cLayout;
+    private int blockHeight;
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -42,12 +44,12 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         public TxViewHolder(LinearLayout v) {
             super(v);
             layout = v;
-            bchAmount = (TextView) v.findViewById(R.id.bchAmount);
-            fiatAmount = (TextView) v.findViewById(R.id.fiatAmount);
-            txDescription = (TextView) v.findViewById(R.id.txDescription);
-            txMemo = (TextView) v.findViewById(R.id.txMemo);
-            arrowImage = (ImageView) v.findViewById(R.id.arrowImage);
-            confirmationCircle = (ImageView) v.findViewById(R.id.confirmationCircle);
+            bchAmount = v.findViewById(R.id.bchAmount);
+            fiatAmount = v.findViewById(R.id.fiatAmount);
+            txDescription = v.findViewById(R.id.txDescription);
+            txMemo = v.findViewById(R.id.txMemo);
+            arrowImage = v.findViewById(R.id.arrowImage);
+            confirmationCircle = v.findViewById(R.id.confirmationCircle);
         }
     }
 

@@ -1,44 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
+    android:id="@+id/qrCodeLayout"
     android:layout_width="wrap_content"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:background="@drawable/gradient"
-    android:padding="10dp"
     android:layout_margin="50dp"
-    android:id="@+id/qrCodeLayout">
+    android:background="@drawable/gradient"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="10dp">
 
     <ImageView
         android:id="@+id/qrCodeView"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:scaleType="fitCenter"
         android:adjustViewBounds="true"
-        />
+        android:scaleType="fitCenter" />
 
     <TextView
         android:id="@+id/addrHelpText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="@color/grey"
-        android:textSize="15sp"
+        android:layout_marginTop="-20dp"
         android:background="#fcfcfc"
+        android:gravity="start"
         android:padding="10dp"
-        android:gravity="left"
-        android:text="WALLET ADDRESS"
-        android:layout_marginTop="-20dp"/>
+        android:text="@string/wallet_address"
+        android:textColor="@color/grey"
+        android:textSize="15sp" />
+
     <TextView
         android:id="@+id/address"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="#000"
-        android:textSize="20sp"
+        android:layout_marginTop="-10dp"
         android:background="#fcfcfc"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
         android:paddingBottom="10dp"
-        android:layout_marginTop="-10dp"/>
+        android:textColor="#000"
+        android:textSize="20sp" />
 
 </LinearLayout>

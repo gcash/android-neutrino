@@ -5,11 +5,10 @@ import android.content.Intent;
 import android.hardware.fingerprint.FingerprintManager;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.support.design.widget.Snackbar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -37,7 +36,7 @@ public class FingerprintSetupActivity extends FingerprintActivity {
                     @Override
                     public void onAuthenticationSucceeded(FingerprintManager.AuthenticationResult result) {
                         Settings settings = Settings.getInstance();
-                        RelativeLayout layout = (RelativeLayout) findViewById(R.id.fingerprintSetupLayout);
+                        RelativeLayout layout = findViewById(R.id.fingerprintSetupLayout);
                         try {
 
                             Wallet wallet = Wallet.getInstance();
@@ -90,7 +89,7 @@ public class FingerprintSetupActivity extends FingerprintActivity {
                 };
                 handler.startAuth(fingerprintManager, cryptoObject);
             } catch (Exception e) {
-                TextView desc = (TextView) findViewById(R.id.fingerprintDesc);
+                TextView desc = findViewById(R.id.fingerprintDesc);
                 desc.setText(e.getMessage().substring(e.getMessage().indexOf(":") + 2));
             }
             return;

@@ -2,11 +2,10 @@ package cash.bchd.android_neutrino;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.view.ViewPager;
-import android.text.Html;
 import android.widget.Button;
-import android.widget.TextView;
+
+import androidx.fragment.app.FragmentActivity;
+import androidx.viewpager.widget.ViewPager;
 
 public class BackupActivity extends FragmentActivity {
     private CustomViewPager _mViewPager;
@@ -25,7 +24,7 @@ public class BackupActivity extends FragmentActivity {
         fa = this;
     }
     private void setUpView(){
-        _mViewPager = (CustomViewPager) findViewById(R.id.viewPager);
+        _mViewPager = findViewById(R.id.viewPager);
         _adapter = new BackupAdapter(getApplicationContext(),getSupportFragmentManager());
         _mViewPager.setAdapter(_adapter);
         _mViewPager.setCurrentItem(0);
@@ -58,9 +57,9 @@ public class BackupActivity extends FragmentActivity {
         }
     }
     private void initButton(){
-        _btn1=(Button)findViewById(R.id.backupCircle1);
-        _btn2=(Button)findViewById(R.id.backupCircle2);
-        _btn3=(Button)findViewById(R.id.backupCircle3);
+        _btn1= findViewById(R.id.backupCircle1);
+        _btn2= findViewById(R.id.backupCircle2);
+        _btn3= findViewById(R.id.backupCircle3);
         setButton(_btn1,true);
         setButton(_btn2,false);
         setButton(_btn3,false);

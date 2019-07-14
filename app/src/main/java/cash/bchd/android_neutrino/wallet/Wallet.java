@@ -3,7 +3,6 @@ package cash.bchd.android_neutrino.wallet;
 import android.content.Context;
 import android.util.Base64;
 
-import com.google.android.gms.common.util.ArrayUtils;
 import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;

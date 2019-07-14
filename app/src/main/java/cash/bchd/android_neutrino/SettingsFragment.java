@@ -3,14 +3,13 @@ package cash.bchd.android_neutrino;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-import com.takisoft.fix.support.v7.preference.EditTextPreference;
 
-import android.support.v7.app.AlertDialog;
-import android.support.v7.preference.Preference;
-import com.takisoft.fix.support.v7.preference.PreferenceFragmentCompat;
-import android.support.v7.preference.PreferenceScreen;
-import android.support.v7.preference.SwitchPreferenceCompat;
-import android.view.View;
+import androidx.appcompat.app.AlertDialog;
+import androidx.preference.EditTextPreference;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceScreen;
+import androidx.preference.SwitchPreferenceCompat;
 
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
@@ -32,7 +31,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     }
 
     @Override
-    public void onCreatePreferencesFix(Bundle bundle, String rootKey) {
+    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
 
         settings = Settings.getInstance();

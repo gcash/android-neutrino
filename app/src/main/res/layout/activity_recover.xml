@@ -9,14 +9,14 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:orientation="vertical">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Restore your wallet"
+            android:text="@string/restore_your_wallet"
             android:textStyle="bold"
             android:textSize="20sp"
             android:textAlignment="center"
@@ -25,192 +25,215 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Enter your 12-word recovery phrase to restore your wallet."
+            android:text="@string/enter_your_phrase"
             android:textSize="20sp"
             android:layout_marginStart="50dp"
             android:layout_marginEnd="50dp"
             android:textAlignment="center"
             android:layout_marginTop="20dp"/>
 
-        <android.support.design.widget.TextInputLayout
+        <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/restoreLayout1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
             android:layout_marginEnd="50dp"
             android:layout_marginTop="25dp">
-            <android.support.design.widget.TextInputEditText
+
+            <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/restoreWord1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter word 1"
+                android:hint="@string/enter_word_1"
                 android:textSize="20sp"/>
-        </android.support.design.widget.TextInputLayout>
 
-        <android.support.design.widget.TextInputLayout
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/restoreLayout2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
             android:layout_marginEnd="50dp"
             android:layout_marginTop="25dp">
-            <android.support.design.widget.TextInputEditText
+
+            <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/restoreWord2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter word 2"
+                android:hint="@string/enter_word_2"
                 android:textSize="20sp"/>
-        </android.support.design.widget.TextInputLayout>
 
-        <android.support.design.widget.TextInputLayout
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/restoreLayout3"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
             android:layout_marginEnd="50dp"
             android:layout_marginTop="25dp">
-            <android.support.design.widget.TextInputEditText
+
+            <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/restoreWord3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter word 3"
+                android:hint="@string/enter_word_3"
                 android:textSize="20sp"/>
-        </android.support.design.widget.TextInputLayout>
 
-        <android.support.design.widget.TextInputLayout
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/restoreLayout4"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
             android:layout_marginEnd="50dp"
             android:layout_marginTop="25dp">
-            <android.support.design.widget.TextInputEditText
+
+            <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/restoreWord4"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter word 4"
+                android:hint="@string/enter_word_4"
                 android:textSize="20sp"/>
-        </android.support.design.widget.TextInputLayout>
 
-        <android.support.design.widget.TextInputLayout
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/restoreLayout5"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
             android:layout_marginEnd="50dp"
             android:layout_marginTop="25dp">
-            <android.support.design.widget.TextInputEditText
+
+            <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/restoreWord5"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter word 5"
+                android:hint="@string/enter_word_5"
                 android:textSize="20sp"/>
-        </android.support.design.widget.TextInputLayout>
 
-        <android.support.design.widget.TextInputLayout
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/restoreLayout6"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
             android:layout_marginEnd="50dp"
             android:layout_marginTop="25dp">
-            <android.support.design.widget.TextInputEditText
+
+            <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/restoreWord6"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter word 6"
+                android:hint="@string/enter_word_6"
                 android:textSize="20sp"/>
-        </android.support.design.widget.TextInputLayout>
 
-        <android.support.design.widget.TextInputLayout
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/restoreLayout7"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
             android:layout_marginEnd="50dp"
             android:layout_marginTop="25dp">
-            <android.support.design.widget.TextInputEditText
+
+            <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/restoreWord7"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter word 7"
+                android:hint="@string/enter_word_7"
                 android:textSize="20sp"/>
-        </android.support.design.widget.TextInputLayout>
 
-        <android.support.design.widget.TextInputLayout
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/restoreLayout8"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
             android:layout_marginEnd="50dp"
             android:layout_marginTop="25dp">
-            <android.support.design.widget.TextInputEditText
+
+            <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/restoreWord8"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter word 8"
+                android:hint="@string/enter_word_8"
                 android:textSize="20sp"/>
-        </android.support.design.widget.TextInputLayout>
 
-        <android.support.design.widget.TextInputLayout
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/restoreLayout9"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
             android:layout_marginEnd="50dp"
             android:layout_marginTop="25dp">
-            <android.support.design.widget.TextInputEditText
+
+            <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/restoreWord9"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter word 9"
+                android:hint="@string/enter_word_9"
                 android:textSize="20sp"/>
-        </android.support.design.widget.TextInputLayout>
 
-        <android.support.design.widget.TextInputLayout
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/restoreLayout10"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
             android:layout_marginEnd="50dp"
             android:layout_marginTop="25dp">
-            <android.support.design.widget.TextInputEditText
+
+            <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/restoreWord10"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter word 10"
+                android:hint="@string/enter_word_10"
                 android:textSize="20sp"/>
-        </android.support.design.widget.TextInputLayout>
 
-        <android.support.design.widget.TextInputLayout
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/restoreLayout11"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
             android:layout_marginEnd="50dp"
             android:layout_marginTop="25dp">
-            <android.support.design.widget.TextInputEditText
+
+            <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/restoreWord11"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter word 11"
+                android:hint="@string/enter_word_11"
                 android:textSize="20sp"/>
-        </android.support.design.widget.TextInputLayout>
 
-        <android.support.design.widget.TextInputLayout
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/restoreLayout12"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
             android:layout_marginEnd="50dp"
             android:layout_marginTop="25dp">
-            <android.support.design.widget.TextInputEditText
+
+            <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/restoreWord12"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter word 12"
+                android:hint="@string/enter_word_12"
                 android:textSize="20sp"/>
-        </android.support.design.widget.TextInputLayout>
+        </com.google.android.material.textfield.TextInputLayout>
 
         <RelativeLayout
             android:layout_width="wrap_content"
@@ -223,10 +246,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="20sp"
-                android:text="CONFIRM"
+                android:text="@string/confirm"
                 android:gravity="center"
                 android:background="@android:color/transparent"
                 android:textColor="@color/neonGreen"/>
+
         </RelativeLayout>
+
     </LinearLayout>
+
 </ScrollView>

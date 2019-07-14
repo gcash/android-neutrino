@@ -1,40 +1,40 @@
 package cash.bchd.android_neutrino;
 
-import android.content.Context;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentPagerAdapter;
 
 public class TorAdapter extends FragmentPagerAdapter {
-    private Context _context;
-    public static int totalPage=5;
-    public TorAdapter(Context context, FragmentManager fm) {
-        super(fm);
-        _context=context;
 
+    public static int totalPage = 5;
+
+    public TorAdapter(FragmentManager fm) {
+        super(fm);
     }
+
     @Override
     public Fragment getItem(int position) {
         Fragment f = new Fragment();
-        switch(position){
+        switch (position) {
             case 0:
-                f=TorOne.newInstance(_context);
+                f = TorOne.newInstance();
                 break;
             case 1:
-                f=TorTwo.newInstance(_context);
+                f = TorTwo.newInstance();
                 break;
             case 2:
-                f=TorThree.newInstance(_context);
+                f = TorThree.newInstance();
                 break;
             case 3:
-                f=TorFour.newInstance(_context);
+                f = TorFour.newInstance();
                 break;
             case 4:
-                f=TorFive.newInstance(_context);
+                f = TorFive.newInstance();
                 break;
         }
         return f;
     }
+
     @Override
     public int getCount() {
         return totalPage;

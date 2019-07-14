@@ -5,11 +5,13 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.support.design.widget.TextInputEditText;
-import android.support.design.widget.TextInputLayout;
-import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.io.File;
 
@@ -24,43 +26,43 @@ public class RestoreActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recover);
 
-        TextInputLayout layout1 = (TextInputLayout) findViewById(R.id.restoreLayout1);
-        TextInputEditText input1 = (TextInputEditText) findViewById(R.id.restoreWord1);
+        TextInputLayout layout1 = findViewById(R.id.restoreLayout1);
+        TextInputEditText input1 = findViewById(R.id.restoreWord1);
 
-        TextInputLayout layout2 = (TextInputLayout) findViewById(R.id.restoreLayout2);
-        TextInputEditText input2 = (TextInputEditText) findViewById(R.id.restoreWord2);
+        TextInputLayout layout2 = findViewById(R.id.restoreLayout2);
+        TextInputEditText input2 = findViewById(R.id.restoreWord2);
 
-        TextInputLayout layout3 = (TextInputLayout) findViewById(R.id.restoreLayout3);
-        TextInputEditText input3 = (TextInputEditText) findViewById(R.id.restoreWord3);
+        TextInputLayout layout3 = findViewById(R.id.restoreLayout3);
+        TextInputEditText input3 = findViewById(R.id.restoreWord3);
 
-        TextInputLayout layout4 = (TextInputLayout) findViewById(R.id.restoreLayout4);
-        TextInputEditText input4 = (TextInputEditText) findViewById(R.id.restoreWord4);
+        TextInputLayout layout4 = findViewById(R.id.restoreLayout4);
+        TextInputEditText input4 = findViewById(R.id.restoreWord4);
 
-        TextInputLayout layout5 = (TextInputLayout) findViewById(R.id.restoreLayout5);
-        TextInputEditText input5 = (TextInputEditText) findViewById(R.id.restoreWord5);
+        TextInputLayout layout5 = findViewById(R.id.restoreLayout5);
+        TextInputEditText input5 = findViewById(R.id.restoreWord5);
 
-        TextInputLayout layout6 = (TextInputLayout) findViewById(R.id.restoreLayout6);
-        TextInputEditText input6 = (TextInputEditText) findViewById(R.id.restoreWord6);
+        TextInputLayout layout6 = findViewById(R.id.restoreLayout6);
+        TextInputEditText input6 = findViewById(R.id.restoreWord6);
 
-        TextInputLayout layout7 = (TextInputLayout) findViewById(R.id.restoreLayout7);
-        TextInputEditText input7 = (TextInputEditText) findViewById(R.id.restoreWord7);
+        TextInputLayout layout7 = findViewById(R.id.restoreLayout7);
+        TextInputEditText input7 = findViewById(R.id.restoreWord7);
 
-        TextInputLayout layout8 = (TextInputLayout) findViewById(R.id.restoreLayout8);
-        TextInputEditText input8 = (TextInputEditText) findViewById(R.id.restoreWord8);
+        TextInputLayout layout8 = findViewById(R.id.restoreLayout8);
+        TextInputEditText input8 = findViewById(R.id.restoreWord8);
 
-        TextInputLayout layout9 = (TextInputLayout) findViewById(R.id.restoreLayout9);
-        TextInputEditText input9 = (TextInputEditText) findViewById(R.id.restoreWord9);
+        TextInputLayout layout9 = findViewById(R.id.restoreLayout9);
+        TextInputEditText input9 = findViewById(R.id.restoreWord9);
 
-        TextInputLayout layout10 = (TextInputLayout) findViewById(R.id.restoreLayout10);
-        TextInputEditText input10 = (TextInputEditText) findViewById(R.id.restoreWord10);
+        TextInputLayout layout10 = findViewById(R.id.restoreLayout10);
+        TextInputEditText input10 = findViewById(R.id.restoreWord10);
 
-        TextInputLayout layout11 = (TextInputLayout) findViewById(R.id.restoreLayout11);
-        TextInputEditText input11 = (TextInputEditText) findViewById(R.id.restoreWord11);
+        TextInputLayout layout11 = findViewById(R.id.restoreLayout11);
+        TextInputEditText input11 = findViewById(R.id.restoreWord11);
 
-        TextInputLayout layout12 = (TextInputLayout) findViewById(R.id.restoreLayout12);
-        TextInputEditText input12 = (TextInputEditText) findViewById(R.id.restoreWord12);
+        TextInputLayout layout12 = findViewById(R.id.restoreLayout12);
+        TextInputEditText input12 = findViewById(R.id.restoreWord12);
 
-        Button confirmBtn = (Button) findViewById(R.id.restoreConfirmBtn);
+        Button confirmBtn = findViewById(R.id.restoreConfirmBtn);
         confirmBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -168,7 +170,7 @@ public class RestoreActivity extends AppCompatActivity {
 
                                 deleteRecursive(new File(getDataDir().getPath()));
 
-                                Vibrator vibrator = (Vibrator)getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                                Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
                                 vibrator.vibrate(500);
                                 Wallet.getInstance().stop();
 

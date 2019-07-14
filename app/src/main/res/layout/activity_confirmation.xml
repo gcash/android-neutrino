@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/confirmationMainLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ConfirmationActivity"
-    android:id="@+id/confirmationMainLayout"
-    android:background="@drawable/gradient">
+    android:background="@drawable/gradient"
+    tools:context=".ConfirmationActivity">
 
     <RelativeLayout
         android:id="@+id/confirmationLayout"
@@ -18,7 +18,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="50dp"
-            android:text="Send"
+            android:text="@string/send"
             android:textAlignment="center"
             android:textColor="@android:color/white"
             android:textSize="40sp"
@@ -28,8 +28,8 @@
             android:id="@+id/confirmBchAmount"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAlignment="center"
             android:layout_below="@+id/sendTxt"
+            android:textAlignment="center"
             android:textColor="@android:color/white"
             android:textSize="40sp"
             app:layout_anchorGravity="center_horizontal" />
@@ -38,22 +38,22 @@
             android:id="@+id/confirmFiatAmount"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAlignment="center"
             android:layout_below="@+id/confirmBchAmount"
+            android:textAlignment="center"
             android:textColor="@android:color/white"
             android:textSize="20sp"
             app:layout_anchorGravity="center_horizontal" />
 
-        <android.support.v7.widget.CardView
+        <androidx.cardview.widget.CardView
             android:id="@+id/detailsCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@+id/confirmFiatAmount"
             android:layout_marginLeft="15dp"
+            android:layout_marginTop="30dp"
             android:layout_marginRight="15dp"
             android:layout_marginBottom="10dp"
             android:background="@android:color/white"
-            android:layout_marginTop="30dp"
             android:visibility="visible">
 
             <LinearLayout
@@ -65,15 +65,15 @@
                     android:id="@+id/payToLabel"
                     android:layout_width="200dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_gravity="start"
                     android:layout_marginStart="10dp"
+                    android:layout_marginTop="10dp"
                     android:layout_marginBottom="5dp"
                     android:layout_weight="1"
-                    android:layout_gravity="start"
                     android:ellipsize="end"
-                    android:textSize="16sp"
+                    android:text="@string/pay_to"
                     android:textColor="@color/grey"
-                    android:text="PAY TO" />
+                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/payTo"
@@ -82,34 +82,34 @@
                     android:layout_gravity="start"
                     android:layout_marginStart="10dp"
                     android:layout_marginEnd="10dp"
-                    android:padding="10dp"
                     android:layout_weight="1"
-                    android:ellipsize="end"
                     android:background="@color/liteGrey"
-                    android:textColor="@android:color/black"
                     android:drawablePadding="6dp"
+                    android:ellipsize="end"
+                    android:padding="10dp"
+                    android:textColor="@android:color/black"
                     android:textSize="14sp" />
 
                 <View
                     android:id="@+id/divider7"
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="?android:attr/listDivider"
+                    android:layout_marginTop="10dp"
                     android:layout_marginBottom="10dp"
-                    android:layout_marginTop="10dp"/>
+                    android:background="?android:attr/listDivider" />
 
                 <TextView
                     android:id="@+id/paymentAddrLabel"
                     android:layout_width="200dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
-                    android:layout_weight="1"
                     android:layout_gravity="start"
+                    android:layout_marginStart="10dp"
                     android:layout_marginBottom="5dp"
+                    android:layout_weight="1"
                     android:ellipsize="end"
-                    android:textSize="16sp"
+                    android:text="@string/payment_address"
                     android:textColor="@color/grey"
-                    android:text="PAYMENT ADDRESS" />
+                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/paymentAddress"
@@ -118,10 +118,10 @@
                     android:layout_gravity="start"
                     android:layout_marginStart="10dp"
                     android:layout_marginEnd="10dp"
-                    android:padding="10dp"
                     android:layout_weight="1"
-                    android:ellipsize="end"
                     android:background="@color/liteGrey"
+                    android:ellipsize="end"
+                    android:padding="10dp"
                     android:textColor="@android:color/black"
                     android:textSize="14sp" />
 
@@ -129,21 +129,21 @@
                     android:id="@+id/divider8"
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="?android:attr/listDivider"
+                    android:layout_marginTop="10dp"
                     android:layout_marginBottom="10dp"
-                    android:layout_marginTop="10dp"/>
+                    android:background="?android:attr/listDivider" />
 
                 <TextView
                     android:layout_width="200dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
-                    android:layout_weight="1"
                     android:layout_gravity="start"
+                    android:layout_marginStart="10dp"
                     android:layout_marginBottom="5dp"
+                    android:layout_weight="1"
                     android:ellipsize="end"
-                    android:textSize="16sp"
+                    android:text="@string/network_fee"
                     android:textColor="@color/grey"
-                    android:text="NETWORK FEE" />
+                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/networkFee"
@@ -152,10 +152,10 @@
                     android:layout_gravity="start"
                     android:layout_marginStart="10dp"
                     android:layout_marginEnd="10dp"
-                    android:padding="10dp"
                     android:layout_weight="1"
-                    android:ellipsize="end"
                     android:background="@color/liteGrey"
+                    android:ellipsize="end"
+                    android:padding="10dp"
                     android:textColor="@android:color/black"
                     android:textSize="14sp" />
 
@@ -163,22 +163,22 @@
                     android:id="@+id/divider9"
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="?android:attr/listDivider"
+                    android:layout_marginTop="10dp"
                     android:layout_marginBottom="10dp"
-                    android:layout_marginTop="10dp"/>
+                    android:background="?android:attr/listDivider" />
 
                 <TextView
                     android:id="@+id/memoLabel"
                     android:layout_width="200dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
-                    android:layout_weight="1"
                     android:layout_gravity="start"
+                    android:layout_marginStart="10dp"
                     android:layout_marginBottom="5dp"
+                    android:layout_weight="1"
                     android:ellipsize="end"
-                    android:textSize="16sp"
+                    android:text="@string/memo"
                     android:textColor="@color/grey"
-                    android:text="MEMO" />
+                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/memoConfirmation"
@@ -186,53 +186,54 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="start"
                     android:layout_marginStart="10dp"
-                    android:layout_marginBottom="20dp"
                     android:layout_marginEnd="10dp"
-                    android:padding="10dp"
+                    android:layout_marginBottom="20dp"
                     android:layout_weight="1"
-                    android:ellipsize="end"
                     android:background="@color/liteGrey"
+                    android:ellipsize="end"
+                    android:padding="10dp"
                     android:textColor="@android:color/black"
                     android:textSize="14sp" />
             </LinearLayout>
-        </android.support.v7.widget.CardView>
+
+        </androidx.cardview.widget.CardView>
 
         <ImageView
             android:id="@+id/fingerprint"
             android:layout_width="match_parent"
             android:layout_height="90dp"
-            android:layout_marginBottom="20dp"
             android:layout_alignParentBottom="true"
-            app:srcCompat="@drawable/fingerprint"
+            android:layout_marginBottom="20dp"
+            android:visibility="gone"
             app:layout_anchorGravity="center_horizontal"
-            android:visibility="gone"/>
+            app:srcCompat="@drawable/fingerprint" />
 
         <com.ebanx.swipebtn.SwipeButton
             android:id="@+id/swipe_btn"
-            android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
             android:layout_marginStart="20dp"
             android:layout_marginEnd="20dp"
             android:layout_marginBottom="20dp"
-            android:layout_alignParentBottom="true"
-            app:inner_text="SWIPE TO PAY"
-            app:inner_text_color="@android:color/white"
-            app:inner_text_size="16sp"
-            app:inner_text_top_padding="30dp"
-            app:inner_text_bottom_padding="30dp"
-            app:inner_text_background="@drawable/shape_rounded"
-            app:button_image_height="80dp"
-            app:button_image_width="100dp"
+            android:visibility="gone"
+            app:button_background="@drawable/shape_button"
+            app:button_bottom_padding="20dp"
             app:button_image_disabled="@drawable/bitcoin"
             app:button_image_enabled="@drawable/bitcoin"
+            app:button_image_height="80dp"
+            app:button_image_width="100dp"
             app:button_left_padding="20dp"
             app:button_right_padding="20dp"
             app:button_top_padding="20dp"
-            app:button_bottom_padding="20dp"
-            app:button_background="@drawable/shape_button"
+            app:has_activate_state="true"
             app:initial_state="disabled"
-            app:has_activate_state="true" />
+            app:inner_text="SWIPE TO PAY"
+            app:inner_text_background="@drawable/shape_rounded"
+            app:inner_text_bottom_padding="30dp"
+            app:inner_text_color="@android:color/white"
+            app:inner_text_size="16sp"
+            app:inner_text_top_padding="30dp" />
 
     </RelativeLayout>
 
@@ -240,9 +241,9 @@
         android:id="@+id/checkLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="gone"
+        android:gravity="center"
         android:orientation="vertical"
-        android:gravity="center">
+        android:visibility="gone">
 
         <cdflynn.android.library.checkview.CheckView
             android:id="@+id/check"
@@ -250,16 +251,18 @@
             android:layout_height="200dp"
             app:checkView_strokeColor="@color/neonGreen"
             app:checkView_strokeWidth="10dp"
-            app:layout_anchorGravity="center"/>
+            app:layout_anchorGravity="center" />
 
         <TextView
             android:id="@+id/paymentSentLabel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="Payment Sent!"
             android:gravity="center"
+            android:text="@string/payment_sent"
             android:textColor="@color/neonGreen"
-            android:textSize="30sp"/>
+            android:textSize="30sp" />
+
     </LinearLayout>
-</android.support.design.widget.CoordinatorLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -5,6 +5,7 @@ import android.content.Context;
 import java.io.File;
 
 public class Migration {
+
     private int currentVersion;
 
     public Migration(int currentVersion) {
