@@ -30,16 +30,16 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="50dp">
 
-        <LinearLayout
-            android:layout_width="wrap_content"
+        <RelativeLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:orientation="horizontal">
+            android:gravity="center">
 
             <TextView
                 android:id="@+id/receiveSymbolLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
                 android:layout_marginTop="21dp"
                 android:text=""
                 android:textColor="@color/neonPurple"
@@ -49,22 +49,23 @@
                 android:id="@+id/receiveAmountLayout"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:hint="@string/string_space"
+                android:layout_toEndOf="@+id/receiveSymbolLabel"
                 android:minWidth="50dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/receiveAmountInput"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:hint="@string/string_zero"
+                    android:layout_marginBottom="10dp"
                     android:inputType="numberDecimal"
+                    android:text="@string/string_zero"
                     android:textColor="@color/neonPurple"
                     android:textColorHint="@color/grey"
                     android:textSize="40sp" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
-        </LinearLayout>
+        </RelativeLayout>
 
         <ImageView
             android:id="@+id/receiveToggleImage"

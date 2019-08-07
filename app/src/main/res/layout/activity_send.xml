@@ -46,17 +46,16 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <LinearLayout
-            android:layout_width="wrap_content"
+        <RelativeLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:orientation="horizontal">
+            android:gravity="center">
 
             <TextView
                 android:id="@+id/symbolLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="21dp"
+                android:layout_centerVertical="true"
                 android:text=""
                 android:textColor="@color/neonPurple"
                 android:textSize="40sp" />
@@ -65,22 +64,24 @@
                 android:id="@+id/amountLayout"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:hint="@string/string_space"
+                android:layout_toEndOf="@+id/symbolLabel"
                 android:minWidth="50dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/amountInput"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:hint="@string/string_zero"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginBottom="10dp"
                     android:inputType="numberDecimal"
+                    android:text="@string/string_zero"
                     android:textColor="@color/neonPurple"
                     android:textColorHint="@color/grey"
                     android:textSize="40sp" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
-        </LinearLayout>
+        </RelativeLayout>
 
         <ImageView
             android:id="@+id/toggleImage"
