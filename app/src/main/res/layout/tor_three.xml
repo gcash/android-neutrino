@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Step 2: Open Orbot and check VPN Mode and select Full Device VPN"
+        android:text="@string/string_open_orbot"
         android:textSize="20sp"
         android:layout_marginTop="40dp"
         android:layout_marginLeft="40dp"
@@ -22,6 +22,5 @@
         android:src="@drawable/tor2"
         android:layout_marginTop="20dp"
         android:layout_marginBottom="50dp"/>
-
 
 </LinearLayout>

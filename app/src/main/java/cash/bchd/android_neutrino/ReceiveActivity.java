@@ -13,12 +13,6 @@ import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.support.design.widget.CoordinatorLayout;
-import android.support.design.widget.Snackbar;
-import android.support.design.widget.TextInputEditText;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Display;
@@ -33,6 +27,14 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
+
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+
+import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.textfield.TextInputEditText;
 
 import java.nio.charset.Charset;
 import java.util.Currency;
@@ -109,7 +111,8 @@ public class ReceiveActivity extends AppCompatActivity {
         receiveAmountInput.addTextChangedListener(new TextWatcher() {
 
             @Override
-            public void afterTextChanged(Editable s) {}
+            public void afterTextChanged(Editable s) {
+            }
 
             @Override
             public void beforeTextChanged(CharSequence s, int start,
@@ -170,7 +173,7 @@ public class ReceiveActivity extends AppCompatActivity {
                     }
                 }
 
-            } catch(Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             showingFiat = true;
@@ -224,7 +227,7 @@ public class ReceiveActivity extends AppCompatActivity {
             }
         }
         LayoutInflater layoutInflater = (LayoutInflater) ReceiveActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View customView = layoutInflater.inflate(R.layout.requestpopup,null);
+        View customView = layoutInflater.inflate(R.layout.requestpopup, null);
         PopupWindow popupWindow = new PopupWindow(customView, CoordinatorLayout.LayoutParams.WRAP_CONTENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT, true);
         popupWindow.showAtLocation(findViewById(R.id.receiveLayout), Gravity.CENTER, 0, 0);
         popupWindow.setOutsideTouchable(true);
@@ -386,7 +389,7 @@ public class ReceiveActivity extends AppCompatActivity {
 
     private void copyToClipboard(String data) {
         Object clipboardService = getSystemService(CLIPBOARD_SERVICE);
-        final ClipboardManager clipboardManager = (ClipboardManager)clipboardService;
+        final ClipboardManager clipboardManager = (ClipboardManager) clipboardService;
         if (clipboardManager != null) {
             ClipData clipData = ClipData.newPlainText(getString(R.string.source_text), data);
             clipboardManager.setPrimaryClip(clipData);

@@ -1,19 +1,13 @@
 package cash.bchd.android_neutrino;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.fingerprint.FingerprintManager;
-import android.Manifest;
 import android.os.CancellationSignal;
-import android.support.v4.app.ActivityCompat;
 import android.widget.Toast;
 
-import com.google.common.io.BaseEncoding;
-
-import java.security.KeyStore;
-import java.security.SecureRandom;
-
-import javax.crypto.SecretKey;
+import androidx.core.app.ActivityCompat;
 
 public class FingerprintHandler extends FingerprintManager.AuthenticationCallback {
 

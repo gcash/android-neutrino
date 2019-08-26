@@ -1,18 +1,16 @@
 package cash.bchd.android_neutrino;
 
 import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.v14.preference.PreferenceFragment;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.preference.PreferenceFragmentCompat;
-import android.support.v7.preference.PreferenceScreen;
-import android.support.v7.widget.Toolbar;
+
 import android.view.MenuItem;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceScreen;
 
 public class SettingsActivity extends AppCompatActivity implements PreferenceFragmentCompat.OnPreferenceStartScreenCallback {
 
@@ -39,7 +37,7 @@ public class SettingsActivity extends AppCompatActivity implements PreferenceFra
 
         CloseActivity.cancelCloseTimer();
 
-        Toolbar myToolbar = (Toolbar) findViewById(R.id.settingsToolbar);
+        Toolbar myToolbar = findViewById(R.id.settingsToolbar);
         setSupportActionBar(myToolbar);
 
         getSupportActionBar().setDisplayShowTitleEnabled(false);

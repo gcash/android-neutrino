@@ -9,10 +9,11 @@ import android.os.Build;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyPermanentlyInvalidatedException;
 import android.security.keystore.KeyProperties;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v4.app.ActivityCompat;
 import android.util.Base64;
-import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+
 import java.security.KeyStore;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;

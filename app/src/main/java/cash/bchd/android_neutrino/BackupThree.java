@@ -6,14 +6,16 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.support.design.widget.TextInputEditText;
-import android.support.design.widget.TextInputLayout;
-import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+
+import androidx.fragment.app.Fragment;
+
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,12 +49,12 @@ public class BackupThree extends Fragment {
             ns[i] = list.get(i);
         }
 
-        TextInputEditText enter1 = (TextInputEditText) root.findViewById(R.id.enterWord1);
-        TextInputEditText enter2 = (TextInputEditText) root.findViewById(R.id.enterWord2);
-        TextInputEditText enter3 = (TextInputEditText) root.findViewById(R.id.enterWord3);
-        TextInputLayout layout1 = (TextInputLayout) root.findViewById(R.id.wordLayout1);
-        TextInputLayout layout2 = (TextInputLayout) root.findViewById(R.id.wordLayout2);
-        TextInputLayout layout3 = (TextInputLayout) root.findViewById(R.id.wordLayout3);
+        TextInputEditText enter1 = root.findViewById(R.id.enterWord1);
+        TextInputEditText enter2 = root.findViewById(R.id.enterWord2);
+        TextInputEditText enter3 = root.findViewById(R.id.enterWord3);
+        TextInputLayout layout1 = root.findViewById(R.id.wordLayout1);
+        TextInputLayout layout2 = root.findViewById(R.id.wordLayout2);
+        TextInputLayout layout3 = root.findViewById(R.id.wordLayout3);
 
         enter1.setHint("Enter word " + (ns[0]+1));
         enter2.setHint("Enter word " + (ns[1]+1));

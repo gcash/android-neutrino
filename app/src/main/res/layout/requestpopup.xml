@@ -1,57 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
+    android:id="@+id/requestQRLayout"
     android:layout_width="wrap_content"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:background="@drawable/gradient"
-    android:padding="10dp"
     android:layout_margin="50dp"
-    android:id="@+id/requestQRLayout">
+    android:background="@drawable/gradient"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="10dp">
 
     <ImageView
         android:id="@+id/requestQRCode"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:scaleType="fitCenter"
         android:adjustViewBounds="true"
-        />
+        android:scaleType="fitCenter" />
 
     <TextView
         android:id="@+id/parialPayment"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="-20dp"
+        android:background="#fcfcfc"
+        android:gravity="start"
+        android:padding="10dp"
+        android:text="@string/partial_payment_detected"
         android:textColor="@android:color/holo_red_dark"
         android:textSize="15sp"
-        android:background="#fcfcfc"
-        android:padding="10dp"
-        android:gravity="left"
-        android:visibility="gone"
-        android:text="Partial Payment Detected"
-        android:layout_marginTop="-20dp"/>
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/uriHelpText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="@color/grey"
-        android:textSize="24sp"
+        android:layout_marginTop="-20dp"
         android:background="#fcfcfc"
+        android:gravity="start"
         android:padding="10dp"
-        android:gravity="left"
-        android:layout_marginTop="-20dp"/>
+        android:textColor="@color/grey"
+        android:textSize="24sp" />
+
     <TextView
         android:id="@+id/requestURi"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="#000"
-        android:textSize="20sp"
+        android:layout_marginTop="-10dp"
         android:background="#fcfcfc"
         android:paddingLeft="10dp"
+        android:paddingTop="5dp"
         android:paddingRight="10dp"
         android:paddingBottom="10dp"
-        android:paddingTop="5dp"
-        android:layout_marginTop="-10dp"/>
+        android:textColor="#000"
+        android:textSize="20sp" />
 
 </LinearLayout>

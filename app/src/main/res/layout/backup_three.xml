@@ -3,91 +3,99 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:background="@color/white"
-    android:orientation="vertical"
-    android:gravity="center_horizontal">
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Verify your recovery phrase"
-        android:textStyle="bold"
+        android:layout_marginTop="90dp"
+        android:text="@string/string_verify_your_recovery_phrase"
         android:textSize="20sp"
-        android:layout_marginTop="90dp"/>
+        android:textStyle="bold" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Let's test you to make sure you've written it down correctly."
-        android:textSize="20sp"
         android:layout_marginStart="50dp"
+        android:layout_marginTop="20dp"
         android:layout_marginEnd="50dp"
+        android:text="@string/string_test_your_words"
         android:textAlignment="center"
-        android:layout_marginTop="20dp"/>
+        android:textSize="20sp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Enter the following words from your recovery phrase."
-        android:textSize="20sp"
         android:layout_marginStart="50dp"
+        android:layout_marginTop="20dp"
         android:layout_marginEnd="50dp"
+        android:text="@string/string_enter_the_words"
         android:textAlignment="center"
-        android:layout_marginTop="20dp"/>
+        android:textSize="20sp" />
 
-    <android.support.design.widget.TextInputLayout
+    <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/wordLayout1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="50dp"
-        android:layout_marginEnd="50dp"
-        android:layout_marginTop="25dp">
-        <android.support.design.widget.TextInputEditText
+        android:layout_marginTop="25dp"
+        android:layout_marginEnd="50dp">
+
+        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/enterWord1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="20sp"/>
-    </android.support.design.widget.TextInputLayout>
+            android:textSize="20sp" />
+    </com.google.android.material.textfield.TextInputLayout>
 
-    <android.support.design.widget.TextInputLayout
+    <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/wordLayout2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="50dp"
-        android:layout_marginEnd="50dp"
-        android:layout_marginTop="25dp">
-        <android.support.design.widget.TextInputEditText
+        android:layout_marginTop="25dp"
+        android:layout_marginEnd="50dp">
+
+        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/enterWord2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="20sp" />
-    </android.support.design.widget.TextInputLayout>
 
-    <android.support.design.widget.TextInputLayout
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/wordLayout3"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="50dp"
-        android:layout_marginEnd="50dp"
-        android:layout_marginTop="25dp">
-    <android.support.design.widget.TextInputEditText
-        android:id="@+id/enterWord3"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="20sp"/>
-    </android.support.design.widget.TextInputLayout>
+        android:layout_marginTop="25dp"
+        android:layout_marginEnd="50dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/enterWord3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="20sp" />
+
+    </com.google.android.material.textfield.TextInputLayout>
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="match_parent">
+
         <Button
             android:id="@+id/confirmBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
             android:layout_marginBottom="50dp"
-            android:textSize="20sp"
-            android:text="CONFIRM"
             android:background="@android:color/transparent"
-            android:textColor="@color/neonGreen"/>
+            android:text="@string/confirm"
+            android:textColor="@color/neonGreen"
+            android:textSize="20sp" />
+
     </LinearLayout>
+
 </LinearLayout>

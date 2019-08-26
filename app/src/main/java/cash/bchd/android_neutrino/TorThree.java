@@ -1,18 +1,19 @@
 package cash.bchd.android_neutrino;
 
-import android.content.Context;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.fragment.app.Fragment;
+
 public class TorThree extends Fragment {
 
-    public static Fragment newInstance(Context context) {
-        TorThree f = new TorThree();
+    public TorThree() {
+    }
 
-        return f;
+    public static Fragment newInstance() {
+        return new TorThree();
     }
 
     @Override

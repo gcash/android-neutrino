@@ -8,14 +8,13 @@ import java.io.FileOutputStream;
 import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import cash.bchd.android_neutrino.wallet.TransactionData;
 
 public class TransactionStore {
+
     private final String FILE_NAME = "transactionData.dat";
     private ArrayList<TransactionData> transactionDataSet = new ArrayList<TransactionData>();
 
@@ -26,14 +25,14 @@ public class TransactionStore {
             transactionDataSet = (ArrayList<TransactionData>) is.readObject();
             is.close();
             fis.close();
-        } catch (FileNotFoundException| NotSerializableException e) {
+        } catch (FileNotFoundException | NotSerializableException e) {
             // Ignore file not found
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void save(Context context) throws Exception{
+    public void save(Context context) throws Exception {
         FileOutputStream fos = context.openFileOutput(FILE_NAME, Context.MODE_PRIVATE);
         ObjectOutputStream os = new ObjectOutputStream(fos);
         os.writeObject(transactionDataSet);
@@ -42,7 +41,7 @@ public class TransactionStore {
     }
 
     public List<TransactionData> getData() {
-       return this.transactionDataSet;
+        return this.transactionDataSet;
     }
 
     public void setData(List<TransactionData> data) {

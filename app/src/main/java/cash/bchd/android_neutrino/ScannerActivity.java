@@ -7,10 +7,11 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.support.v4.app.ActivityCompat;
 import android.util.SparseArray;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+
+import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.gms.vision.CameraSource;

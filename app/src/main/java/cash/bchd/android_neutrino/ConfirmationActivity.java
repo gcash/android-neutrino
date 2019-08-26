@@ -6,8 +6,6 @@ import android.content.Intent;
 import android.hardware.fingerprint.FingerprintManager;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.support.design.widget.CoordinatorLayout;
-import android.support.design.widget.Snackbar;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.ImageView;
@@ -15,7 +13,10 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+
 import com.ebanx.swipebtn.SwipeButton;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;

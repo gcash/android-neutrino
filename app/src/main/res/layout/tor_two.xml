@@ -2,26 +2,25 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@color/white"
-    android:orientation="vertical"
-    android:gravity="center_horizontal">
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Step 1: Download Orbot from the Play Store"
-        android:textSize="20sp"
-        android:layout_marginTop="40dp"
         android:layout_marginLeft="40dp"
+        android:layout_marginTop="40dp"
         android:layout_marginRight="40dp"
-        android:textAlignment="center"/>
+        android:text="@string/string_download_orbot"
+        android:textAlignment="center"
+        android:textSize="20sp" />
 
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:src="@drawable/tor1"
         android:layout_marginTop="20dp"
-        android:layout_marginBottom="50dp"/>
+        android:layout_marginBottom="50dp"
+        android:src="@drawable/tor1" />
 
 </LinearLayout>

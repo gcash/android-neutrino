@@ -1,19 +1,19 @@
 package cash.bchd.android_neutrino;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.andrognito.pinlockview.IndicatorDots;
 import com.andrognito.pinlockview.PinLockListener;
 import com.andrognito.pinlockview.PinLockView;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -23,8 +23,10 @@ import io.grpc.Status;
 import walletrpc.Api;
 
 public class PinActivity extends AppCompatActivity {
+
     private boolean firstPinEntered = false;
     String firstPin;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -35,18 +37,17 @@ public class PinActivity extends AppCompatActivity {
         boolean removePin = intent.getBooleanExtra("removePin", false);
 
         if (enterOnly || removePin) {
-            TextView pinLabel = (TextView) findViewById(R.id.pinLabel);
+            TextView pinLabel = findViewById(R.id.pinLabel);
             pinLabel.setText("Enter Pin");
         }
 
-
-        IndicatorDots mIndicatorDots = (IndicatorDots) findViewById(R.id.pinIndicatorDots);
-        PinLockView mPinLockView = (PinLockView) findViewById(R.id.pinpad);
+        IndicatorDots mIndicatorDots = findViewById(R.id.pinIndicatorDots);
+        PinLockView mPinLockView = findViewById(R.id.pinpad);
         mPinLockView.setPinLockListener(new PinLockListener() {
             @Override
             public void onComplete(String pin) {
                 if (removePin) {
-                    LinearLayout mCLayout = (LinearLayout) findViewById(R.id.setPinLayout);
+                    LinearLayout mCLayout = findViewById(R.id.setPinLayout);
                     try {
                         Wallet wallet = Wallet.getInstance();
                         String hashedPw = Wallet.SHA256(pin);
@@ -107,7 +108,7 @@ public class PinActivity extends AppCompatActivity {
                         Vibrator vibrator = (Vibrator)getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
                         vibrator.vibrate(500);
                     } else {
-                        LinearLayout mCLayout = (LinearLayout) findViewById(R.id.setPinLayout);
+                        LinearLayout mCLayout = findViewById(R.id.setPinLayout);
                         try {
                             Wallet wallet = Wallet.getInstance();
                             String hashedPw = Wallet.SHA256(pin);

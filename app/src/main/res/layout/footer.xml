@@ -23,14 +23,14 @@
             android:layout_height="14dp"
             android:layout_width="14dp"
             android:id="@+id/backupCircle2"
-            android:layout_marginLeft="10dp"
+            android:layout_marginStart="10dp"
             android:background="@drawable/rounded_cell" />
 
         <Button
             android:layout_height="14dp"
             android:layout_width="14dp"
             android:id="@+id/backupCircle3"
-            android:layout_marginLeft="10dp"
+            android:layout_marginStart="10dp"
             android:background="@drawable/rounded_cell" />
 
     </LinearLayout>
