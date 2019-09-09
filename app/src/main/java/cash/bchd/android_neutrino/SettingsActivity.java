@@ -12,6 +12,10 @@ import androidx.fragment.app.FragmentTransaction;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceScreen;
 
+import java.util.ArrayList;
+
+import cash.bchd.android_neutrino.wallet.WalletEventListener;
+
 public class SettingsActivity extends AppCompatActivity implements PreferenceFragmentCompat.OnPreferenceStartScreenCallback {
 
     public static Activity fa;

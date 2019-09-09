@@ -673,6 +673,9 @@ public class MainActivity extends CloseActivity {
                                 TextView bchPlease = mainActivity2.findViewById(R.id.bchPlease);
                                 bchPlease.setVisibility(View.GONE);
                                 for (TransactionData tx : txs) {
+                                    if (tx.getAmount() == 0) {
+                                        continue;
+                                    }
                                     String fiatCurrency = mainActivity2.settings.getFiatCurrency();
                                     tx.setFiatCurrency(fiatCurrency);
                                     String formattedFiat = "";
@@ -716,7 +719,16 @@ public class MainActivity extends CloseActivity {
                     }
 
                     @Override
+                    public void onScanProgress(int height) {
+                        MainActivity mainActivity = mainActivityRef.get();
+                        mainActivity.settings.setScanHeight(height);
+                    }
+
+                    @Override
                     public void onTransaction(TransactionData tx) {
+                        if (tx.getAmount() == 0) {
+                            return;
+                        }
                         MainActivity mainActivity = mainActivityRef.get();
                         if (mainActivity == null) {
                             return;

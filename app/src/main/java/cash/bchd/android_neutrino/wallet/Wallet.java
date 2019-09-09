@@ -442,7 +442,7 @@ public class Wallet implements Serializable {
         });
     }
 
-    private void listenRescan(WalletEventListener listener) {
+    public void listenRescan(WalletEventListener listener) {
         WalletServiceGrpc.WalletServiceStub stub = WalletServiceGrpc.newStub(channel).withCallCredentials(creds);
         Api.RescanNotificationsRequest request = Api.RescanNotificationsRequest.newBuilder().build();
         stub.rescanNotifications(request, new StreamObserver<Api.RescanNotificationsResponse>() {
@@ -454,11 +454,20 @@ public class Wallet implements Serializable {
                        listener.onBlock(net.getBestHeight(), net.getBestBlock());
                        getTransactions(listener);
                        listener.onBalanceChange(balance());
+                       listener.onScanProgress(value.getHeight());
                    } catch (Exception e) {
                        e.printStackTrace();
                    }
 
-               }
+                } else {
+                    try {
+                        getTransactions(listener);
+                        listener.onBalanceChange(balance());
+                        listener.onScanProgress(value.getHeight());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
             }
 
             @Override
