@@ -11,6 +11,9 @@ import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceScreen;
 import androidx.preference.SwitchPreferenceCompat;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
 import walletrpc.Api;
@@ -43,6 +46,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 Api.NetworkResponse net = wallet.network();
                 settings.setLastBlockHeight(net.getBestHeight());
                 settings.setLastBlockHash(net.getBestBlock());
+                settings.setScanHeight(net.getSyncedTo());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -51,8 +55,21 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             }
 
             Preference blockchainPref = (Preference) findPreference("blockchain");
-            String blockchainInfo = "Height: " + settings.getLastBlockHeight() + "\nHash: " + settings.getLastBlockHash();
+            String blockchainInfo = "Height: " + settings.getLastBlockHeight() + "\nHash: " + settings.getLastBlockHash() + "\nScanned Through: " + settings.getScanHeight();
             blockchainPref.setSummary(blockchainInfo);
+            blockchainPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    try {
+                        Api.NetworkResponse net = wallet.network();
+                        String blockchainInfo = "Height: " + net.getBestHeight() + "\nHash: " + net.getBestBlock() + "\nScanned Through: " + net.getSyncedTo();
+                        blockchainPref.setSummary(blockchainInfo);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    return false;
+                }
+            });
 
             Preference backupPref = (Preference) findPreference("backup");
             PreferenceScreen prefScreen = (PreferenceScreen) findPreference("preferenceScreen");
@@ -174,8 +191,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                     return false;
                 }
             });
-
-            wallet.listenBlockchain(new WalletEventListener() {
+            WalletEventListener listener = new WalletEventListener() {
                 @Override
                 public void onBlock(int blockHeight, String blockHash) {
                     if (getActivity() != null) {
@@ -183,13 +199,30 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
                             @Override
                             public void run() {
-                                String blockchainInfo = "Height: " + blockHeight + "\nHash: " + blockHash;
+                                String blockchainInfo = "Height: " + blockHeight + "\nHash: " + blockHash + "\nScanned Through: " + settings.getScanHeight();
                                 blockchainPref.setSummary(blockchainInfo);
                             }
                         });
                     }
                 }
-            });
+
+                @Override
+                public void onScanProgress(int height) {
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                String blockchainInfo = "Height: " + settings.getLastBlockHeight() + "\nHash: " + settings.getLastBlockHash() + "\nScanned Through: " + height;
+                                blockchainPref.setSummary(blockchainInfo);
+                            }
+                        });
+                    }
+                }
+            };
+
+            wallet.listenRescan(listener);
+            wallet.listenBlockchain(listener);
         } else if (rootKey.equals("bchd")) {
             activeScreen = "bchd";
             Preference ipPref = (Preference) findPreference("ip");
@@ -294,6 +327,16 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             });
             alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int whichButton) {
+                    settings.setScanHeight(0);
+                    getActivity().runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            Preference scanPref = (Preference) findPreference("scanHeight");
+                            String scanInfo = "Height: 0";
+                            scanPref.setSummary(scanInfo);
+                        }
+                    });
                     wallet.rescan();
                 }
             });

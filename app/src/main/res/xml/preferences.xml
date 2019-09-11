@@ -64,7 +64,7 @@
     <cash.bchd.android_neutrino.DialogPreference
         app:icon="@drawable/rescan_icon_small"
         app:key="rescan"
-        app:summary="Rescan blocks for missing transactions."
+        app:summary="Rescan blocks for missing transactions. This may take a while."
         app:title="Rescan Blocks" />
 
     <SwitchPreferenceCompat

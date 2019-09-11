@@ -28,6 +28,7 @@ public class Settings {
     private static final String BACKUP_REMINDER_KEY = "BackupReminder";
     private static final String WALLET_BIRTHDAY_KEY = "WalletBirthday";
     private static final String REPO_VERSION_KEY = "RepoVersion";
+    private static final String SCAN_HEIGHT_KEY = "ScanHeiht";
 
     private final SharedPreferences prefs;
 
@@ -233,6 +234,14 @@ public class Settings {
 
     int getRepoVersion() {
         return prefs.getInt(REPO_VERSION_KEY, 0);
+    }
+
+    void setScanHeight(int scanHeight) {
+        putInt(SCAN_HEIGHT_KEY, scanHeight);
+    }
+
+    int getScanHeight() {
+        return prefs.getInt(SCAN_HEIGHT_KEY, 0);
     }
 
     private void putBoolean(final String key, final boolean val) {

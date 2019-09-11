@@ -14,4 +14,6 @@ public class WalletEventListener {
     public void onBlock(int blockHeight, String blockHash) {}
 
     public void onTransaction(TransactionData tx) {}
+
+    public void onScanProgress(int height) {}
 }
