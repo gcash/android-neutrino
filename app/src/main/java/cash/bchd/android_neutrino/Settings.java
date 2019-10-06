@@ -28,7 +28,7 @@ public class Settings {
     private static final String BACKUP_REMINDER_KEY = "BackupReminder";
     private static final String WALLET_BIRTHDAY_KEY = "WalletBirthday";
     private static final String REPO_VERSION_KEY = "RepoVersion";
-    private static final String SCAN_HEIGHT_KEY = "ScanHeiht";
+    private static final String SCAN_HEIGHT_KEY = "ScanHeight";
 
     private final SharedPreferences prefs;
 
