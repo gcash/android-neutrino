@@ -13,7 +13,7 @@ public class Migration {
     }
 
     public int MigrateUp(Context context) {
-        if (this.currentVersion == 0){
+        if (this.currentVersion <= 1){
             File blockHeaders = new File(context.getDataDir().getPath() + "/mainnet/block_headers.bin");
             blockHeaders.delete();
 
