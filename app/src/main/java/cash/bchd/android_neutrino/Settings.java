@@ -233,7 +233,7 @@ public class Settings {
     }
 
     int getRepoVersion() {
-        return prefs.getInt(REPO_VERSION_KEY, 0);
+        return prefs.getInt(REPO_VERSION_KEY, 2);
     }
 
     void setScanHeight(int scanHeight) {

@@ -17,6 +17,9 @@ public class Migration {
             File blockHeaders = new File(context.getDataDir().getPath() + "/mainnet/block_headers.bin");
             blockHeaders.delete();
 
+            File peers = new File(context.getDataDir().getPath() + "/mainnet/peers.json");
+            peers.delete();
+
             File filterHeaders = new File(context.getDataDir().getPath() + "/mainnet/reg_filter_headers.bin");
             filterHeaders.delete();
 
