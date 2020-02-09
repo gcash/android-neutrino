@@ -31,6 +31,8 @@ public class FingerprintSetupActivity extends FingerprintActivity {
 
         if (removeFingerprint) {
             try {
+                TextView info = findViewById(R.id.fingerprintDesc);
+                info.setText("Scan your fingerprint to remove encryption and return to an unencrypted state.");
                 this.initFingerprintScanner(false);
                 FingerprintHandler handler = new FingerprintHandler(this) {
                     @Override
