@@ -2,9 +2,11 @@ package cash.bchd.android_neutrino;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.nfc.NfcAdapter;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.MenuItem;
@@ -62,7 +64,10 @@ public class SendActivity extends AppCompatActivity {
 
         CloseActivity.cancelCloseTimer();
 
+        sendLayout = findViewById(R.id.sendLayout);
+
         Intent intent = getIntent();
+
         fiatCurrency = intent.getExtras().getString("fiatCurrency");
         satPerByte = intent.getExtras().getInt("feePerByte");
 
@@ -76,8 +81,6 @@ public class SendActivity extends AppCompatActivity {
             supportActionBar.setDisplayHomeAsUpEnabled(true);
             supportActionBar.setDisplayShowHomeEnabled(true);
         }
-
-        sendLayout = findViewById(R.id.sendLayout);
 
         balanceTxtView = findViewById(R.id.sendBalance);
         try {
@@ -275,6 +278,7 @@ public class SendActivity extends AppCompatActivity {
             Intent newIntent = new Intent();
             newIntent.putExtra("qrdata", data.toString());
             this.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, newIntent);
+            return;
         }
     }
 

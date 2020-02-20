@@ -16,6 +16,7 @@ import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
@@ -205,7 +206,7 @@ public class MainActivity extends CloseActivity {
         }
     }
 
-    private void createWallet() {
+    public void createWallet() {
         if (Wallet.getInstance() == null) {
             String[] addrs = new String[0];
             String bchdIP = settings.getBchdIP();
@@ -526,6 +527,15 @@ public class MainActivity extends CloseActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        Intent intent = this.getIntent();
+        if (intent != null && intent.getExtras() != null && Wallet.getInstance() != null && Wallet.getInstance().isRunning()) {
+            String uri = intent.getExtras().getString("uri");
+            if (uri != null && !uri.equals("")) {
+                Intent newIntent = new Intent();
+                newIntent.putExtra("qrdata", uri);
+                this.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, newIntent);
+            }
+        }
     }
 
     private static class ExchangeRateFetcher implements Runnable {
@@ -615,6 +625,21 @@ public class MainActivity extends CloseActivity {
                     @Override
                     public void onWalletReady() {
                         System.out.println("Wallet ready");
+                        MainActivity mainActivity = mainActivityRef.get();
+                        if (mainActivity == null) {
+                            // no can do if we no longer have a reference to MainActivity.
+                            // perhaps print a warning.
+                            return;
+                        }
+                        Intent intent = mainActivity.getIntent();
+                        if (intent != null && intent.getExtras() != null) {
+                            String uri = intent.getExtras().getString("uri");
+                            if (uri != null && !uri.equals("")) {
+                                Intent newIntent = new Intent();
+                                newIntent.putExtra("qrdata", uri);
+                                mainActivity.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, newIntent);
+                            }
+                        }
                     }
 
                     @Override
