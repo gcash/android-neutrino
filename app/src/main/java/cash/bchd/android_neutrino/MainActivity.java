@@ -531,6 +531,7 @@ public class MainActivity extends CloseActivity {
         if (intent != null && intent.getExtras() != null && Wallet.getInstance() != null && Wallet.getInstance().isRunning()) {
             String uri = intent.getExtras().getString("uri");
             if (uri != null && !uri.equals("")) {
+                this.getIntent().getExtras().clear();
                 Intent newIntent = new Intent();
                 newIntent.putExtra("qrdata", uri);
                 this.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, newIntent);
@@ -635,6 +636,7 @@ public class MainActivity extends CloseActivity {
                         if (intent != null && intent.getExtras() != null) {
                             String uri = intent.getExtras().getString("uri");
                             if (uri != null && !uri.equals("")) {
+                                intent.getExtras().clear();
                                 Intent newIntent = new Intent();
                                 newIntent.putExtra("qrdata", uri);
                                 mainActivity.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, newIntent);
