@@ -102,6 +102,18 @@
             android:textSize="25sp"
             app:layout_anchorGravity="center_horizontal" />
 
+        <TextView
+            android:id="@+id/syncStatusView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/fiatBalanceView"
+            android:text=""
+            android:textAlignment="center"
+            android:textColor="@color/liteGrey"
+            android:textSize="14sp"
+            android:visibility="gone"
+            app:layout_anchorGravity="center_horizontal" />
+
     </RelativeLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

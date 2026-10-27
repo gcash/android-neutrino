@@ -7,6 +7,10 @@
     <string name="unconfirmed">Unconfirmed</string>
     <string name="pending">Pending</string>
     <string name="confirmed">Confirmed</string>
+    <string name="sync_waiting_for_peers">Waiting for peers…</string>
+    <string name="sync_syncing">Syncing block %1$s of %2$s</string>
+    <string name="sync_syncing_at_tip">Syncing…</string>
+    <string name="sync_updating_wallet">Updating wallet: block %1$s of %2$s</string>
     <string name="address_copied_to_clipboard">Address copied to clipboard.</string>
     <string name="insufficient_funds">Insufficient Funds</string>
     <string name="invalid_payment_request">Invalid Payment Request</string>

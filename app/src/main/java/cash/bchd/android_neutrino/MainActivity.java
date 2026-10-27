@@ -50,9 +50,12 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.lang.ref.WeakReference;
+import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.Currency;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import cash.bchd.android_neutrino.wallet.AddressListener;
@@ -61,6 +64,7 @@ import cash.bchd.android_neutrino.wallet.BitcoinPaymentURI;
 import cash.bchd.android_neutrino.wallet.Config;
 import cash.bchd.android_neutrino.wallet.ExchangeRates;
 import cash.bchd.android_neutrino.wallet.Migration;
+import cash.bchd.android_neutrino.wallet.SyncStatus;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
@@ -90,8 +94,11 @@ public class MainActivity extends CloseActivity {
     SwipeRefreshLayout mSwipeRefreshLayout;
     // Whether this activity listens to the wallet's events.
     boolean walletAttached;
+    // Shows the wallet's sync status while this activity is in front.
+    private ScheduledExecutorService syncStatusPoller;
 
     private static final long DONATION_REMINDER_INTERVAL = TimeUnit.DAYS.toMillis(45);
+    private static final long SYNC_STATUS_POLL_MILLIS = 2000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -467,6 +474,57 @@ public class MainActivity extends CloseActivity {
                 this.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
             }
         }
+        startSyncStatusPoller();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        syncStatusPoller.shutdownNow();
+    }
+
+    // startSyncStatusPoller shows how far the wallet is from following the network, from its
+    // Network call every two seconds until the activity pauses.
+    private void startSyncStatusPoller() {
+        syncStatusPoller = Executors.newSingleThreadScheduledExecutor();
+        syncStatusPoller.scheduleWithFixedDelay(() -> {
+            SyncStatus status = null;
+            Wallet wallet = Wallet.getInstance();
+            if (wallet != null && wallet.isRunning()) {
+                try {
+                    status = SyncStatus.of(wallet.network());
+                } catch (Exception e) {
+                    // The wallet is starting or stopping, so there is nothing to show yet.
+                }
+            }
+            SyncStatus shown = status;
+            runOnUiThread(() -> showSyncStatus(shown));
+        }, 0, SYNC_STATUS_POLL_MILLIS, TimeUnit.MILLISECONDS);
+    }
+
+    private void showSyncStatus(SyncStatus status) {
+        TextView syncStatusView = findViewById(R.id.syncStatusView);
+        if (status == null || status.state == SyncStatus.State.SYNCED) {
+            syncStatusView.setVisibility(View.GONE);
+            return;
+        }
+        NumberFormat heights = NumberFormat.getIntegerInstance();
+        switch (status.state) {
+            case WAITING_FOR_PEERS:
+                syncStatusView.setText(R.string.sync_waiting_for_peers);
+                break;
+            case SYNCING:
+                if (status.height < status.target) {
+                    syncStatusView.setText(getString(R.string.sync_syncing, heights.format(status.height), heights.format(status.target)));
+                } else {
+                    syncStatusView.setText(R.string.sync_syncing_at_tip);
+                }
+                break;
+            case UPDATING_WALLET:
+                syncStatusView.setText(getString(R.string.sync_updating_wallet, heights.format(status.height), heights.format(status.target)));
+                break;
+        }
+        syncStatusView.setVisibility(View.VISIBLE);
     }
 
     private static class ExchangeRateFetcher implements Runnable {
