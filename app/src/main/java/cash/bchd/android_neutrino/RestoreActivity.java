@@ -1,14 +1,15 @@
 package cash.bchd.android_neutrino;
 
 import android.app.AlertDialog;
+import android.app.DatePickerDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.view.View;
+import android.text.TextUtils;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -16,13 +17,27 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
 import java.io.File;
-import java.util.Locale;
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.TimeZone;
 
+import cash.bchd.android_neutrino.wallet.Bip39;
 import cash.bchd.android_neutrino.wallet.Wallet;
 
 public class RestoreActivity extends AppCompatActivity {
 
-    final long BETA_RELEASE_TIMESTAMP = 1551398400;
+    // August 1, 2017, when Bitcoin Cash split from Bitcoin. The wallet finds coins only in the
+    // blocks from its birthday on, so a phrase that received coins before then needs an earlier
+    // birthday.
+    static final long DEFAULT_BIRTHDAY = 1501545600;
+    // The time of the first block, on January 3, 2009.
+    static final long FIRST_BLOCK_TIME = 1231006505;
+
+    private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
+
+    // The birthday of the restored wallet, in seconds.
+    private long birthday = DEFAULT_BIRTHDAY;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,185 +46,112 @@ public class RestoreActivity extends AppCompatActivity {
         SystemBars.apply(this);
         // Keep the recovery phrase and PIN out of screenshots and the recent apps.
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
+        if (savedInstanceState != null) {
+            birthday = savedInstanceState.getLong("birthday", DEFAULT_BIRTHDAY);
+        }
 
-        TextInputLayout layout1 = findViewById(R.id.restoreLayout1);
-        TextInputEditText input1 = findViewById(R.id.restoreWord1);
-
-        TextInputLayout layout2 = findViewById(R.id.restoreLayout2);
-        TextInputEditText input2 = findViewById(R.id.restoreWord2);
-
-        TextInputLayout layout3 = findViewById(R.id.restoreLayout3);
-        TextInputEditText input3 = findViewById(R.id.restoreWord3);
-
-        TextInputLayout layout4 = findViewById(R.id.restoreLayout4);
-        TextInputEditText input4 = findViewById(R.id.restoreWord4);
-
-        TextInputLayout layout5 = findViewById(R.id.restoreLayout5);
-        TextInputEditText input5 = findViewById(R.id.restoreWord5);
-
-        TextInputLayout layout6 = findViewById(R.id.restoreLayout6);
-        TextInputEditText input6 = findViewById(R.id.restoreWord6);
-
-        TextInputLayout layout7 = findViewById(R.id.restoreLayout7);
-        TextInputEditText input7 = findViewById(R.id.restoreWord7);
-
-        TextInputLayout layout8 = findViewById(R.id.restoreLayout8);
-        TextInputEditText input8 = findViewById(R.id.restoreWord8);
-
-        TextInputLayout layout9 = findViewById(R.id.restoreLayout9);
-        TextInputEditText input9 = findViewById(R.id.restoreWord9);
-
-        TextInputLayout layout10 = findViewById(R.id.restoreLayout10);
-        TextInputEditText input10 = findViewById(R.id.restoreWord10);
-
-        TextInputLayout layout11 = findViewById(R.id.restoreLayout11);
-        TextInputEditText input11 = findViewById(R.id.restoreWord11);
-
-        TextInputLayout layout12 = findViewById(R.id.restoreLayout12);
-        TextInputEditText input12 = findViewById(R.id.restoreWord12);
+        TextInputLayout phraseLayout = findViewById(R.id.restorePhraseLayout);
+        TextInputEditText phraseInput = findViewById(R.id.restorePhrase);
+        TextView birthdayView = findViewById(R.id.restoreBirthday);
+        showBirthday(birthdayView);
+        birthdayView.setOnClickListener(v -> pickBirthday(birthdayView));
 
         Button confirmBtn = findViewById(R.id.restoreConfirmBtn);
-        confirmBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                boolean error = false;
-                String errStr = "Enter word";
-                if (input1.getText().toString().equals("")) {
-                    layout1.setError(errStr);
-                    error = true;
-                } else {
-                    layout1.setError("");
-                }
-                if (input2.getText().toString().equals("")) {
-                    layout2.setError(errStr);
-                    error = true;
-                } else {
-                    layout2.setError("");
-                }
-                if (input3.getText().toString().equals("")) {
-                    layout3.setError(errStr);
-                    error = true;
-                } else {
-                    layout3.setError("");
-                }
-                if (input4.getText().toString().equals("")) {
-                    layout4.setError(errStr);
-                    error = true;
-                } else {
-                    layout4.setError("");
-                }
-                if (input5.getText().toString().equals("")) {
-                    layout5.setError(errStr);
-                    error = true;
-                } else {
-                    layout5.setError("");
-                }
-                if (input6.getText().toString().equals("")) {
-                    layout6.setError(errStr);
-                    error = true;
-                } else {
-                    layout6.setError("");
-                }
-                if (input7.getText().toString().equals("")) {
-                    layout7.setError(errStr);
-                    error = true;
-                } else {
-                    layout7.setError("");
-                }
-                if (input8.getText().toString().equals("")) {
-                    layout8.setError(errStr);
-                    error = true;
-                } else {
-                    layout8.setError("");
-                }
-                if (input9.getText().toString().equals("")) {
-                    layout9.setError(errStr);
-                    error = true;
-                } else {
-                    layout9.setError("");
-                }
-                if (input10.getText().toString().equals("")) {
-                    layout10.setError(errStr);
-                    error = true;
-                } else {
-                    layout10.setError("");
-                }
-                if (input11.getText().toString().equals("")) {
-                    layout11.setError(errStr);
-                    error = true;
-                } else {
-                    layout11.setError("");
-                }
-                if (input12.getText().toString().equals("")) {
-                    layout12.setError(errStr);
-                    error = true;
-                } else {
-                    layout12.setError("");
-                }
-
-                if (error) {
+        confirmBtn.setOnClickListener(v -> {
+            // Check the phrase as bchwallet will before the current wallet is deleted.
+            String phrase = Bip39.normalize(String.valueOf(phraseInput.getText()));
+            Bip39.Check check = Bip39.check(phrase);
+            switch (check.problem) {
+                case WORD_COUNT:
+                    phraseLayout.setError(getString(R.string.restore_word_count));
                     return;
-                }
-
-                DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        switch (which){
-                            case DialogInterface.BUTTON_POSITIVE:
-                                String mnemonic = word(input1) + " " +
-                                        word(input2) + " " +
-                                        word(input3) + " " +
-                                        word(input4) + " " +
-                                        word(input5) + " " +
-                                        word(input6) + " " +
-                                        word(input7) + " " +
-                                        word(input8) + " " +
-                                        word(input9) + " " +
-                                        word(input10) + " " +
-                                        word(input11) + " " +
-                                        word(input12);
-                                Settings settings = Settings.getInstance();
-                                settings.setMnemonic(mnemonic);
-                                settings.setWalletInitialized(false);
-                                settings.setWalletBirthday(BETA_RELEASE_TIMESTAMP);
-                                settings.setScanHeight(0);
-                                settings.setEncryptionType(EncryptionType.UNENCRYPTED);
-                                settings.setLastBalance(0);
-                                settings.setLastAddress("");
-                                settings.setBackupReminder(false);
-
-                                // Stop the wallet, and delete its files once it has closed them, so
-                                // that MainActivity creates the restored wallet. The cached
-                                // transactions are only read by the app and can go right away.
-                                deleteFile(TransactionStore.FILE_NAME);
-                                Wallet wallet = Wallet.getInstance();
-                                if (wallet != null) {
-                                    wallet.stop();
-                                }
-                                File walletDir = new File(getDataDir(), "mainnet");
-                                Wallet.runAfterStop(() -> deleteRecursive(walletDir));
-
-                                Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-                                vibrator.vibrate(500);
-
-                                Intent intent = new Intent(RestoreActivity.this, MainActivity.class);
-                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                startActivity(intent);
-                                finish();
-                                break;
-
-                            case DialogInterface.BUTTON_NEGATIVE:
-                                //No button clicked
-                                break;
-                        }
-                    }
-                };
-
-                AlertDialog.Builder builder = new AlertDialog.Builder(RestoreActivity.this);
-                builder.setTitle("Are you sure?").setMessage("Once you continue the existing wallet will be overridden with the new wallet and any coins in the existing wallet will be lost. Please backup the existing wallet if you need to do so before continuing.").setPositiveButton("Yes, restore", dialogClickListener)
-                        .setNegativeButton("Cancel", dialogClickListener).show();
+                case UNKNOWN_WORDS:
+                    phraseLayout.setError(getString(R.string.restore_unknown_words, TextUtils.join(", ", check.unknownWords)));
+                    return;
+                case CHECKSUM:
+                    phraseLayout.setError(getString(R.string.restore_checksum));
+                    return;
+                default:
+                    phraseLayout.setError(null);
             }
+
+            new AlertDialog.Builder(RestoreActivity.this)
+                    .setTitle("Are you sure?")
+                    .setMessage("Once you continue the existing wallet will be overridden with the new wallet and any coins in the existing wallet will be lost. Please backup the existing wallet if you need to do so before continuing.")
+                    .setPositiveButton("Yes, restore", (dialog, which) ->
+                            // Restoring deletes the current wallet, so it asks for the screen
+                            // lock as sending does.
+                            ScreenLock.confirm(RestoreActivity.this, getString(R.string.screen_lock_restore), new ScreenLock.Callback() {
+                                @Override
+                                public void onConfirmed() {
+                                    restore(phrase);
+                                }
+
+                                @Override
+                                public void onCancelled() {
+                                }
+                            }))
+                    .setNegativeButton("Cancel", null)
+                    .show();
         });
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putLong("birthday", birthday);
+    }
+
+    private void showBirthday(TextView view) {
+        DateFormat format = DateFormat.getDateInstance(DateFormat.LONG);
+        format.setTimeZone(UTC);
+        view.setText(format.format(new Date(birthday * 1000)));
+    }
+
+    private void pickBirthday(TextView view) {
+        Calendar current = Calendar.getInstance(UTC);
+        current.setTimeInMillis(birthday * 1000);
+        DatePickerDialog dialog = new DatePickerDialog(this, (picker, year, month, day) -> {
+            Calendar picked = Calendar.getInstance(UTC);
+            picked.clear();
+            picked.set(year, month, day);
+            birthday = Math.max(picked.getTimeInMillis() / 1000, FIRST_BLOCK_TIME);
+            showBirthday(view);
+        }, current.get(Calendar.YEAR), current.get(Calendar.MONTH), current.get(Calendar.DAY_OF_MONTH));
+        dialog.getDatePicker().setMinDate(FIRST_BLOCK_TIME * 1000);
+        dialog.getDatePicker().setMaxDate(System.currentTimeMillis());
+        dialog.show();
+    }
+
+    private void restore(String phrase) {
+        Settings settings = Settings.getInstance();
+        settings.setMnemonic(phrase);
+        settings.setWalletInitialized(false);
+        settings.setWalletBirthday(birthday);
+        settings.setScanHeight(0);
+        settings.setEncryptionType(EncryptionType.UNENCRYPTED);
+        settings.setLastBalance(0);
+        settings.setLastAddress("");
+        settings.setBackupReminder(false);
+
+        // Stop the wallet, and delete its files once it has closed them, so
+        // that MainActivity creates the restored wallet. The cached
+        // transactions are only read by the app and can go right away.
+        deleteFile(TransactionStore.FILE_NAME);
+        Wallet wallet = Wallet.getInstance();
+        if (wallet != null) {
+            wallet.stop();
+        }
+        File walletDir = new File(getDataDir(), "mainnet");
+        Wallet.runAfterStop(() -> deleteRecursive(walletDir));
+
+        Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+        vibrator.vibrate(500);
+
+        Intent intent = new Intent(RestoreActivity.this, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     private static void deleteRecursive(File fileOrDirectory) {
@@ -220,9 +162,4 @@ public class RestoreActivity extends AppCompatActivity {
 
         fileOrDirectory.delete();
     }
-
-    private static String word(TextInputEditText input) {
-        return input.getText() == null ? "" : input.getText().toString().trim().toLowerCase(Locale.ROOT);
-    }
-
 }

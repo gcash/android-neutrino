@@ -33,207 +33,52 @@
             android:layout_marginTop="20dp"/>
 
         <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/restoreLayout1"
+            android:id="@+id/restorePhraseLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
             android:layout_marginEnd="50dp"
             android:layout_marginTop="25dp">
 
+            <!-- No suggestions or autofill, so that the keyboard doesn't learn the phrase. -->
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/restoreWord1"
+                android:id="@+id/restorePhrase"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/enter_word_1"
+                android:gravity="top"
+                android:hint="@string/recovery_phrase"
+                android:importantForAutofill="no"
+                android:inputType="textMultiLine|textNoSuggestions|textVisiblePassword"
+                android:minLines="4"
                 android:textSize="20sp"/>
-
         </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/restoreLayout2"
-            android:layout_width="match_parent"
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
             android:layout_marginEnd="50dp"
-            android:layout_marginTop="25dp">
+            android:layout_marginTop="30dp"
+            android:text="@string/wallet_birthday"
+            android:textSize="16sp"/>
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/restoreWord2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/enter_word_2"
-                android:textSize="20sp"/>
+        <TextView
+            android:id="@+id/restoreBirthday"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginStart="50dp"
+            android:layout_marginEnd="50dp"
+            android:gravity="center_vertical"
+            android:textColor="@color/neonGreen"
+            android:textSize="20sp"/>
 
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/restoreLayout3"
-            android:layout_width="match_parent"
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
             android:layout_marginEnd="50dp"
-            android:layout_marginTop="25dp">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/restoreWord3"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/enter_word_3"
-                android:textSize="20sp"/>
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/restoreLayout4"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="50dp"
-            android:layout_marginEnd="50dp"
-            android:layout_marginTop="25dp">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/restoreWord4"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/enter_word_4"
-                android:textSize="20sp"/>
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/restoreLayout5"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="50dp"
-            android:layout_marginEnd="50dp"
-            android:layout_marginTop="25dp">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/restoreWord5"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/enter_word_5"
-                android:textSize="20sp"/>
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/restoreLayout6"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="50dp"
-            android:layout_marginEnd="50dp"
-            android:layout_marginTop="25dp">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/restoreWord6"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/enter_word_6"
-                android:textSize="20sp"/>
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/restoreLayout7"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="50dp"
-            android:layout_marginEnd="50dp"
-            android:layout_marginTop="25dp">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/restoreWord7"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/enter_word_7"
-                android:textSize="20sp"/>
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/restoreLayout8"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="50dp"
-            android:layout_marginEnd="50dp"
-            android:layout_marginTop="25dp">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/restoreWord8"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/enter_word_8"
-                android:textSize="20sp"/>
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/restoreLayout9"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="50dp"
-            android:layout_marginEnd="50dp"
-            android:layout_marginTop="25dp">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/restoreWord9"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/enter_word_9"
-                android:textSize="20sp"/>
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/restoreLayout10"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="50dp"
-            android:layout_marginEnd="50dp"
-            android:layout_marginTop="25dp">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/restoreWord10"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/enter_word_10"
-                android:textSize="20sp"/>
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/restoreLayout11"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="50dp"
-            android:layout_marginEnd="50dp"
-            android:layout_marginTop="25dp">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/restoreWord11"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/enter_word_11"
-                android:textSize="20sp"/>
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/restoreLayout12"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="50dp"
-            android:layout_marginEnd="50dp"
-            android:layout_marginTop="25dp">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/restoreWord12"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/enter_word_12"
-                android:textSize="20sp"/>
-        </com.google.android.material.textfield.TextInputLayout>
+            android:text="@string/wallet_birthday_note"
+            android:textSize="14sp"/>
 
         <RelativeLayout
             android:layout_width="wrap_content"
