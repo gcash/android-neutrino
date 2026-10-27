@@ -78,29 +78,6 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 prefScreen.removePreference(backupPref);
             }
 
-            Preference encryptionPref = (Preference) findPreference("encryption");
-            Preference removeEncryptionPref = (Preference) findPreference("removeEncryption");
-            removeEncryptionPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-                    if (settings.getEncryptionType() == EncryptionType.PIN) {
-                        Intent intent = new Intent(getContext(), PinActivity.class);
-                        intent.putExtra("removePin", true);
-                        startActivity(intent);
-                    } else if (settings.getEncryptionType() == EncryptionType.FINGERPRINT) {
-                        Intent intent = new Intent(getContext(), FingerprintSetupActivity.class);
-                        intent.putExtra("removeFingerprint", true);
-                        startActivity(intent);
-                    }
-                    return false;
-                }
-            });
-            if (settings.getEncryptionType() == EncryptionType.UNENCRYPTED) {
-                prefScreen.removePreference(removeEncryptionPref);
-            } else {
-                prefScreen.removePreference(encryptionPref);
-            }
-
             Preference currencyPref = (Preference) findPreference("currency_preference");
             currencyPref.setSummary(settings.getFiatCurrency().toUpperCase());
             currencyPref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
@@ -347,8 +324,6 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                     return false;
                 }
             });
-        } else if (rootKey.equals("encryption")) {
-            activeScreen = "encryption";
         }
     }
 

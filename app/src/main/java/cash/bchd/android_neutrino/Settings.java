@@ -24,6 +24,7 @@ public class Settings {
     private static final String LAST_INVALID_PIN_KEY = "LastInvalidPin";
     private static final String ENCRYPTED_PASSWORD_KEY = "EncryptedPassword";
     private static final String FINGERPRINT_IV_KEY = "FingerprintIV";
+    private static final String SEALED_PASSPHRASE_KEY = "SealedPassphrase";
     private static final String LAST_NOTIFICATION_KEY = "LastNotification";
     private static final String BACKUP_REMINDER_KEY = "BackupReminder";
     private static final String WALLET_BIRTHDAY_KEY = "WalletBirthday";
@@ -193,20 +194,41 @@ public class Settings {
         return prefs.getLong(LAST_INVALID_PIN_KEY, 0);
     }
 
-    void setEncryptedPassword(String pw) {
-        putString(ENCRYPTED_PASSWORD_KEY, pw);
+    // The PIN of earlier versions is refused for five minutes after three wrong ones.
+    boolean pinLockedOut() {
+        return getInvalidPinCount() >= 3 && getLastInvalidPin() + 300000 > System.currentTimeMillis();
+    }
+
+    void countInvalidPin() {
+        setInvalidPinCount(getInvalidPinCount() + 1);
+        setLastInvalidPin(System.currentTimeMillis());
     }
 
     String getEncryptedPassword() {
         return prefs.getString(ENCRYPTED_PASSWORD_KEY, "");
     }
 
-    void setFingerprintIv(String iv) {
-        putString(FINGERPRINT_IV_KEY, iv);
-    }
-
     String getFingerprintIv() {
         return prefs.getString(FINGERPRINT_IV_KEY, "");
+    }
+
+    // clearLegacyPassphrases forgets what earlier versions kept to unlock the wallet.
+    void clearLegacyPassphrases() {
+        prefs.edit()
+                .remove(ENCRYPTED_PASSWORD_KEY)
+                .remove(FINGERPRINT_IV_KEY)
+                .remove(INVALID_PIN_COUNT_KEY)
+                .remove(LAST_INVALID_PIN_KEY)
+                .apply();
+    }
+
+    // The wallet's private passphrase, sealed with WalletSecret.
+    void setSealedPassphrase(String sealed) {
+        putString(SEALED_PASSPHRASE_KEY, sealed);
+    }
+
+    String getSealedPassphrase() {
+        return prefs.getString(SEALED_PASSPHRASE_KEY, "");
     }
 
     void setLastNotification(long timestamp) {

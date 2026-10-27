@@ -1,10 +1,17 @@
 package cash.bchd.android_neutrino;
 
+/**
+ * EncryptionType is how the wallet's private passphrase is kept. KEYSTORE is a random passphrase
+ * sealed with WalletSecret. The others are what earlier versions used, which the app replaces with
+ * KEYSTORE: the default passphrase, a hash of a PIN, or a random passphrase sealed with a key
+ * that needs a fingerprint.
+ */
 public enum EncryptionType {
 
     UNENCRYPTED("unencrypted"),
     PIN("pin"),
-    FINGERPRINT("fingerprint");
+    FINGERPRINT("fingerprint"),
+    KEYSTORE("keystore");
 
     private final String name;
 
@@ -18,6 +25,8 @@ public enum EncryptionType {
                 return PIN;
             case "fingerprint":
                 return FINGERPRINT;
+            case "keystore":
+                return KEYSTORE;
         }
         return UNENCRYPTED;
     }

@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="100dp"
-        android:text="@string/enter_new_pin"
+        android:text="@string/enter_pin"
         android:textAlignment="center"
         android:textSize="20sp"
         app:layout_anchorGravity="center_horizontal" />
@@ -24,18 +24,6 @@
         android:layout_marginTop="50dp"
         app:dotEmptyBackground="@drawable/dot_empty"
         app:dotFilledBackground="@drawable/dot_filled" />
-
-    <TextView
-        android:id="@+id/invalidPin"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:text="@string/incorrect_pin"
-        android:textAlignment="center"
-        android:textColor="@android:color/holo_red_dark"
-        android:textSize="15sp"
-        android:visibility="gone"
-        app:layout_anchorGravity="center_horizontal" />
 
     <RelativeLayout
         android:layout_width="match_parent"

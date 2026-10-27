@@ -3,22 +3,19 @@ package cash.bchd.android_neutrino;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.hardware.fingerprint.FingerprintManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.material.snackbar.Snackbar;
-import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -29,19 +26,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Wallet;
+import cash.bchd.android_neutrino.wallet.WalletSecret;
 import cash.bchd.android_neutrino.widget.CheckView;
 import cash.bchd.android_neutrino.widget.SlideToConfirmView;
 import io.grpc.Status;
 import walletrpc.Api;
 
-public class ConfirmationActivity extends FingerprintActivity {
+public class ConfirmationActivity extends AppCompatActivity {
+
+    private static final int ENTER_PIN = 1234;
 
     byte[] serializedTx;
     List<Long> inputVals;
     String paymentAddr;
     String memo;
     SlideToConfirmView swipeButton;
-    EncryptionType encType;
 
     // Set while the payment is signed and sent, and after it was sent.
     private final AtomicBoolean sending = new AtomicBoolean(false);
@@ -71,15 +70,9 @@ public class ConfirmationActivity extends FingerprintActivity {
         CloseActivity.cancelCloseTimer();
 
         Intent intent = getIntent();
-        encType = Settings.getInstance().getEncryptionType();
         swipeButton = findViewById(R.id.swipe_btn);
-        if (encType == EncryptionType.PIN) {
-            swipeButton.setVisibility(View.VISIBLE);
-        } else if (encType == EncryptionType.FINGERPRINT) {
-            ImageView fingerprint = findViewById(R.id.fingerprint);
-            fingerprint.setVisibility(View.VISIBLE);
-        } else {
-            swipeButton.setVisibility(View.VISIBLE);
+        if (!ScreenLock.isSet(this)) {
+            findViewById(R.id.noScreenLockNotice).setVisibility(View.VISIBLE);
         }
 
         paymentAddr = intent.getStringExtra("paymentAddress");
@@ -145,59 +138,89 @@ public class ConfirmationActivity extends FingerprintActivity {
         }
 
 
-        swipeButton.setOnConfirmListener(() -> {
-            if (encType == EncryptionType.PIN) {
-                Settings settings = Settings.getInstance();
-                if (settings.getInvalidPinCount() >= 3 && settings.getLastInvalidPin() + 300000 > System.currentTimeMillis()) {
-                    CoordinatorLayout layout = findViewById(R.id.confirmationMainLayout);
-                    Snackbar snackbar = Snackbar.make(layout, "Too many invalid pin attempts. Wait five minutes.", Snackbar.LENGTH_LONG);
+        swipeButton.setOnConfirmListener(this::unlockAndSign);
+    }
+
+    // unlockAndSign gets the wallet's private passphrase the way the wallet keeps it: after the
+    // screen lock, or from the PIN or fingerprint of earlier versions, which it then replaces.
+    private void unlockAndSign() {
+        Settings settings = Settings.getInstance();
+        CoordinatorLayout layout = findViewById(R.id.confirmationMainLayout);
+        switch (settings.getEncryptionType()) {
+            case PIN:
+                if (settings.pinLockedOut()) {
+                    Snackbar snackbar = Snackbar.make(layout, R.string.pin_locked_out, Snackbar.LENGTH_LONG);
                     snackbar.show();
                     swipeButton.reset();
                     return;
                 }
-
-                Intent intent1 = new Intent(ConfirmationActivity.this, PinActivity.class);
-                intent1.putExtra("enterOnly", true);
-                startActivityForResult(intent1, 1234);
+                Intent intent = new Intent(ConfirmationActivity.this, PinActivity.class);
+                startActivityForResult(intent, ENTER_PIN);
                 return;
-            }
-            signTransaction(serializedTx, paymentAddr, memo, inputVals, Wallet.DEFAULT_PASSPHRASE);
-        });
-
-        if (encType == EncryptionType.FINGERPRINT) {
-            CoordinatorLayout layout = findViewById(R.id.confirmationMainLayout);
-            try {
-                this.initFingerprintScanner(false);
-                FingerprintHandler handler = new FingerprintHandler(this) {
+            case FINGERPRINT:
+                LegacyFingerprint.read(this, settings, new LegacyFingerprint.Callback() {
                     @Override
-                    public void onAuthenticationSucceeded(FingerprintManager.AuthenticationResult result) {
-                        try {
-                            String encryptedPwHex = Settings.getInstance().getEncryptedPassword();
-
-                            byte[] encrypted = BaseEncoding.base16().lowerCase().decode(encryptedPwHex);
-
-                            byte[] decrypted = result.getCryptoObject().getCipher().doFinal(encrypted);
-
-                            String password = BaseEncoding.base16().lowerCase().encode(decrypted);
-
-                            signTransaction(serializedTx, paymentAddr, memo, inputVals, password);
-                        } catch (Exception e) {
-                            Snackbar snackbar = Snackbar.make(layout, e.getMessage(), Snackbar.LENGTH_LONG);
-                            snackbar.show();
-                        }
+                    public void onPassphrase(String passphrase) {
+                        upgradeAndSign(passphrase);
                     }
 
                     @Override
-                    public void onAuthenticationFailed() {
-                        Snackbar snackbar = Snackbar.make(layout, "Invalid fingerprint", Snackbar.LENGTH_LONG);
+                    public void onFailed(CharSequence message) {
+                        Snackbar snackbar = Snackbar.make(layout, message, Snackbar.LENGTH_LONG);
+                        snackbar.setTextMaxLines(5);
                         snackbar.show();
+                        swipeButton.reset();
                     }
-                };
-                handler.startAuth(fingerprintManager, cryptoObject);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+                });
+                return;
+            default:
+                ScreenLock.confirm(this, getString(R.string.screen_lock_confirm_payment), new ScreenLock.Callback() {
+                    @Override
+                    public void onConfirmed() {
+                        String passphrase = Wallet.DEFAULT_PASSPHRASE;
+                        if (settings.getEncryptionType() == EncryptionType.KEYSTORE) {
+                            try {
+                                passphrase = WalletSecret.open(settings.getSealedPassphrase());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                Snackbar snackbar = Snackbar.make(layout, R.string.wallet_key_missing, Snackbar.LENGTH_LONG);
+                                snackbar.setTextMaxLines(5);
+                                snackbar.show();
+                                swipeButton.reset();
+                                return;
+                            }
+                        }
+                        signTransaction(serializedTx, paymentAddr, memo, inputVals, passphrase);
+                    }
+
+                    @Override
+                    public void onCancelled() {
+                        swipeButton.reset();
+                    }
+                });
         }
+    }
+
+    // upgradeAndSign replaces the passphrase of an earlier version with a sealed one, if the phone
+    // has a screen lock to ask for from now on, and signs with whichever the wallet then has. A
+    // wrong PIN fails the upgrade, and signing with it counts the failed attempt.
+    private void upgradeAndSign(String oldPassphrase) {
+        if (!ScreenLock.isSet(this)) {
+            signTransaction(serializedTx, paymentAddr, memo, inputVals, oldPassphrase);
+            return;
+        }
+        PassphraseUpgrade.run(Wallet.getInstance(), Settings.getInstance(), oldPassphrase,
+                ContextCompat.getMainExecutor(this), new PassphraseUpgrade.Callback() {
+                    @Override
+                    public void onUpgraded(String passphrase) {
+                        signTransaction(serializedTx, paymentAddr, memo, inputVals, passphrase);
+                    }
+
+                    @Override
+                    public void onFailed(Throwable t) {
+                        signTransaction(serializedTx, paymentAddr, memo, inputVals, oldPassphrase);
+                    }
+                });
     }
 
     // Once the payment is sent, leave the send screen too, so that going back
@@ -260,17 +283,10 @@ public class ConfirmationActivity extends FingerprintActivity {
                 runOnUiThread(() -> {
                     Status status = Status.fromThrowable(t);
                     String errStr = status.getDescription();
-                    if (status.getDescription() != null && status.getDescription().equals("invalid passphrase for master private key")) {
+                    Settings settings = Settings.getInstance();
+                    if (settings.getEncryptionType() == EncryptionType.PIN && Wallet.isWrongPassphrase(t)) {
                         errStr = "Invalid Pin";
-                        if (encType == EncryptionType.FINGERPRINT) {
-                            errStr = "Invalid Fingerprint";
-                        } else if (encType == EncryptionType.PIN) {
-                            Settings settings = Settings.getInstance();
-                            int invalidCount = settings.getInvalidPinCount();
-                            invalidCount++;
-                            settings.setInvalidPinCount(invalidCount);
-                            settings.setLastInvalidPin(System.currentTimeMillis());
-                        }
+                        settings.countInvalidPin();
                     }
                     Snackbar snackbar = Snackbar.make(layout, errStr, Snackbar.LENGTH_LONG);
                     snackbar.show();
@@ -328,7 +344,7 @@ public class ConfirmationActivity extends FingerprintActivity {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         switch(requestCode) {
-            case (1234) : {
+            case (ENTER_PIN) : {
                 if (resultCode != Activity.RESULT_OK) {
                     swipeButton.reset();
                 } else {
@@ -339,7 +355,7 @@ public class ConfirmationActivity extends FingerprintActivity {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                    signTransaction(serializedTx, paymentAddr, memo, inputVals, pw);
+                    upgradeAndSign(pw);
                 }
                 break;
             }

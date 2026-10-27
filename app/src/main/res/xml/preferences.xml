@@ -32,43 +32,6 @@
             android:targetPackage="cash.bchd.android_neutrino" />
     </Preference>
 
-    <PreferenceScreen
-        android:icon="@drawable/key_icon_small"
-        android:key="encryption"
-        android:persistent="false"
-        android:title="Wallet Encryption"
-        app:summary="Set up encryption of the wallet's private keys.">
-
-        <Preference
-            android:icon="@drawable/pin_icon_small"
-            android:key="pin"
-            android:title="Pin Encryption"
-            app:summary="Enter a pin to encrypt the wallet with.">
-
-            <intent
-                android:targetClass="cash.bchd.android_neutrino.PinActivity"
-                android:targetPackage="cash.bchd.android_neutrino" />
-        </Preference>
-
-        <Preference
-            android:icon="@drawable/fingerprint_icon_small"
-            android:key="fingerprint"
-            android:title="Fingerprint Authentication"
-            app:summary="Set up fingerprint based encryption.">
-
-            <intent
-                android:targetClass="cash.bchd.android_neutrino.FingerprintSetupActivity"
-                android:targetPackage="cash.bchd.android_neutrino" />
-        </Preference>
-
-    </PreferenceScreen>
-
-    <Preference
-        android:icon="@drawable/key_icon_small"
-        android:key="removeEncryption"
-        android:title="Remove Encryption"
-        app:summary="Decrypt wallet and return to unencrypted state." />
-
     <cash.bchd.android_neutrino.DialogPreference
         app:icon="@drawable/rescan_icon_small"
         app:key="rescan"

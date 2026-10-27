@@ -213,6 +213,21 @@ public class Wallet implements Serializable {
         return null;
     }
 
+    /**
+     * isWrongPassphrase returns whether bchwallet failed a call that threw t because the private
+     * passphrase doesn't unlock the wallet. Unlocking and changing the passphrase word the reason
+     * differently, "invalid passphrase for master private key" and "for private master key".
+     */
+    public static boolean isWrongPassphrase(Throwable t) {
+        if (!(t instanceof StatusRuntimeException)) {
+            return false;
+        }
+        Status status = ((StatusRuntimeException) t).getStatus();
+        String description = status.getDescription();
+        return status.getCode() == Status.Code.INVALID_ARGUMENT && description != null
+                && description.startsWith("invalid passphrase for ");
+    }
+
     public boolean isRunning() {
         return running;
     }

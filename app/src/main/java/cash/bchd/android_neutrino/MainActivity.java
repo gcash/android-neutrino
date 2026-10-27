@@ -37,6 +37,7 @@ import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
@@ -99,6 +100,7 @@ public class MainActivity extends CloseActivity {
 
     private static final long DONATION_REMINDER_INTERVAL = TimeUnit.DAYS.toMillis(45);
     private static final long SYNC_STATUS_POLL_MILLIS = 2000;
+    private static final int RC_UPGRADE_PIN = 9003;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -440,9 +442,103 @@ public class MainActivity extends CloseActivity {
                 Snackbar snackbar = Snackbar.make(mCLayout, R.string.barcode_read_error, Snackbar.LENGTH_LONG);
                 snackbar.show();
             }
+        } else if (requestCode == RC_UPGRADE_PIN) {
+            if (resultCode == RESULT_OK && data != null) {
+                try {
+                    upgradeFrom(Wallet.SHA256(data.getStringExtra("pin")));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
+    }
+
+    // upgradeWalletPassphrase replaces the private passphrase of earlier versions with a random one
+    // sealed with WalletSecret: right away for the default passphrase, and once the user enters
+    // the PIN or fingerprint that unlocks it. A PIN is replaced only when the phone has a screen
+    // lock to ask for instead.
+    void upgradeWalletPassphrase() {
+        switch (settings.getEncryptionType()) {
+            case UNENCRYPTED:
+                PassphraseUpgrade.run(Wallet.getInstance(), settings, Wallet.DEFAULT_PASSPHRASE,
+                        ContextCompat.getMainExecutor(this), new PassphraseUpgrade.Callback() {
+                            @Override
+                            public void onUpgraded(String passphrase) {
+                            }
+
+                            @Override
+                            public void onFailed(Throwable t) {
+                                t.printStackTrace();
+                            }
+                        });
+                break;
+            case PIN:
+                if (ScreenLock.isSet(this)) {
+                    askToUpgrade(R.string.upgrade_from_pin, () -> {
+                        if (settings.pinLockedOut()) {
+                            Snackbar.make(mCLayout, R.string.pin_locked_out, Snackbar.LENGTH_LONG).show();
+                            return;
+                        }
+                        Intent intent = new Intent(this, PinActivity.class);
+                        startActivityForResult(intent, RC_UPGRADE_PIN);
+                    });
+                }
+                break;
+            case FINGERPRINT:
+                askToUpgrade(R.string.upgrade_from_fingerprint, () ->
+                        LegacyFingerprint.read(this, settings, new LegacyFingerprint.Callback() {
+                            @Override
+                            public void onPassphrase(String passphrase) {
+                                upgradeFrom(passphrase);
+                            }
+
+                            @Override
+                            public void onFailed(CharSequence message) {
+                                Snackbar snackbar = Snackbar.make(mCLayout, message, Snackbar.LENGTH_LONG);
+                                snackbar.setTextMaxLines(5);
+                                snackbar.show();
+                            }
+                        }));
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void askToUpgrade(int message, Runnable upgrade) {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.upgrade_title)
+                .setMessage(message)
+                .setPositiveButton(R.string.upgrade_switch, (dialog, which) -> upgrade.run())
+                .setNegativeButton(R.string.upgrade_later, null)
+                .show();
+    }
+
+    private void upgradeFrom(String oldPassphrase) {
+        PassphraseUpgrade.run(Wallet.getInstance(), settings, oldPassphrase, ContextCompat.getMainExecutor(this),
+                new PassphraseUpgrade.Callback() {
+                    @Override
+                    public void onUpgraded(String passphrase) {
+                        Snackbar.make(mCLayout, R.string.upgrade_done, Snackbar.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    public void onFailed(Throwable t) {
+                        String message;
+                        if (Wallet.isWrongPassphrase(t) && settings.getEncryptionType() == EncryptionType.PIN) {
+                            settings.countInvalidPin();
+                            message = getString(R.string.upgrade_wrong_pin);
+                        } else {
+                            String reason = Wallet.reasonFor(t);
+                            message = getString(R.string.upgrade_failed, reason != null ? reason : t.toString());
+                        }
+                        Snackbar snackbar = Snackbar.make(mCLayout, message, Snackbar.LENGTH_LONG);
+                        snackbar.setTextMaxLines(5);
+                        snackbar.show();
+                    }
+                });
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -655,6 +751,7 @@ public class MainActivity extends CloseActivity {
                                     mainActivity.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
                                 }
                             }
+                            mainActivity.upgradeWalletPassphrase();
                         });
                     }
 

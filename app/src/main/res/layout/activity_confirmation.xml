@@ -198,15 +198,19 @@
 
         </androidx.cardview.widget.CardView>
 
-        <ImageView
-            android:id="@+id/fingerprint"
+        <TextView
+            android:id="@+id/noScreenLockNotice"
             android:layout_width="match_parent"
-            android:layout_height="90dp"
-            android:layout_alignParentBottom="true"
-            android:layout_marginBottom="20dp"
-            android:visibility="gone"
-            app:layout_anchorGravity="center_horizontal"
-            app:srcCompat="@drawable/fingerprint" />
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/swipe_btn"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="12dp"
+            android:text="@string/no_screen_lock_notice"
+            android:textAlignment="center"
+            android:textColor="@color/liteGrey"
+            android:textSize="14sp"
+            android:visibility="gone" />
 
         <cash.bchd.android_neutrino.widget.SlideToConfirmView
             android:id="@+id/swipe_btn"
@@ -216,7 +220,6 @@
             android:layout_marginStart="20dp"
             android:layout_marginEnd="20dp"
             android:layout_marginBottom="20dp"
-            android:visibility="gone"
             app:slideText="@string/swipe_to_pay"
             app:slideThumbBackground="@drawable/shape_button"
             app:slideThumbIcon="@drawable/bitcoin"
