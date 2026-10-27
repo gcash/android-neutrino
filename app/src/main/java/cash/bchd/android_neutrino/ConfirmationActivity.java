@@ -299,7 +299,7 @@ public class ConfirmationActivity extends AppCompatActivity {
     }
 
     private void publishTransaction(Wallet wallet, Api.SignTransactionResponse result, CoordinatorLayout layout) {
-        ListenableFuture<Api.PublishTransactionResponse> resp = wallet.publishTransactionAsync(result.getTransaction().toByteArray(), paymentAddr, memo);
+        ListenableFuture<Api.PublishTransactionResponse> resp = wallet.publishTransactionAsync(result.getTransaction().toByteArray(), memo);
         Futures.addCallback(resp, new FutureCallback<Api.PublishTransactionResponse>() {
             @Override
             public void onSuccess(Api.PublishTransactionResponse result) {
@@ -320,7 +320,7 @@ public class ConfirmationActivity extends AppCompatActivity {
     }
 
     private void postPaymentToMerchant(Wallet wallet, Api.SignTransactionResponse result, CoordinatorLayout layout) {
-        ListenableFuture<Api.PostPaymentResponse> resp = wallet.postPaymentAsync(refundAddress, refundAmount, result.getTransaction().toByteArray(), paymentURL, paymentProtocol, merchantData, paymentAddr, memo);
+        ListenableFuture<Api.PostPaymentResponse> resp = wallet.postPaymentAsync(refundAddress, refundAmount, result.getTransaction().toByteArray(), paymentURL, paymentProtocol, merchantData, memo);
         Futures.addCallback(resp, new FutureCallback<Api.PostPaymentResponse>() {
             @Override
             public void onSuccess(Api.PostPaymentResponse result) {

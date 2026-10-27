@@ -16,7 +16,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -51,7 +53,8 @@ public class Wallet implements Serializable {
     private final String MAINNET_URI_PREFIX = "bitcoincash:";
 
     private HashMap<String, AddressListener> addressListeners = new HashMap<String, AddressListener>();
-    private HashMap<ByteString, String[]> metadataCache = new HashMap<ByteString, String[]>();
+    // The memos of the transactions the app sent, which the wallet doesn't have, by transaction.
+    private HashMap<ByteString, String> memos = new HashMap<ByteString, String>();
     private List<WalletEventListener> blockchainListeners = new ArrayList<WalletEventListener>();
 
     private int lastBlockHeight;
@@ -390,7 +393,7 @@ public class Wallet implements Serializable {
      * postPaymentAsync sends the payment of a payment request to the merchant with the protocol,
      * an Api.PaymentProtocol value, that the request was downloaded with.
      */
-    public ListenableFuture<Api.PostPaymentResponse> postPaymentAsync(String refundAddress, long refundAmount, byte[] serializedTransaction, String paymentURL, int protocol, byte[] merchantData, String toAddress, String memo) {
+    public ListenableFuture<Api.PostPaymentResponse> postPaymentAsync(String refundAddress, long refundAmount, byte[] serializedTransaction, String paymentURL, int protocol, byte[] merchantData, String memo) {
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
         Api.PostPaymentRequest.Output refundOuput = Api.PostPaymentRequest.Output.newBuilder().setAddress(refundAddress).setAmount(refundAmount).build();
 
@@ -403,10 +406,7 @@ public class Wallet implements Serializable {
                 .addTransactions(bs)
                 .build();
 
-        String[] metadata = new String[2];
-        metadata[0] = toAddress;
-        metadata[1] = memo;
-        this.metadataCache.put(bs, metadata);
+        this.memos.put(bs, memo);
 
         return stub.postPayment(request);
     }
@@ -443,23 +443,17 @@ public class Wallet implements Serializable {
         return stub.signTransaction(request);
     }
 
-    public void publishTransaction(byte[] serializedTransaction, String toAddress, String memo) throws Exception {
+    public void publishTransaction(byte[] serializedTransaction, String memo) throws Exception {
         ByteString bs = ByteString.copyFrom(serializedTransaction);
-        String[] metadata = new String[2];
-        metadata[0] = toAddress;
-        metadata[1] = memo;
-        this.metadataCache.put(bs, metadata);
+        this.memos.put(bs, memo);
         WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
         Api.PublishTransactionRequest request = Api.PublishTransactionRequest.newBuilder().setSignedTransaction(bs).build();
         Api.PublishTransactionResponse reply = stub.publishTransaction(request);
     }
 
-    public ListenableFuture<Api.PublishTransactionResponse> publishTransactionAsync(byte[] serializedTransaction, String toAddress, String memo) {
+    public ListenableFuture<Api.PublishTransactionResponse> publishTransactionAsync(byte[] serializedTransaction, String memo) {
         ByteString bs = ByteString.copyFrom(serializedTransaction);
-        String[] metadata = new String[2];
-        metadata[0] = toAddress;
-        metadata[1] = memo;
-        this.metadataCache.put(bs, metadata);
+        this.memos.put(bs, memo);
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
         Api.PublishTransactionRequest request = Api.PublishTransactionRequest.newBuilder().setSignedTransaction(bs).build();
         return stub.publishTransaction(request);
@@ -598,34 +592,41 @@ public class Wallet implements Serializable {
     }
 
     private TransactionData extractTransactionData(Api.TransactionDetails tx, int height, long timestamp) {
+        String memo = this.memos.get(tx.getTransaction());
+        return transactionData(tx, height, timestamp, memo != null ? memo : "");
+    }
+
+    /**
+     * transactionData makes the list's entry for one of the wallet's transactions. A transaction
+     * it sent names the first address its outputs pay besides the wallet's and how many more they
+     * pay, each address once, or that every output pays the wallet.
+     */
+    static TransactionData transactionData(Api.TransactionDetails tx, int height, long timestamp, String memo) {
         long total = 0;
-        String toAddress = "";
         for (Api.TransactionDetails.Output output : tx.getCreditsList()) {
             total += output.getAmount();
-            toAddress = output.getAddress();
         }
         for (Api.TransactionDetails.Input input : tx.getDebitsList()) {
             total -= input.getPreviousAmount();
         }
-        if (total > 0) {
-            toAddress = "";
-        }
 
         String txid = txidToString(tx.getHash());
-
-        String[] metaData = this.metadataCache.get(tx.getTransaction());
-        String memo = "";
-        if (metaData != null && metaData.length == 2) {
-            toAddress = metaData[0];
-            memo = metaData[1];
-            this.metadataCache.remove(tx.getHash());
+        TransactionData txData = new TransactionData(txid, (total > 0), memo, total, "", "", timestamp, "", height);
+        if (total <= 0) {
+            // An output that pays no single address, such as OP_RETURN data, has none.
+            Set<String> addresses = new LinkedHashSet<>();
+            for (Api.TransactionDetails.OtherOutput output : tx.getOtherOutputsList()) {
+                if (!output.getAddress().isEmpty()) {
+                    addresses.add(output.getAddress());
+                }
+            }
+            String first = addresses.isEmpty() ? "" : addresses.iterator().next();
+            txData.setRecipients(first, Math.max(addresses.size() - 1, 0), tx.getOtherOutputsCount() == 0);
         }
-
-        TransactionData txData = new TransactionData(txid, (total > 0), memo, total, "", "", timestamp, toAddress, height);
         return txData;
     }
 
-    private String txidToString(ByteString txid) {
+    private static String txidToString(ByteString txid) {
         byte[] txBytes = txid.toByteArray();
         reverse(txBytes);
         return BaseEncoding.base16().lowerCase().encode(txBytes);

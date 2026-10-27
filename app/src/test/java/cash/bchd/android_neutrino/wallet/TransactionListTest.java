@@ -49,18 +49,30 @@ public class TransactionListTest {
     }
 
     @Test
-    public void keepsWhatTheShownEntryHadAndTakesTheWalletsHeight() {
+    public void keepsWhatTheShownEntryHadAndTakesTheWalletsHeightAndRecipients() {
+        // Saved by an earlier version, which named the wallet's change address as the recipient.
         TransactionData sent = new TransactionData("sent", false, "lunch", -5000, "$1.39", "USD", 300,
-                "bitcoincash:qrhea03074073ff3zv9whh0nggxc7k03ssh8jv9mkx", 0);
-        TransactionData mined = new TransactionData("sent", false, "", -5000, "$9.99", "USD", 400,
-                "bitcoincash:qchange", 812345);
+                "qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy", 0);
+        TransactionData mined = new TransactionData("sent", false, "", -5000, "$9.99", "USD", 400, "", 812345);
+        mined.setRecipients("qrhea03074073ff3zv9whh0nggxc7k03ssh8jv9mkx", 2, false);
         List<TransactionData> list = TransactionList.rebuild(Collections.singletonList(sent), Collections.singletonList(mined));
         assertSame(sent, list.get(0));
         assertEquals(812345, sent.getHeight());
         assertEquals("lunch", sent.getMemo());
         assertEquals("$1.39", sent.getFiatAmount());
-        assertEquals("bitcoincash:qrhea03074073ff3zv9whh0nggxc7k03ssh8jv9mkx", sent.getToAddress());
         assertEquals(300, sent.getTimestamp());
+        assertEquals("qrhea03074073ff3zv9whh0nggxc7k03ssh8jv9mkx", sent.getToAddress());
+        assertEquals(2, sent.getMoreRecipients());
+    }
+
+    @Test
+    public void learnsThatAShownSendPaidTheWallet() {
+        TransactionData shown = new TransactionData("self", false, "", -200, "", "", 100,
+                "qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy", 10);
+        TransactionData wallet = tx("self", -200, 100, 10);
+        wallet.setRecipients("", 0, true);
+        TransactionList.rebuild(Collections.singletonList(shown), Collections.singletonList(wallet));
+        assertEquals(TransactionData.SentTo.YOURSELF, shown.getSentTo());
     }
 
     @Test

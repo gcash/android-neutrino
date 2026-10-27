@@ -7,6 +7,13 @@
     <string name="unconfirmed">Unconfirmed</string>
     <string name="pending">Pending</string>
     <string name="confirmed">Confirmed</string>
+    <string name="sent_to">Sent to %1$s</string>
+    <plurals name="sent_to_and_more">
+        <item quantity="one">Sent to %1$s and %2$d more</item>
+        <item quantity="other">Sent to %1$s and %2$d more</item>
+    </plurals>
+    <string name="sent_to_yourself">Sent to yourself</string>
+    <string name="sent">Sent</string>
     <string name="sync_waiting_for_peers">Waiting for peers…</string>
     <string name="sync_syncing">Syncing block %1$s of %2$s</string>
     <string name="sync_syncing_at_tip">Syncing…</string>

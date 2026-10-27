@@ -3,6 +3,7 @@ package cash.bchd.android_neutrino;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -113,6 +114,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             holder.fiatAmount.setText(tx.getFiatAmount());
         }
 
+        holder.txMemo.setEllipsize(TextUtils.TruncateAt.END);
         if (tx.getIncoming()) {
             holder.txDescription.setText("Received Bitcoin Cash");
             holder.arrowImage.setImageResource(R.drawable.receive_arrow);
@@ -127,8 +129,10 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             holder.txDescription.setText("Sent Bitcoin Cash");
             holder.bchAmount.setTextColor(ctx.getResources().getColor(R.color.neonPurple));
             if (tx.getMemo() == null || tx.getMemo().equals("")) {
-                String to = "Sent to " + tx.getToAddress();
-                holder.txMemo.setText(to);
+                // Shortening an address in the middle keeps its end and how many more addresses
+                // the transaction paid in view.
+                holder.txMemo.setEllipsize(TextUtils.TruncateAt.MIDDLE);
+                holder.txMemo.setText(sentTo(tx));
             } else {
                 holder.txMemo.setText(tx.getMemo());
             }
@@ -198,5 +202,19 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     @Override
     public int getItemCount() {
         return mDataset.size();
+    }
+
+    private String sentTo(TransactionData tx) {
+        switch (tx.getSentTo()) {
+            case YOURSELF:
+                return ctx.getString(R.string.sent_to_yourself);
+            case NO_ADDRESS:
+                return ctx.getString(R.string.sent);
+            case ADDRESS_AND_MORE:
+                return ctx.getResources().getQuantityString(R.plurals.sent_to_and_more, tx.getMoreRecipients(),
+                        tx.getToAddress(), tx.getMoreRecipients());
+            default:
+                return ctx.getString(R.string.sent_to, tx.getToAddress());
+        }
     }
 }
