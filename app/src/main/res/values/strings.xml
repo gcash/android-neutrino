@@ -78,4 +78,6 @@
     <string name="pin_delete">Delete</string>
     <string name="swipe_to_pay">SWIPE TO PAY</string>
     <string name="wallet_error">The wallet failed to start: %1$s</string>
+    <string name="donation_reminder_title">Show Some Love To BCHD</string>
+    <string name="donation_reminder_text">The Neutrino wallet is part of a larger suite of open source software which helps power the Bitcoin Cash network. The developers donate their time and expertise to bring awesome software to you for free.</string>
 </resources>

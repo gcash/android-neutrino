@@ -29,6 +29,7 @@ public class Settings {
     private static final String WALLET_BIRTHDAY_KEY = "WalletBirthday";
     private static final String REPO_VERSION_KEY = "RepoVersion";
     private static final String SCAN_HEIGHT_KEY = "ScanHeight";
+    private static final String NOTIFICATIONS_REQUESTED_KEY = "NotificationsRequested";
 
     private final SharedPreferences prefs;
 
@@ -242,6 +243,14 @@ public class Settings {
 
     int getScanHeight() {
         return prefs.getInt(SCAN_HEIGHT_KEY, 0);
+    }
+
+    void setNotificationsRequested(boolean requested) {
+        putBoolean(NOTIFICATIONS_REQUESTED_KEY, requested);
+    }
+
+    Boolean getNotificationsRequested() {
+        return prefs.getBoolean(NOTIFICATIONS_REQUESTED_KEY, false);
     }
 
     private void putBoolean(final String key, final boolean val) {

@@ -61,14 +61,6 @@ public class SettingsActivity extends AppCompatActivity implements PreferenceFra
     }
 
     @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        if (SettingsFragment.activeScreen.equals("root")) {
-            finish();
-        }
-    }
-
-    @Override
     public boolean onPreferenceStartScreen(PreferenceFragmentCompat preferenceFragmentCompat,
                                            PreferenceScreen preferenceScreen) {
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();

@@ -7,13 +7,13 @@ import android.hardware.fingerprint.FingerprintManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.view.KeyEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
 
@@ -42,6 +42,14 @@ public class ConfirmationActivity extends FingerprintActivity {
     SlideToConfirmView swipeButton;
     EncryptionType encType;
 
+    // Enabled once the payment is sent, to leave the send screen on back.
+    OnBackPressedCallback afterPayment = new OnBackPressedCallback(false) {
+        @Override
+        public void handleOnBackPressed() {
+            leaveAfterPayment();
+        }
+    };
+
     boolean isPaymentRequest;
     byte[] merchantData;
     String paymentURL;
@@ -52,6 +60,7 @@ public class ConfirmationActivity extends FingerprintActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_confirmation);
+        getOnBackPressedDispatcher().addCallback(this, afterPayment);
 
         CloseActivity.cancelCloseTimer();
 
@@ -184,31 +193,30 @@ public class ConfirmationActivity extends FingerprintActivity {
         }
     }
 
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event)  {
-        if (Integer.parseInt(android.os.Build.VERSION.SDK) > 5
-                && keyCode == KeyEvent.KEYCODE_BACK
-                && event.getRepeatCount() == 0) {
-            onBackPressed();
-            return true;
+    // Once the payment is sent, leave the send screen too, so that going back
+    // does not show the filled in payment again.
+    private void leaveAfterPayment() {
+        finish();
+        if (SendActivity.fa != null) {
+            SendActivity.fa.finish();
         }
-        return super.onKeyDown(keyCode, event);
+        if (UriActivity.fa != null) {
+            UriActivity.fa.finish();
+        }
     }
 
-
-    @Override
-    public void onBackPressed() {
+    private void showPaymentSent() {
+        RelativeLayout rLayout = findViewById(R.id.confirmationLayout);
+        CheckView checkView = findViewById(R.id.check);
         LinearLayout checkLayout = findViewById(R.id.checkLayout);
-        if (checkLayout.getVisibility() == View.VISIBLE) {
-            finish();
-            if (SendActivity.fa != null) {
-                SendActivity.fa.finish();
-            }
-            if (UriActivity.fa != null) {
-                UriActivity.fa.finish();
-            }
-        } else {
-            super.onBackPressed();
+        checkLayout.setOnClickListener(v -> leaveAfterPayment());
+        rLayout.setVisibility(View.GONE);
+        checkLayout.setVisibility(View.VISIBLE);
+        checkView.check();
+        afterPayment.setEnabled(true);
+        Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+        if (vibrator != null) {
+            vibrator.vibrate(500);
         }
     }
 
@@ -263,19 +271,7 @@ public class ConfirmationActivity extends FingerprintActivity {
         Futures.addCallback(resp, new FutureCallback<Api.PublishTransactionResponse>() {
             @Override
             public void onSuccess(Api.PublishTransactionResponse result) {
-                runOnUiThread(() -> {
-                    RelativeLayout rLayout = findViewById(R.id.confirmationLayout);
-                    CheckView checkView = findViewById(R.id.check);
-                    LinearLayout checkLayout = findViewById(R.id.checkLayout);
-                    checkLayout.setOnClickListener(v -> onBackPressed());
-                    rLayout.setVisibility(View.GONE);
-                    checkLayout.setVisibility(View.VISIBLE);
-                    checkView.check();
-                    Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-                    if (vibrator != null) {
-                        vibrator.vibrate(500);
-                    }
-                });
+                runOnUiThread(() -> showPaymentSent());
             }
 
             @Override
@@ -296,18 +292,7 @@ public class ConfirmationActivity extends FingerprintActivity {
         Futures.addCallback(resp, new FutureCallback<Api.PostPaymentResponse>() {
             @Override
             public void onSuccess(Api.PostPaymentResponse result) {
-                runOnUiThread(() -> {
-                    RelativeLayout rLayout = findViewById(R.id.confirmationLayout);
-                    CheckView checkView = findViewById(R.id.check);
-                    LinearLayout checkLayout = findViewById(R.id.checkLayout);
-                    checkLayout.setOnClickListener(v -> onBackPressed());
-
-                    rLayout.setVisibility(View.GONE);
-                    checkLayout.setVisibility(View.VISIBLE);
-                    checkView.check();
-                    Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-                    vibrator.vibrate(500);
-                });
+                runOnUiThread(() -> showPaymentSent());
             }
 
             @Override

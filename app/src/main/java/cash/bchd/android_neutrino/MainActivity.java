@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Currency;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import cash.bchd.android_neutrino.wallet.AddressListener;
 import cash.bchd.android_neutrino.wallet.Amount;
@@ -92,12 +93,13 @@ public class MainActivity extends CloseActivity {
     // Whether this activity listens to the wallet's events.
     boolean walletAttached;
 
+    private static final long DONATION_REMINDER_INTERVAL = TimeUnit.DAYS.toMillis(45);
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         cancelCloseTimer();
-        startService(new Intent(this, NotificationService.class));
         layoutManager = new LinearLayoutManager(this);
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         this.settings = new Settings(sharedPref);
@@ -513,6 +515,7 @@ public class MainActivity extends CloseActivity {
     @Override
     public void onResume() {
         super.onResume();
+        maybeSendDonationReminder();
         try {
             TextView fiatBalanceView = findViewById(R.id.fiatBalanceView);
             Amount amt = new Amount(settings.getLastBalance());
@@ -570,34 +573,63 @@ public class MainActivity extends CloseActivity {
     private void maybeSendBackupReminder() {
         if (!settings.getBackupReminder() && !settings.getMnemonic().equals("")) {
             Intent intent = new Intent(getApplicationContext(), BackupActivity.class);
-            PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, 0);
-
-            Notification notification = new NotificationCompat.Builder(getApplicationContext(), "default")
-                    .setSmallIcon(R.drawable.neutrino_small)
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                    .setContentTitle(getString(R.string.backup_your_wallet))
-                    .setContentIntent(pendingIntent)
-                    .setDefaults(Notification.DEFAULT_SOUND|Notification.DEFAULT_LIGHTS|Notification.DEFAULT_VIBRATE)
-                    .setStyle(new NotificationCompat.BigTextStyle()
-                            .bigText(getString(R.string.backup_recovery_phrase_suggestion)))
-                    .build();
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                CharSequence name = "default";
-                String description = "default channel";
-                int importance = NotificationManager.IMPORTANCE_DEFAULT;
-                NotificationChannel channel = new NotificationChannel("default", name, importance);
-                channel.setDescription(description);
-                // Register the channel with the system; you can't change the importance
-                // or other notification behaviors after this
-                NotificationManager notificationManager = getSystemService(NotificationManager.class);
-                if (notificationManager != null) {
-                    notificationManager.createNotificationChannel(channel);
-                    notificationManager.notify(5678, notification);
-                }
-            }
+            postNotification(5678, intent, getString(R.string.backup_your_wallet),
+                    getString(R.string.backup_recovery_phrase_suggestion));
             settings.setBackupReminder(true);
         }
+    }
+
+    // Remind every 45 days that the wallet is free software by volunteers
+    // who accept donations. This used to be posted by a background service.
+    private void maybeSendDonationReminder() {
+        long now = System.currentTimeMillis();
+        long last = settings.getLastNotification();
+        if (last == 0) {
+            settings.setLastNotification(now);
+            return;
+        }
+        if (last + DONATION_REMINDER_INTERVAL > now) {
+            return;
+        }
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        intent.putExtra("launchLoveActivity", true);
+        postNotification(1234, intent, getString(R.string.donation_reminder_title),
+                getString(R.string.donation_reminder_text));
+        settings.setLastNotification(now);
+    }
+
+    private void postNotification(int id, Intent intent, String title, String text) {
+        // Ask once for the permission to post notifications, which Android 13
+        // and newer require.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                && !settings.getNotificationsRequested()) {
+            settings.setNotificationsRequested(true);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, 2);
+        }
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), id, intent,
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        Notification notification = new NotificationCompat.Builder(getApplicationContext(), "default")
+                .setSmallIcon(R.drawable.neutrino_small)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContentTitle(title)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .setDefaults(Notification.DEFAULT_SOUND|Notification.DEFAULT_LIGHTS|Notification.DEFAULT_VIBRATE)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
+                .build();
+
+        NotificationManager notificationManager = getSystemService(NotificationManager.class);
+        if (notificationManager == null) {
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel("default", "default", NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setDescription("default channel");
+            notificationManager.createNotificationChannel(channel);
+        }
+        notificationManager.notify(id, notification);
     }
 
     // StartWalletTask loads the started wallet and shows its balance and transactions. The
