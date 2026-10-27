@@ -30,6 +30,8 @@ public class Settings {
     private static final String REPO_VERSION_KEY = "RepoVersion";
     private static final String SCAN_HEIGHT_KEY = "ScanHeight";
     private static final String NOTIFICATIONS_REQUESTED_KEY = "NotificationsRequested";
+    private static final String PEERS_KEY = "Peers";
+    private static final String PEERS_ONLY_KEY = "PeersOnly";
 
     private final SharedPreferences prefs;
 
@@ -245,6 +247,40 @@ public class Settings {
 
     int getScanHeight() {
         return prefs.getInt(SCAN_HEIGHT_KEY, 0);
+    }
+
+    void setPeers(String peers) {
+        putString(PEERS_KEY, peers);
+    }
+
+    String getPeers() {
+        return prefs.getString(PEERS_KEY, "");
+    }
+
+    /**
+     * The peers to sync from in SPV mode, host or host:port, as entered separated by commas or
+     * spaces. Entries with characters a host and port can't have are left out.
+     */
+    String[] getPeerList() {
+        return parsePeers(getPeers());
+    }
+
+    static String[] parsePeers(String text) {
+        java.util.List<String> peers = new java.util.ArrayList<>();
+        for (String peer : text.split("[,\\s]+")) {
+            if (peer.matches("[A-Za-z0-9.:\\[\\]-]+")) {
+                peers.add(peer);
+            }
+        }
+        return peers.toArray(new String[0]);
+    }
+
+    void setPeersOnly(boolean only) {
+        putBoolean(PEERS_ONLY_KEY, only);
+    }
+
+    Boolean getPeersOnly() {
+        return prefs.getBoolean(PEERS_ONLY_KEY, false);
     }
 
     void setNotificationsRequested(boolean requested) {

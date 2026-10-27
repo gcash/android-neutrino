@@ -34,6 +34,10 @@ public class Config {
     // Connect only to the specified peers at startup
     private String[] connect;
 
+    // Connect to the specified peers at startup in addition to the ones found
+    // through DNS seeds
+    private String[] addPeers;
+
     // The following are configuration parameters for connecting to a bchd full node
     // over the RPC interface. These must provided if useSPV is false.
     private String rpcConnect;
@@ -58,13 +62,14 @@ public class Config {
     /**
      * Construct the config file.
      */
-    public Config(String dataDir, Boolean noInitialLoad, Boolean useSPV, Boolean blocksOnly, String[] connect, String rpcConnect,
+    public Config(String dataDir, Boolean noInitialLoad, Boolean useSPV, Boolean blocksOnly, String[] connect, String[] addPeers, String rpcConnect,
                   String bchdUsername, String bchdPassword, String cert, long birthday) {
         this.birthday = birthday;
         this.dataDir = dataDir;
         this.useSPV = useSPV;
         this.blocksOnly = blocksOnly;
         this.connect = connect;
+        this.addPeers = addPeers;
         this.rpcConnect = rpcConnect;
         this.bchdUsername = bchdUsername;
         this.bchdPassword = bchdPassword;
@@ -105,6 +110,9 @@ public class Config {
         StringBuilder sb = new StringBuilder();
         for (String c : this.connect) {
             sb.append("connect=" + c + "\n");
+        }
+        for (String a : this.addPeers) {
+            sb.append("addpeer=" + a + "\n");
         }
         if (!sb.toString().equals("")) {
             configFileContents += sb.toString();

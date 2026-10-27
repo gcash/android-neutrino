@@ -80,4 +80,5 @@
     <string name="wallet_error">The wallet failed to start: %1$s</string>
     <string name="donation_reminder_title">Show Some Love To BCHD</string>
     <string name="donation_reminder_text">The Neutrino wallet is part of a larger suite of open source software which helps power the Bitcoin Cash network. The developers donate their time and expertise to bring awesome software to you for free.</string>
+    <string name="peers_summary">Enter bchd nodes, as host or host:port separated by commas, to sync from in SPV mode besides the ones found automatically. Takes effect when the wallet restarts.</string>
 </resources>

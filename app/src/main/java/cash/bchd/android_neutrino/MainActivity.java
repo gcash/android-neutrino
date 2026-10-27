@@ -203,7 +203,9 @@ public class MainActivity extends CloseActivity {
 
     public void createWallet() {
         if (Wallet.getInstance() == null) {
-            String[] addrs = new String[0];
+            String[] peers = settings.getPeerList();
+            String[] none = new String[0];
+            boolean peersOnly = settings.getPeersOnly() && peers.length > 0;
             String bchdIP = settings.getBchdIP();
             long birthday = settings.getWalletBirthday();
             if (birthday == 0) {
@@ -216,7 +218,8 @@ public class MainActivity extends CloseActivity {
             settings.setRepoVersion(newRepoVersion);
 
             Config cfg = new Config(getDataDir().getPath(), !settings.getWalletInitialized(),
-                    bchdIP.equals(""), settings.getBlocksOnly(), addrs, settings.getBchdIP(), settings.getBchdUsername(),
+                    bchdIP.equals(""), settings.getBlocksOnly(), peersOnly ? peers : none, peersOnly ? none : peers,
+                    settings.getBchdIP(), settings.getBchdUsername(),
                     settings.getBchdPassword(), settings.getBchdCert(), birthday);
             wallet = new Wallet(this, cfg);
             wallet.start();

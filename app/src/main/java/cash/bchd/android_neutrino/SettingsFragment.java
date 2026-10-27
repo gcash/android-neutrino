@@ -165,6 +165,34 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 }
             });
 
+            EditTextPreference peersPref = (EditTextPreference) findPreference("peers");
+            String peers = settings.getPeers();
+            peersPref.setText(peers);
+            if (!peers.equals("")) {
+                peersPref.setSummary(peers);
+            }
+            peersPref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object o) {
+                    settings.setPeers(o.toString().trim());
+                    String joined = String.join(", ", settings.getPeerList());
+                    settings.setPeers(joined);
+                    peersPref.setText(joined);
+                    peersPref.setSummary(joined.equals("") ? getString(R.string.peers_summary) : joined);
+                    return false;
+                }
+            });
+
+            SwitchPreferenceCompat peersOnlyPref = (SwitchPreferenceCompat) findPreference("peersOnly");
+            peersOnlyPref.setChecked(settings.getPeersOnly());
+            peersOnlyPref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object o) {
+                    settings.setPeersOnly((Boolean) o);
+                    return true;
+                }
+            });
+
             EditTextPreference feePref = (EditTextPreference) findPreference("fee");
             feePref.setSummary(settings.getFeePerByte() + " sat/byte");
             feePref.setText(String.valueOf(settings.getFeePerByte()));

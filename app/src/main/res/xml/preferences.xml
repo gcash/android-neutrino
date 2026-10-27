@@ -81,6 +81,20 @@
         app:summary="Disable downloading unconfirmed transactions from the mempool. This will use less bandwidth but you will only detect transactions when they are mined."
         app:title="Blocks Only" />
 
+    <EditTextPreference
+        app:icon="@drawable/ip_icon_small"
+        app:key="peers"
+        app:persistent="false"
+        app:summary="@string/peers_summary"
+        app:title="SPV Peers" />
+
+    <SwitchPreferenceCompat
+        app:icon="@drawable/ip_icon_small"
+        app:key="peersOnly"
+        app:persistent="false"
+        app:summary="Sync only from the SPV peers above. Takes effect when the wallet restarts."
+        app:title="Only These Peers" />
+
     <ListPreference
         android:entries="@array/CurrencyCodes"
         android:entryValues="@array/CurrencyCodes"
