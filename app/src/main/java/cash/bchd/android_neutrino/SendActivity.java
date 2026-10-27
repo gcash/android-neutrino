@@ -21,7 +21,6 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
-import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -268,7 +267,7 @@ public class SendActivity extends AppCompatActivity {
 
         String qrData = intent.getExtras().getString("qrdata");
         if (qrData != null) {
-            this.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, intent);
+            this.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, intent);
             return;
         }
 
@@ -276,7 +275,7 @@ public class SendActivity extends AppCompatActivity {
         if (data != null) {
             Intent newIntent = new Intent();
             newIntent.putExtra("qrdata", data.toString());
-            this.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, newIntent);
+            this.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
             return;
         }
     }
@@ -369,7 +368,7 @@ public class SendActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == RC_BARCODE_CAPTURE) {
-            if (resultCode == CommonStatusCodes.SUCCESS) {
+            if (resultCode == RESULT_OK) {
                 if (data != null) {
                     String qrdata = data.getStringExtra("qrdata");
 
@@ -409,7 +408,7 @@ public class SendActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 }
-            } else {
+            } else if (resultCode != RESULT_CANCELED) {
                 Snackbar snackbar = Snackbar.make(sendLayout, R.string.barcode_read_error, Snackbar.LENGTH_LONG);
                 snackbar.show();
             }
@@ -427,7 +426,7 @@ public class SendActivity extends AppCompatActivity {
 
             Intent newIntent = new Intent();
             newIntent.putExtra("qrdata", uriString);
-            this.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, newIntent);
+            this.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
         }
     }
 

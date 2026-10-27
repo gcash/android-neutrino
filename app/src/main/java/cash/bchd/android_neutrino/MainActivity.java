@@ -46,7 +46,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -110,9 +109,7 @@ public class MainActivity extends CloseActivity {
         Amount lastBal = new Amount(this.settings.getLastBalance());
         bchBalanceView.setText(getString(R.string.bch_amount, lastBal.toString()));
         new Thread(new ExchangeRateFetcher(this, lastBal)).start();
-        if (checkForPermissions()) {
-            createWallet();
-        }
+        createWallet();
         fab = findViewById(R.id.fab);
         fabSettings = findViewById(R.id.btnSettings);
         fabReceive = findViewById(R.id.btnReceive);
@@ -199,7 +196,7 @@ public class MainActivity extends CloseActivity {
         if (launchLoveActivity) {
             Intent newIntent = new Intent();
             newIntent.putExtra("qrdata", SettingsFragment.DONATE_URI);
-            this.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, newIntent);
+            this.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
         }
     }
 
@@ -235,8 +232,7 @@ public class MainActivity extends CloseActivity {
     protected void onStart() {
         super.onStart();
         cancelCloseTimer();
-        if (settings != null && ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED) {
+        if (settings != null) {
             // Start the wallet again if the close timer stopped it while the app
             // was in the background.
             createWallet();
@@ -416,7 +412,7 @@ public class MainActivity extends CloseActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == RC_BARCODE_CAPTURE) {
-            if (resultCode == CommonStatusCodes.SUCCESS) {
+            if (resultCode == RESULT_OK) {
                 if (data != null) {
                     String qrdata = data.getStringExtra("qrdata");
                     BitcoinPaymentURI uri = BitcoinPaymentURI.parse(qrdata);
@@ -477,7 +473,7 @@ public class MainActivity extends CloseActivity {
                         startActivity(intent);
                     }
                 }
-            } else {
+            } else if (resultCode != RESULT_CANCELED) {
                 Snackbar snackbar = Snackbar.make(mCLayout, R.string.barcode_read_error, Snackbar.LENGTH_LONG);
                 snackbar.show();
             }
@@ -491,25 +487,6 @@ public class MainActivity extends CloseActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    private boolean checkForPermissions() {
-        boolean hasAllPermissions = true;
-        String[] missingPermissions = new String[1];
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                != PackageManager.PERMISSION_GRANTED) {
-            missingPermissions[0] = Manifest.permission.CAMERA;
-            hasAllPermissions = false;
-        }
-        if (!hasAllPermissions) {
-            ActivityCompat.requestPermissions(this, missingPermissions, 1);
-        }
-        return hasAllPermissions;
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        createWallet();
     }
 
     @Override
@@ -531,7 +508,7 @@ public class MainActivity extends CloseActivity {
                 this.getIntent().getExtras().clear();
                 Intent newIntent = new Intent();
                 newIntent.putExtra("qrdata", uri);
-                this.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, newIntent);
+                this.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
             }
         }
     }
@@ -661,7 +638,7 @@ public class MainActivity extends CloseActivity {
                                     intent.getExtras().clear();
                                     Intent newIntent = new Intent();
                                     newIntent.putExtra("qrdata", uri);
-                                    mainActivity.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, newIntent);
+                                    mainActivity.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
                                 }
                             }
                         });

@@ -1,91 +1,92 @@
 package cash.bchd.android_neutrino;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.util.SparseArray;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
-import com.google.android.gms.common.api.CommonStatusCodes;
-import com.google.android.gms.vision.CameraSource;
-import com.google.android.gms.vision.Detector;
-import com.google.android.gms.vision.barcode.Barcode;
-import com.google.android.gms.vision.barcode.BarcodeDetector;
+import com.google.zxing.BarcodeFormat;
+import com.journeyapps.barcodescanner.DecoratedBarcodeView;
+import com.journeyapps.barcodescanner.DefaultDecoderFactory;
 
-import java.io.IOException;
+import java.util.Collections;
 
-public class ScannerActivity extends Activity {
+/**
+ * ScannerActivity scans a QR code with the camera and returns its text as the "qrdata" extra
+ * with RESULT_OK. It decodes with ZXing on the device, so it needs no Google Play services.
+ */
+public class ScannerActivity extends AppCompatActivity {
 
-    BarcodeDetector detector;
-    CameraSource camera;
-    SurfaceView surfaceView;
+    private static final int REQ_CAMERA = 1;
+
+    private DecoratedBarcodeView barcodeView;
+    private boolean scanned;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scanner);
 
-
-        surfaceView = (SurfaceView) findViewById(R.id.scanPreview);
-        detector = new BarcodeDetector.Builder(this).setBarcodeFormats(Barcode.QR_CODE).build();
-
-        camera = new CameraSource.Builder(this, detector).setRequestedPreviewSize(640, 480)
-                .setFacing(CameraSource.CAMERA_FACING_BACK)
-                .setRequestedFps(30.0f)
-                .setAutoFocusEnabled(true).build();
-
-        surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
-            @Override
-            public void surfaceCreated(SurfaceHolder holder) {
-                if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                    System.out.println("Missing permissions");
-                    return;
-                }
-                try {
-                    camera.start(holder);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+        barcodeView = findViewById(R.id.scanPreview);
+        barcodeView.getBarcodeView().setDecoderFactory(
+                new DefaultDecoderFactory(Collections.singletonList(BarcodeFormat.QR_CODE)));
+        barcodeView.setStatusText("");
+        barcodeView.decodeContinuous(result -> {
+            if (scanned || result.getText() == null) {
+                return;
             }
-
-            @Override
-            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
+            scanned = true;
+            Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+            if (vibrator != null) {
+                vibrator.vibrate(500);
             }
-
-            @Override
-            public void surfaceDestroyed(SurfaceHolder holder) {
-                camera.stop();
-            }
+            Intent data = new Intent();
+            data.putExtra("qrdata", result.getText());
+            setResult(RESULT_OK, data);
+            finish();
         });
 
-        detector.setProcessor(new Detector.Processor<Barcode>() {
-            @Override
-            public void release() {
-
-            }
-
-            @Override
-            public void receiveDetections(Detector.Detections<Barcode> detections) {
-                SparseArray<Barcode> qrCodes = detections.getDetectedItems();
-
-                if (qrCodes.size() != 0) {
-                    Vibrator vibrator = (Vibrator)getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-                    vibrator.vibrate(500);
-                    Intent data = new Intent();
-                    data.putExtra("qrdata", qrCodes.valueAt(0).rawValue);
-                    setResult(CommonStatusCodes.SUCCESS, data);
-                    finish();
-                }
-            }
-        });
+        if (!hasCameraPermission()) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, REQ_CAMERA);
+        }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (hasCameraPermission()) {
+            barcodeView.resume();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        barcodeView.pause();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != REQ_CAMERA) {
+            return;
+        }
+        if (hasCameraPermission()) {
+            barcodeView.resume();
+        } else {
+            setResult(RESULT_CANCELED);
+            finish();
+        }
+    }
+
+    private boolean hasCameraPermission() {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+    }
 }
