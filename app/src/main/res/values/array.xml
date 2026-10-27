@@ -7,7 +7,6 @@
         <item>ANG</item>
         <item>AOA</item>
         <item>ARS</item>
-        <item>ATS</item>
         <item>AUD</item>
         <item>AWG</item>
         <item>AZN</item>
@@ -20,7 +19,6 @@
         <item>BMD</item>
         <item>BND</item>
         <item>BOB</item>
-        <item>BRC</item>
         <item>BRL</item>
         <item>BSD</item>
         <item>BTN</item>
@@ -29,21 +27,15 @@
         <item>BZD</item>
         <item>CAD</item>
         <item>CDF</item>
-        <item>CHE</item>
         <item>CHF</item>
         <item>CLF</item>
         <item>CLP</item>
-        <item>CNH</item>
-        <item>CNX</item>
         <item>CNY</item>
         <item>COP</item>
-        <item>COU</item>
         <item>CRC</item>
-        <item>CUC</item>
         <item>CUP</item>
         <item>CVE</item>
         <item>CZK</item>
-        <item>DEM</item>
         <item>DJF</item>
         <item>DKK</item>
         <item>DOP</item>
@@ -73,7 +65,6 @@
         <item>IQD</item>
         <item>IRR</item>
         <item>ISK</item>
-        <item>ITL</item>
         <item>JMD</item>
         <item>JOD</item>
         <item>JPY</item>
@@ -90,7 +81,6 @@
         <item>LKR</item>
         <item>LRD</item>
         <item>LSL</item>
-        <item>LUC</item>
         <item>LYD</item>
         <item>MAD</item>
         <item>MDL</item>
@@ -99,7 +89,6 @@
         <item>MMK</item>
         <item>MNT</item>
         <item>MOP</item>
-        <item>MRO</item>
         <item>MTL</item>
         <item>MUR</item>
         <item>MVR</item>
@@ -110,7 +99,6 @@
         <item>NAD</item>
         <item>NGN</item>
         <item>NIO</item>
-        <item>NLG</item>
         <item>NOK</item>
         <item>NPR</item>
         <item>NZD</item>
@@ -138,9 +126,7 @@
         <item>SOS</item>
         <item>SRD</item>
         <item>SSP</item>
-        <item>STD</item>
         <item>STN</item>
-        <item>SUR</item>
         <item>SVC</item>
         <item>SYP</item>
         <item>SZL</item>
@@ -163,14 +149,9 @@
         <item>XAF</item>
         <item>XAG</item>
         <item>XAU</item>
-        <item>XBC</item>
         <item>XCD</item>
-        <item>XDR</item>
         <item>XOF</item>
-        <item>XPD</item>
         <item>XPF</item>
-        <item>XPT</item>
-        <item>XXX</item>
         <item>YER</item>
         <item>ZAR</item>
         <item>ZMW</item>

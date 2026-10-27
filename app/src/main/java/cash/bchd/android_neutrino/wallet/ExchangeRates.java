@@ -1,5 +1,6 @@
 package cash.bchd.android_neutrino.wallet;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -8,18 +9,29 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Currency;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * ExchangeRates fetches the price of BCH in fiat currencies from BitPay, or from Coinbase when
+ * BitPay is unavailable, and refreshes it every five minutes.
+ */
 public class ExchangeRates {
     private static ExchangeRates instance;
-    private static final String EXCHANGE_RATE_ENDPOINT = "https://ticker.openbazaar.org/api";
+    private static final String BITPAY_ENDPOINT = "https://bitpay.com/rates/BCH";
+    private static final String COINBASE_ENDPOINT = "https://api.coinbase.com/v2/exchange-rates?currency=BCH";
+    private static final int TIMEOUT_MILLIS = 15000;
 
-    private JSONObject rates;
+    // The price of one BCH in each fiat currency, by ISO 4217 code.
+    private volatile Map<String, Double> rates;
 
     public ExchangeRates() {
         instance = this;
@@ -35,7 +47,7 @@ public class ExchangeRates {
             @Override
             public void run() {
                 try {
-                    rates = readJsonFromUrl(EXCHANGE_RATE_ENDPOINT);
+                    rates = fetchRates();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -44,6 +56,48 @@ public class ExchangeRates {
 
         final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         scheduler.scheduleAtFixedRate(service, 5, 5, TimeUnit.MINUTES);
+    }
+
+    /**
+     * Fetch the price of one BCH in each fiat currency.
+     */
+    static Map<String, Double> fetchRates() throws IOException, JSONException {
+        try {
+            return parseBitPayRates(readJsonFromUrl(BITPAY_ENDPOINT));
+        } catch (IOException | JSONException e) {
+            return parseCoinbaseRates(readJsonFromUrl(COINBASE_ENDPOINT));
+        }
+    }
+
+    /**
+     * Parse BitPay's rates, {"data":[{"code":"USD","name":"US Dollar","rate":271.31},...]}.
+     */
+    static Map<String, Double> parseBitPayRates(JSONObject json) throws JSONException {
+        JSONArray data = json.getJSONArray("data");
+        Map<String, Double> rates = new HashMap<>();
+        for (int i = 0; i < data.length(); i++) {
+            JSONObject rate = data.getJSONObject(i);
+            rates.put(rate.getString("code"), rate.getDouble("rate"));
+        }
+        return rates;
+    }
+
+    /**
+     * Parse Coinbase's rates, {"data":{"currency":"BCH","rates":{"USD":"274.07",...}}}.
+     */
+    static Map<String, Double> parseCoinbaseRates(JSONObject json) throws JSONException {
+        JSONObject data = json.getJSONObject("data").getJSONObject("rates");
+        Map<String, Double> rates = new HashMap<>();
+        Iterator<String> codes = data.keys();
+        while (codes.hasNext()) {
+            String code = codes.next();
+            try {
+                rates.put(code, Double.parseDouble(data.getString(code)));
+            } catch (NumberFormatException e) {
+                // Leave out a rate that is not a number.
+            }
+        }
+        return rates;
     }
 
     private static String readAll(Reader rd) throws IOException {
@@ -56,25 +110,38 @@ public class ExchangeRates {
     }
 
     public static JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
-        InputStream is = new URL(url).openStream();
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(TIMEOUT_MILLIS);
+        connection.setReadTimeout(TIMEOUT_MILLIS);
+        connection.setRequestProperty("Accept", "application/json");
         try {
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-            String jsonText = readAll(rd);
-            JSONObject json = new JSONObject(jsonText);
-            return json;
+            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                throw new IOException(url + " returned HTTP " + connection.getResponseCode());
+            }
+            try (InputStream is = connection.getInputStream()) {
+                BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+                return new JSONObject(readAll(rd));
+            }
         } finally {
-            is.close();
+            connection.disconnect();
         }
     }
 
+    // The price of one BCH in the currency.
+    private double rate(Currency currencyCode) throws Exception {
+        Map<String, Double> current = rates;
+        if (current == null) {
+            throw new Exception("The exchange rates are not loaded yet");
+        }
+        Double rate = current.get(currencyCode.getCurrencyCode());
+        if (rate == null || rate <= 0) {
+            throw new Exception("There is no exchange rate for " + currencyCode.getCurrencyCode());
+        }
+        return rate;
+    }
+
     public String getFormattedAmountInFiat(Amount bchAmount, Currency currencyCode) throws Exception {
-        JSONObject btcObj = rates.getJSONObject(currencyCode.getCurrencyCode());
-        double btcRate = btcObj.getDouble("last");
-
-        JSONObject bchObj = rates.getJSONObject("BCH");
-        double bchBtcRate = bchObj.getDouble("last");
-
-        double fiat = round((btcRate/bchBtcRate) * bchAmount.toBCH(), 2);
+        double fiat = round(rate(currencyCode) * bchAmount.toBCH(), 2);
         String fiatStr = String.valueOf(fiat);
         if (fiatStr.indexOf(".") != 0) {
             String afterDecimal = fiatStr.substring(fiatStr.indexOf(".")+1);
@@ -90,33 +157,12 @@ public class ExchangeRates {
     }
 
     public double convertToBCH(double amount, Currency currencyCode) throws Exception {
-        JSONObject btcObj = rates.getJSONObject(currencyCode.getCurrencyCode());
-        double btcRate = btcObj.getDouble("last");
-
-        JSONObject bchObj = rates.getJSONObject("BCH");
-        double bchBtcRate = bchObj.getDouble("last");
-        return round(amount / (btcRate/bchBtcRate), 8);
+        return round(amount / rate(currencyCode), 8);
     }
 
     public void fetchFormattedAmountInFiat(Amount bchAmount, Currency currencyCode, Callback cb) throws Exception {
-        rates = readJsonFromUrl(EXCHANGE_RATE_ENDPOINT);
-        JSONObject btcObj = rates.getJSONObject(currencyCode.getCurrencyCode());
-        double btcRate = btcObj.getDouble("last");
-
-        JSONObject bchObj = rates.getJSONObject("BCH");
-        double bchBtcRate = bchObj.getDouble("last");
-
-        double fiat = round((btcRate/bchBtcRate) * bchAmount.toBCH(), 2);
-        String fiatStr = String.valueOf(fiat);
-        if (fiatStr.indexOf(".") == fiatStr.length()-2) {
-            fiatStr += "0";
-        }
-        String s = String.format("%.12f", 12.345);
-        if (s.contains(",")) {
-            fiatStr = fiatStr.replace(".", ",");
-        }
-        String formatted = currencyCode.getSymbol() + fiatStr;
-        cb.onRateFetched(formatted);
+        rates = fetchRates();
+        cb.onRateFetched(getFormattedAmountInFiat(bchAmount, currencyCode));
     }
 
     private static double round(double value, int places) {
