@@ -21,6 +21,7 @@
     <string name="wallet_is_not_loaded_yet">Wallet isn\'t loaded yet.</string>
     <string name="source_text">Source Text</string>
     <string name="error_creating_transaction">Error creating transaction.</string>
+    <string name="error_creating_transaction_reason">Error creating transaction: %1$s</string>
     <string name="invalid_amount">INVALID AMOUNT</string>
     <string name="invalid_bitcoin_cash_address">INVALID BITCOIN CASH ADDRESS</string>
     <string name="network_fee_sat_per_byte">Network Fee: %1$d sat/byte</string>

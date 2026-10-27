@@ -195,13 +195,22 @@ public class Wallet implements Serializable {
     }
 
     private static String describe(Exception e) {
-        if (e instanceof StatusRuntimeException) {
-            String description = ((StatusRuntimeException) e).getStatus().getDescription();
-            if (description != null) {
-                return description;
-            }
+        String reason = reasonFor(e);
+        if (reason != null) {
+            return reason;
         }
         return e.getMessage() != null ? e.getMessage() : e.toString();
+    }
+
+    /**
+     * reasonFor returns the reason bchwallet gave for failing a call that threw t, such as why
+     * it refused to create a transaction, or null if the failure didn't come with one.
+     */
+    public static String reasonFor(Throwable t) {
+        if (t instanceof StatusRuntimeException) {
+            return ((StatusRuntimeException) t).getStatus().getDescription();
+        }
+        return null;
     }
 
     public boolean isRunning() {

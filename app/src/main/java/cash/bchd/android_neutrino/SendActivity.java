@@ -242,7 +242,13 @@ public class SendActivity extends AppCompatActivity {
                 }
                 startActivity(intent1);
             } catch (Exception e) {
-                Snackbar snackbar = Snackbar.make(sendLayout, R.string.error_creating_transaction, Snackbar.LENGTH_LONG);
+                // Say why bchwallet refused the transaction, such as a dust amount, when it did.
+                String reason = Wallet.reasonFor(e);
+                String message = reason != null
+                        ? getString(R.string.error_creating_transaction_reason, reason)
+                        : getString(R.string.error_creating_transaction);
+                Snackbar snackbar = Snackbar.make(sendLayout, message, Snackbar.LENGTH_LONG);
+                snackbar.setTextMaxLines(5);
                 snackbar.show();
                 e.printStackTrace();
             }
