@@ -18,10 +18,10 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 
 /**
- * WalletSecret makes the wallet's private passphrase, a random secret, and seals it with an AES
- * key in the Android Keystore, which can't be read out of the phone. The key needs no
- * authentication, so removing the screen lock doesn't make Android erase it; the app asks for the
- * screen lock itself before it uses the passphrase.
+ * WalletSecret makes the wallet's private passphrase, a random secret, and seals it, and the
+ * recovery phrase until the user backed it up, with an AES key in the Android Keystore, which
+ * can't be read out of the phone. The key needs no authentication, so removing the screen lock
+ * doesn't make Android erase it; the app asks for the screen lock itself before it uses them.
  */
 public final class WalletSecret {
 

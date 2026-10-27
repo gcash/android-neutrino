@@ -2,10 +2,13 @@ package cash.bchd.android_neutrino;
 
 import android.content.SharedPreferences;
 
+import cash.bchd.android_neutrino.wallet.WalletSecret;
+
 public class Settings {
 
     private static final String INITIALIZED_KEY = "Initialized";
     private static final String MNEMONIC_KEY = "Mnemonic";
+    private static final String SEALED_MNEMONIC_KEY = "SealedMnemonic";
     private static final String BLOCKS_ONLY_KEY = "BlocksOnly";
     private static final String LAST_BALANCE_KEY = "LastBalance";
     private static final String FIAT_CURRENCY_KEY = "FiatCurrency";
@@ -55,12 +58,41 @@ public class Settings {
         return prefs.getBoolean(INITIALIZED_KEY, false);
     }
 
+    // The recovery phrase, kept until the user backed it up, sealed with WalletSecret. Without the
+    // Keystore it stays plain text, as earlier versions kept it, rather than be lost; an empty
+    // phrase forgets it.
     public void setMnemonic(String mnemonic) {
-        putString(MNEMONIC_KEY, mnemonic);
+        if (mnemonic.isEmpty()) {
+            prefs.edit().remove(MNEMONIC_KEY).remove(SEALED_MNEMONIC_KEY).apply();
+            return;
+        }
+        try {
+            String sealed = WalletSecret.seal(mnemonic);
+            prefs.edit().putString(SEALED_MNEMONIC_KEY, sealed).remove(MNEMONIC_KEY).apply();
+        } catch (Exception e) {
+            e.printStackTrace();
+            prefs.edit().putString(MNEMONIC_KEY, mnemonic).remove(SEALED_MNEMONIC_KEY).apply();
+        }
     }
 
+    // getMnemonic returns the recovery phrase, or "" once it was backed up, and seals the plain
+    // text phrase of an earlier version.
     public String getMnemonic() {
-        return prefs.getString(MNEMONIC_KEY, "");
+        String plain = prefs.getString(MNEMONIC_KEY, "");
+        if (!plain.isEmpty()) {
+            setMnemonic(plain);
+            return plain;
+        }
+        String sealed = prefs.getString(SEALED_MNEMONIC_KEY, "");
+        if (sealed.isEmpty()) {
+            return "";
+        }
+        try {
+            return WalletSecret.open(sealed);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 
     void setBlocksOnly(boolean blocksOnly) {
