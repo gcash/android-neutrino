@@ -1,5 +1,6 @@
 package cash.bchd.android_neutrino;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -10,9 +11,12 @@ import cash.bchd.android_neutrino.wallet.Wallet;
 
 public class UriActivity extends AppCompatActivity {
 
+    public static Activity fa;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        fa = this;
 
         Intent intent = getIntent();
         Uri uri = intent.getData();
@@ -26,7 +30,7 @@ public class UriActivity extends AppCompatActivity {
             } else {
                 Intent newIntent = new Intent(this, SendActivity.class);
                 newIntent.putExtra("qrdata", uriString);
-                newIntent.putExtra("fiatCurrenty", Settings.getInstance().getFiatCurrency());
+                newIntent.putExtra("fiatCurrency", Settings.getInstance().getFiatCurrency());
                 newIntent.putExtra("feePerByte", Settings.getInstance().getFeePerByte());
                 startActivity(newIntent);
             }

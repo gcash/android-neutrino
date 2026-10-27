@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.fingerprint.FingerprintManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.view.KeyEvent;
@@ -200,7 +201,12 @@ public class ConfirmationActivity extends FingerprintActivity {
         LinearLayout checkLayout = findViewById(R.id.checkLayout);
         if (checkLayout.getVisibility() == View.VISIBLE) {
             finish();
-            SendActivity.fa.finish();
+            if (SendActivity.fa != null) {
+                SendActivity.fa.finish();
+            }
+            if (UriActivity.fa != null) {
+                UriActivity.fa.finish();
+            }
         } else {
             super.onBackPressed();
         }
