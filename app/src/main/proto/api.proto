@@ -23,6 +23,7 @@ service WalletService {
 	rpc AccountNumber (AccountNumberRequest) returns (AccountNumberResponse);
 	rpc Accounts (AccountsRequest) returns (AccountsResponse);
 	rpc Balance (BalanceRequest) returns (BalanceResponse);
+	rpc TokenBalances (TokenBalancesRequest) returns (TokenBalancesResponse);
 	rpc CurrentAddress (CurrentAddressRequest) returns (CurrentAddressResponse);
 	rpc GetTransactions (GetTransactionsRequest) returns (GetTransactionsResponse);
 
@@ -67,6 +68,7 @@ message TransactionDetails {
 		uint32 index = 1;
 		uint32 previous_account = 2;
 		int64 previous_amount = 3;
+		TokenData previous_token = 4; // Unset if the spent output has no tokens.
 	}
 	message Output {
 		uint32 index = 1;
@@ -74,6 +76,7 @@ message TransactionDetails {
 		bool internal = 3;
 		string address = 4;
 		int64 amount = 5;
+		TokenData token = 6; // Unset if the output has no tokens.
 	}
 	bytes hash = 1;
 	bytes transaction = 2;
@@ -81,6 +84,20 @@ message TransactionDetails {
 	repeated Output credits = 4;
 	int64 fee = 5;
 	int64 timestamp = 6; // May be earlier than a block timestamp, but never later.
+}
+
+// The CashTokens an output carries.
+message TokenData {
+	enum Capability {
+		NONE = 0; // An immutable NFT.
+		MUTABLE = 1;
+		MINTING = 2;
+	}
+	string category = 1; // Hex, in the byte order of transaction IDs.
+	uint64 amount = 2; // Fungible amount, 0 if none.
+	bool has_nft = 3;
+	Capability capability = 4;
+	bytes commitment = 5;
 }
 
 message BlockDetails {
@@ -104,6 +121,12 @@ message NetworkResponse {
 	string best_block = 2;
 	int32 best_height = 3;
 	int32 synced_to = 4;
+	// The peers of the SPV chain backend, and the highest block height they
+	// announced.  Both are 0 with a bchd RPC backend.
+	uint32 peer_count = 5;
+	int32 peer_best_height = 6;
+	// Whether the chain backend considers itself synced with the network.
+	bool chain_current = 7;
 }
 
 message AccountNumberRequest {
@@ -149,6 +172,7 @@ message NextAddressRequest {
 	     BIP0044_INTERNAL = 1;
 	}
 	Kind kind = 2;
+	bool token_aware = 3; // Return the token-aware form, for receiving tokens.
 }
 message NextAddressResponse {
 	string address = 1;
@@ -173,8 +197,28 @@ message BalanceResponse {
 	int64 immature_reward = 3;
 }
 
+message TokenBalancesRequest {
+	uint32 account_number = 1;
+	int32 required_confirmations = 2;
+}
+message TokenBalancesResponse {
+	message NFT {
+		bytes transaction_hash = 1;
+		uint32 output_index = 2;
+		TokenData.Capability capability = 3;
+		bytes commitment = 4;
+	}
+	message Balance {
+		string category = 1; // Hex, in the byte order of transaction IDs.
+		uint64 amount = 2; // Fungible amount.
+		repeated NFT nfts = 3;
+	}
+	repeated Balance balances = 1; // Sorted by category.
+}
+
 message CurrentAddressRequest {
 	uint32 account = 1;
+	bool token_aware = 2; // Return the token-aware form, for receiving tokens.
 }
 message CurrentAddressResponse {
 	string address = 1;
@@ -245,8 +289,19 @@ message FundTransactionResponse {
 
 message CreateTransactionRequest {
 	message Output {
-		string address = 1;
-		int64 amount = 2;
+		string address = 1; // Token-aware if the output sends tokens.
+		int64 amount = 2; // 0 for an output with tokens means its dust minimum.
+		TokenOutput token = 3; // Unset to send no tokens.
+	}
+	// The tokens an output sends.
+	message TokenOutput {
+		string category = 1; // Hex, in the byte order of transaction IDs.
+		uint64 amount = 2; // Fungible amount, 0 if none.
+
+		// The NFT to send, by the outpoint of the wallet's output that
+		// holds it, as TokenBalances lists it.  Unset to send none.
+		bytes nft_transaction_hash = 3;
+		uint32 nft_output_index = 4;
 	}
 	uint32 account = 1;
 	repeated Output outputs = 2;
@@ -286,6 +341,11 @@ message SignTransactionRequest {
 	// Values must be provided for each input in order to sign using
 	// the bitcoin cash signing algorithm.
 	repeated int64 input_values = 4;
+
+	// Sign even if the transaction's outputs carry fewer fungible tokens
+	// or NFTs of a category than the wallet's outputs it spends, which
+	// burns the difference.
+	bool allow_token_burn = 5;
 }
 message SignTransactionResponse {
 	bytes transaction = 1;
@@ -391,6 +451,7 @@ message ValidateAddressRequest {
 }
 message ValidateAddressResponse {
 	bool valid = 1;
+	bool token_aware = 2; // The address is in its token-aware form.
 }
 
 message GenerateMnemonicSeedRequest {
@@ -398,6 +459,12 @@ message GenerateMnemonicSeedRequest {
 }
 message GenerateMnemonicSeedResponse {
 	string mnemonic = 1;
+}
+
+// The payment protocol of a payment request.
+enum PaymentProtocol {
+	BIP70 = 0;
+	JSON_PAYMENT_PROTOCOL_V2 = 1;
 }
 
 message DownloadPaymentRequestRequest {
@@ -415,6 +482,10 @@ message DownloadPaymentRequestResponse {
 	string memo = 4;
 	string payment_url = 5;
 	bytes merchant_data = 6;
+	PaymentProtocol protocol = 7;
+	// The lowest fee rate the merchant accepts, in satoshis per kB, or 0
+	// when it does not say.
+	uint32 required_sat_per_kb_fee = 8;
 }
 
 message PostPaymentRequest {
@@ -428,6 +499,9 @@ message PostPaymentRequest {
 	repeated bytes transactions = 3;
 	Output refund_output = 4;
 	string memo = 5;
+	// The protocol of the payment request.  merchant_data and refund_output
+	// are only used with BIP70.
+	PaymentProtocol protocol = 6;
 }
 message PostPaymentResponse {
 	string memo = 1;

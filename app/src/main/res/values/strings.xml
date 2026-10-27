@@ -10,6 +10,7 @@
     <string name="address_copied_to_clipboard">Address copied to clipboard.</string>
     <string name="insufficient_funds">Insufficient Funds</string>
     <string name="invalid_payment_request">Invalid Payment Request</string>
+    <string name="loading_payment_request">Loading payment request…</string>
     <string name="barcode_read_error">Barcode Read Error</string>
     <string name="backup_your_wallet">Backup Your Wallet</string>
     <string name="backup_recovery_phrase_suggestion">Now that you\'ve received some money it\'s a good time to back up your wallet recovery phrase.</string>

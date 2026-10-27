@@ -50,7 +50,6 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Currency;
 import java.util.List;
@@ -421,54 +420,7 @@ public class MainActivity extends CloseActivity {
                     String qrdata = data.getStringExtra("qrdata");
                     BitcoinPaymentURI uri = BitcoinPaymentURI.parse(qrdata);
                     if (uri != null && uri.getR() != null) {
-                        try {
-                            Api.DownloadPaymentRequestResponse pr = wallet.downloadPaymentRequest(qrdata);
-                            List<Api.CreateTransactionRequest.Output> outputs = new ArrayList<>();
-                            long totalSatoshis = 0;
-                            for (Api.DownloadPaymentRequestResponse.Output out : pr.getOutputsList()) {
-                                Api.CreateTransactionRequest.Output output = Api.CreateTransactionRequest.Output.newBuilder().setAmount(out.getAmount()).setAddress(out.getAddress()).build();
-                                outputs.add(output);
-                                totalSatoshis += out.getAmount();
-                            }
-                            Amount totalAmt = new Amount(totalSatoshis);
-                            String fiatFormatted = ExchangeRates.getInstance().getFormattedAmountInFiat(totalAmt, Currency.getInstance(settings.getFiatCurrency()));
-                            if (totalSatoshis > wallet.balance()) {
-                                System.out.println(totalSatoshis);
-                                System.out.println(wallet.balance());
-                                Snackbar snackbar = Snackbar.make(mCLayout, R.string.insufficient_funds, Snackbar.LENGTH_LONG);
-                                snackbar.show();
-                                return;
-                            }
-                            Api.CreateTransactionResponse tx = wallet.createTransaction(outputs, settings.getFeePerByte());
-                            byte[] serializedTx = tx.getSerializedTransaction().toByteArray();
-                            long txFee = tx.getFee();
-                            List<Long> inputVals = tx.getInputValuesList();
-                            ArrayList<String> inputStrings = new ArrayList<>();
-                            for (Long val : inputVals) {
-                                inputStrings.add(String.valueOf(val));
-                            }
-                            Intent intent = new Intent(getApplicationContext(), ConfirmationActivity.class);
-                            intent.putExtra("paymentAddress", outputs.get(0).getAddress());
-                            intent.putExtra("amountBCH", totalAmt.toString());
-                            intent.putExtra("amountFiat", fiatFormatted);
-                            intent.putExtra("fee", txFee);
-                            intent.putExtra("serializedTransaction", serializedTx);
-                            intent.putStringArrayListExtra("inputVals", inputStrings);
-                            intent.putExtra("memo", pr.getMemo());
-                            intent.putExtra("label", pr.getPayToName());
-                            intent.putExtra("isPaymentRequest", true);
-                            intent.putExtra("merchantData", pr.getMerchantData().toByteArray());
-                            intent.putExtra("paymentURL", pr.getPaymentUrl());
-                            intent.putExtra("refundAddress", wallet.currentAddress());
-                            intent.putExtra("refundAmount", totalSatoshis);
-                            startActivity(intent);
-
-                        } catch (Exception e) {
-                            Snackbar snackbar = Snackbar.make(mCLayout, R.string.invalid_payment_request, Snackbar.LENGTH_LONG);
-                            snackbar.show();
-                            e.printStackTrace();
-                        }
-
+                        PaymentRequests.pay(this, mCLayout, wallet, qrdata, settings.getFiatCurrency(), settings.getFeePerByte());
                     } else {
                         Intent intent = new Intent(this, SendActivity.class);
                         intent.putExtra("fiatCurrency", this.settings.getFiatCurrency());

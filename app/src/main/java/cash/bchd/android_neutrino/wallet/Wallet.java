@@ -336,13 +336,17 @@ public class Wallet implements Serializable {
         return reply;
     }
 
-    public Api.CreateTransactionResponse createTransaction(List<Api.CreateTransactionRequest.Output> outputs, int feePerByte) {
+    /**
+     * createTransaction creates a transaction paying the outputs with a fee of satPerKbFee
+     * satoshis per kB, a uint32.
+     */
+    public Api.CreateTransactionResponse createTransaction(List<Api.CreateTransactionRequest.Output> outputs, int satPerKbFee) {
         WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
         Api.CreateTransactionRequest.Builder builder = Api.CreateTransactionRequest.newBuilder();
 
         builder.setAccount(0)
         .setRequiredConfirmations(0)
-        .setSatPerKbFee(feePerByte*1000);
+        .setSatPerKbFee(satPerKbFee);
 
         for (Api.CreateTransactionRequest.Output out : outputs) {
             builder.addOutputs(out);
@@ -353,7 +357,11 @@ public class Wallet implements Serializable {
         return reply;
     }
 
-    public ListenableFuture<Api.PostPaymentResponse> postPaymentAsync(String refundAddress, long refundAmount, byte[] serializedTransaction, String paymentURL, byte[] merchantData, String toAddress, String memo) {
+    /**
+     * postPaymentAsync sends the payment of a payment request to the merchant with the protocol,
+     * an Api.PaymentProtocol value, that the request was downloaded with.
+     */
+    public ListenableFuture<Api.PostPaymentResponse> postPaymentAsync(String refundAddress, long refundAmount, byte[] serializedTransaction, String paymentURL, int protocol, byte[] merchantData, String toAddress, String memo) {
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
         Api.PostPaymentRequest.Output refundOuput = Api.PostPaymentRequest.Output.newBuilder().setAddress(refundAddress).setAmount(refundAmount).build();
 
@@ -362,6 +370,7 @@ public class Wallet implements Serializable {
                 .setRefundOutput(refundOuput)
                 .setMerchantData(ByteString.copyFrom(merchantData))
                 .setPaymentUrl(paymentURL)
+                .setProtocolValue(protocol)
                 .addTransactions(bs)
                 .build();
 

@@ -55,6 +55,7 @@ public class ConfirmationActivity extends FingerprintActivity {
     };
 
     boolean isPaymentRequest;
+    int paymentProtocol;
     byte[] merchantData;
     String paymentURL;
     String refundAddress;
@@ -90,6 +91,7 @@ public class ConfirmationActivity extends FingerprintActivity {
 
         // Extra data if payment request
         isPaymentRequest = intent.getBooleanExtra("isPaymentRequest", false);
+        paymentProtocol = intent.getIntExtra("paymentProtocol", Api.PaymentProtocol.BIP70_VALUE);
         merchantData = intent.getByteArrayExtra("merchantData");
         paymentURL = intent.getStringExtra("paymentURL");
         refundAddress = intent.getStringExtra("refundAddress");
@@ -302,7 +304,7 @@ public class ConfirmationActivity extends FingerprintActivity {
     }
 
     private void postPaymentToMerchant(Wallet wallet, Api.SignTransactionResponse result, CoordinatorLayout layout) {
-        ListenableFuture<Api.PostPaymentResponse> resp = wallet.postPaymentAsync(refundAddress, refundAmount, result.getTransaction().toByteArray(), paymentURL, merchantData, paymentAddr, memo);
+        ListenableFuture<Api.PostPaymentResponse> resp = wallet.postPaymentAsync(refundAddress, refundAmount, result.getTransaction().toByteArray(), paymentURL, paymentProtocol, merchantData, paymentAddr, memo);
         Futures.addCallback(resp, new FutureCallback<Api.PostPaymentResponse>() {
             @Override
             public void onSuccess(Api.PostPaymentResponse result) {
