@@ -3,6 +3,10 @@
 *.ap_
 *.aab
 
+# Release keystores, which belong outside the repo
+*.jks
+*.keystore
+
 # Files for the ART/Dalvik VM
 *.dex
 
