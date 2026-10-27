@@ -31,6 +31,7 @@ public class PinActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pin);
+        SystemBars.apply(this);
 
         Intent intent = getIntent();
         boolean enterOnly = intent.getBooleanExtra("enterOnly", false);

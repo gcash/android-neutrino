@@ -19,6 +19,7 @@ public class BackupActivity extends FragmentActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_backup);
+        SystemBars.apply(this);
         setUpView();
         setTab();
         fa = this;

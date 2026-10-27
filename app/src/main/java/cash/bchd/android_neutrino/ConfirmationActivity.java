@@ -64,6 +64,7 @@ public class ConfirmationActivity extends FingerprintActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_confirmation);
+        SystemBars.apply(this);
         getOnBackPressedDispatcher().addCallback(this, afterPayment);
 
         CloseActivity.cancelCloseTimer();

@@ -98,6 +98,7 @@ public class MainActivity extends CloseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        SystemBars.apply(this);
         cancelCloseTimer();
         layoutManager = new LinearLayoutManager(this);
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);

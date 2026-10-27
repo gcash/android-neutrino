@@ -33,6 +33,7 @@ public class ScannerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scanner);
+        SystemBars.apply(this);
 
         barcodeView = findViewById(R.id.scanPreview);
         barcodeView.getBarcodeView().setDecoderFactory(

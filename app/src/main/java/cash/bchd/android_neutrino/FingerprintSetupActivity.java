@@ -27,6 +27,7 @@ public class FingerprintSetupActivity extends FingerprintActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_fingerprint);
+        SystemBars.apply(this);
 
         Intent intent = getIntent();
         boolean removeFingerprint = intent.getBooleanExtra("removeFingerprint", false);

@@ -24,6 +24,7 @@ public class SettingsActivity extends AppCompatActivity implements PreferenceFra
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
+        SystemBars.apply(this);
 
         fa = this;
         if (savedInstanceState == null) {
