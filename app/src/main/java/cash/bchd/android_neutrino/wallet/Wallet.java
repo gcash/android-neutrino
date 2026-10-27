@@ -17,9 +17,14 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import walletrpc.Api;
 import walletrpc.WalletLoaderServiceGrpc;
@@ -37,7 +42,6 @@ public class Wallet implements Serializable {
 
     private String getConfigFilePath;
     private final String host = "127.0.0.1";
-    private final int port = 8332;
     private ManagedChannel channel;
     public static final io.grpc.Context.Key<String> AUTH_TOKEN_KEY = io.grpc.Context.key("AuthenticationToken");
     private AuthCredentials creds;
@@ -55,6 +59,20 @@ public class Wallet implements Serializable {
 
     private static boolean running = false;
 
+    // Set once stop was called, so that loadWallet does not report the
+    // shutdown as an error.
+    private volatile boolean stopped = false;
+
+    // Done once start has started the daemon.
+    private volatile Future<?> started;
+
+    // How long loadWallet waits between checks whether the daemon is ready.
+    private static final long POLL_MILLIS = 250;
+
+    // Starts and stops the wallet daemon one after the other, off the UI
+    // thread, since stopping it waits for it to close its databases.
+    private static final ExecutorService lifecycle = Executors.newSingleThreadExecutor();
+
     /**
      * The wallet constructor takes in a context which it uses to derive the config file
      * path and appdatadir.
@@ -63,7 +81,7 @@ public class Wallet implements Serializable {
         this.config = config;
         this.getConfigFilePath = config.getConfigFilePath();
         this.creds = new AuthCredentials(config.getAuthToken());
-        this.channel = ManagedChannelBuilder.forAddress(this.host, this.port).usePlaintext().build();
+        this.channel = ManagedChannelBuilder.forAddress(this.host, config.getRpcPort()).usePlaintext().build();
         instance = this;
         try {
             config.save(context);
@@ -81,19 +99,40 @@ public class Wallet implements Serializable {
         return instance;
     }
 
+    /**
+     * runAfterStop runs the task in the background once the wallets stopped so far have shut
+     * down, and before wallets started later start up. Use it to change the wallet's files.
+     */
+    public static void runAfterStop(Runnable task) {
+        lifecycle.execute(task);
+    }
+
     public static void resetInstance() {
         instance = null;
     }
 
+    /**
+     * loadWallet waits in the background for the daemon to start, creates the wallet from the
+     * mnemonic, or a new one if it is empty, when it does not exist yet, and starts listening for
+     * the wallet's events once it is loaded. If the daemon stops or the wallet can't be created,
+     * for example because the mnemonic is invalid, the listener's onWalletError is called.
+     */
     public void loadWallet(WalletEventListener listener, String mnemonic) {
-        while(true) {
+        Thread thread = new Thread(() -> {
             try {
-                if (!walletExists()) {
+                Future<?> start = started;
+                if (start != null) {
+                    start.get();
+                }
+
+                // The loader service answers once the daemon's RPC server is up.
+                boolean exists = waitForDaemon(this::walletExists);
+                if (!exists) {
                     String mnemonicToSet = mnemonic;
                     if (mnemonicToSet.equals("")) {
                         mnemonicToSet = generateMnemonic();
                     }
-                    WalletLoaderServiceGrpc.WalletLoaderServiceFutureStub stub = WalletLoaderServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
+                    WalletLoaderServiceGrpc.WalletLoaderServiceBlockingStub stub = WalletLoaderServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
                     ByteString pw = ByteString.copyFromUtf8(DEFAULT_PASSPHRASE);
 
                     Api.CreateWalletRequest request = Api.CreateWalletRequest.newBuilder()
@@ -103,31 +142,66 @@ public class Wallet implements Serializable {
                             .build();
                     stub.createWallet(request);
                     listener.onWalletCreated(mnemonicToSet);
-                    break;
-                } else {
-                    break;
                 }
-            } catch (Exception e) {}
-        }
 
-        Thread thread = new Thread(){
-            public void run(){
-                while (true) {
-                    try {
-                        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(channel).withCallCredentials(creds);
-                        Api.PingRequest request = Api.PingRequest.newBuilder().build();
-                        stub.ping(request);
-                        listener.onWalletReady();
-                        listener.onBalanceChange(balance());
-                        getTransactions(listener);
-                        listenTransactions(listener);
-                        running = true;
-                        break;
-                    } catch (Exception e) {}
+                // The wallet service answers once the wallet is loaded.
+                waitForDaemon(() -> {
+                    WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(channel).withCallCredentials(creds);
+                    return stub.ping(Api.PingRequest.newBuilder().build());
+                });
+                running = true;
+                listener.onWalletReady();
+                listener.onBalanceChange(balance());
+                getTransactions(listener);
+                listenTransactions(listener);
+            } catch (Exception e) {
+                if (!stopped) {
+                    listener.onWalletError(describe(e));
                 }
             }
-        };
+        }, "wallet-load");
         thread.start();
+    }
+
+    private interface DaemonCall<T> {
+        T call() throws Exception;
+    }
+
+    /**
+     * waitForDaemon makes the call until the daemon answers it, while the daemon is still starting
+     * up. It throws when the daemon stopped, or the call failed for another reason.
+     */
+    private <T> T waitForDaemon(DaemonCall<T> call) throws Exception {
+        while (true) {
+            try {
+                return call.call();
+            } catch (StatusRuntimeException e) {
+                // The call is unavailable until the RPC server listens, and fails
+                // its precondition until the service it uses is ready.
+                Status.Code code = e.getStatus().getCode();
+                if (code != Status.Code.UNAVAILABLE && code != Status.Code.FAILED_PRECONDITION) {
+                    throw e;
+                }
+            }
+            if (stopped || !mobile.Mobile.isRunning()) {
+                String err = mobile.Mobile.lastError();
+                throw new Exception(err.isEmpty() ? "The wallet stopped" : err);
+            }
+            Thread.sleep(POLL_MILLIS);
+            // Connect right away instead of after the channel's backoff once
+            // the RPC server listens.
+            channel.resetConnectBackoff();
+        }
+    }
+
+    private static String describe(Exception e) {
+        if (e instanceof StatusRuntimeException) {
+            String description = ((StatusRuntimeException) e).getStatus().getDescription();
+            if (description != null) {
+                return description;
+            }
+        }
+        return e.getMessage() != null ? e.getMessage() : e.toString();
     }
 
     public boolean isRunning() {
@@ -518,22 +592,35 @@ public class Wallet implements Serializable {
     }
 
     /**
-     * Start will start the bchwallet daemon with the requested config options
+     * Start will start the bchwallet daemon with the requested config options. It returns right
+     * away, and the daemon starts once any earlier wallet has shut down.
      */
     public void start() {
-        mobile.Mobile.startWallet(this.getConfigFilePath);
+        String configPath = this.getConfigFilePath;
+        started = lifecycle.submit(() -> mobile.Mobile.startWallet(configPath));
     }
 
     /**
      * Stop cleanly shuts down the wallet daemon. This must be called on close to guarantee
-     * no data is corrupted.
+     * no data is corrupted. It returns right away and the daemon shuts down in the background.
+     * Once stopped the wallet can't be used again; create and start a new one instead.
      */
-    public void stop() {
-        if (isRunning()) {
-            channel.shutdown();
+    public synchronized void stop() {
+        // Only the first call stops the daemon, so that a wallet stopped
+        // earlier can't stop the daemon of a wallet started after it.
+        if (stopped) {
+            return;
         }
-        mobile.Mobile.stopWallet();
+        stopped = true;
         running = false;
+        if (instance == this) {
+            instance = null;
+        }
+        ManagedChannel channel = this.channel;
+        lifecycle.execute(() -> {
+            channel.shutdownNow();
+            mobile.Mobile.stopWallet();
+        });
     }
 
     public static void reverse(byte[] array) {

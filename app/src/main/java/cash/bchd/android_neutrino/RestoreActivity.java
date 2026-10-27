@@ -3,6 +3,7 @@ package cash.bchd.android_neutrino;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.view.View;
@@ -14,6 +15,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
 import java.io.File;
+import java.util.Locale;
 
 import cash.bchd.android_neutrino.wallet.Wallet;
 
@@ -150,31 +152,45 @@ public class RestoreActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         switch (which){
                             case DialogInterface.BUTTON_POSITIVE:
-                                String mnemonic = input1.getText().toString() + " " +
-                                        input2.getText().toString() + " " +
-                                        input3.getText().toString() + " " +
-                                        input4.getText().toString() + " " +
-                                        input5.getText().toString() + " " +
-                                        input6.getText().toString() + " " +
-                                        input7.getText().toString() + " " +
-                                        input8.getText().toString() + " " +
-                                        input9.getText().toString() + " " +
-                                        input10.getText().toString() + " " +
-                                        input11.getText().toString() + " " +
-                                        input12.getText().toString();
+                                String mnemonic = word(input1) + " " +
+                                        word(input2) + " " +
+                                        word(input3) + " " +
+                                        word(input4) + " " +
+                                        word(input5) + " " +
+                                        word(input6) + " " +
+                                        word(input7) + " " +
+                                        word(input8) + " " +
+                                        word(input9) + " " +
+                                        word(input10) + " " +
+                                        word(input11) + " " +
+                                        word(input12);
                                 Settings settings = Settings.getInstance();
                                 settings.setMnemonic(mnemonic);
                                 settings.setWalletInitialized(false);
                                 settings.setWalletBirthday(BETA_RELEASE_TIMESTAMP);
                                 settings.setScanHeight(0);
                                 settings.setEncryptionType(EncryptionType.UNENCRYPTED);
+                                settings.setLastBalance(0);
+                                settings.setLastAddress("");
+                                settings.setBackupReminder(false);
 
-                                deleteRecursive(new File(getDataDir().getPath()));
+                                // Stop the wallet, and delete its files once it has closed them, so
+                                // that MainActivity creates the restored wallet. The cached
+                                // transactions are only read by the app and can go right away.
+                                deleteFile(TransactionStore.FILE_NAME);
+                                Wallet wallet = Wallet.getInstance();
+                                if (wallet != null) {
+                                    wallet.stop();
+                                }
+                                File walletDir = new File(getDataDir(), "mainnet");
+                                Wallet.runAfterStop(() -> deleteRecursive(walletDir));
 
                                 Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
                                 vibrator.vibrate(500);
-                                Wallet.getInstance().stop();
 
+                                Intent intent = new Intent(RestoreActivity.this, MainActivity.class);
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                startActivity(intent);
                                 finish();
                                 break;
 
@@ -192,12 +208,17 @@ public class RestoreActivity extends AppCompatActivity {
         });
     }
 
-    private void deleteRecursive(File fileOrDirectory) {
-        if (fileOrDirectory.isDirectory())
-            for (File child : fileOrDirectory.listFiles())
+    private static void deleteRecursive(File fileOrDirectory) {
+        File[] children = fileOrDirectory.listFiles();
+        if (children != null)
+            for (File child : children)
                 deleteRecursive(child);
 
         fileOrDirectory.delete();
+    }
+
+    private static String word(TextInputEditText input) {
+        return input.getText() == null ? "" : input.getText().toString().trim().toLowerCase(Locale.ROOT);
     }
 
 }

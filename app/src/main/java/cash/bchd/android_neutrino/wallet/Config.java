@@ -50,6 +50,11 @@ public class Config {
 
     private long birthday;
 
+    // The port of the wallet's gRPC server on 127.0.0.1. A random one is
+    // picked for each start, so that the wallet still starts, and the app does
+    // not talk to another app, when another app listens on a fixed port.
+    private int rpcPort;
+
     /**
      * Construct the config file.
      */
@@ -76,6 +81,9 @@ public class Config {
         random.nextBytes(randomBytes);
 
         this.authToken = BaseEncoding.base16().lowerCase().encode(randomBytes);
+
+        // A port in the dynamic range, 49152 to 65535.
+        this.rpcPort = 49152 + random.nextInt(16384);
     }
 
     /**
@@ -83,7 +91,7 @@ public class Config {
      */
     public String getConfigData() {
         String configFileContents = "[Application Options]\n\nappdata="+this.dataDir+"\nlogdir="+ this.dataDir+
-                "/logs\nexperimentalrpclisten=127.0.0.1\nnoservertls=1\nauthtoken="+ this.authToken+ "\n";
+                "/logs\nexperimentalrpclisten=127.0.0.1:"+ this.rpcPort+ "\nnoservertls=1\nauthtoken="+ this.authToken+ "\n";
 
         if (this.noInitialLoad) {
             configFileContents += "noinitialload=1\n";
@@ -137,6 +145,10 @@ public class Config {
 
     public String getAuthToken() {
         return this.authToken;
+    }
+
+    public int getRpcPort() {
+        return this.rpcPort;
     }
 
     public String getDataDir() {

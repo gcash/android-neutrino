@@ -17,7 +17,6 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
@@ -90,6 +89,8 @@ public class MainActivity extends CloseActivity {
     RecyclerView.LayoutManager layoutManager;
     TransactionAdapter mAdapter;
     SwipeRefreshLayout mSwipeRefreshLayout;
+    // Whether this activity listens to the wallet's events.
+    boolean walletAttached;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -220,13 +221,24 @@ public class MainActivity extends CloseActivity {
             wallet = new Wallet(this, cfg);
             wallet.start();
             new StartWalletTask(this).execute(wallet);
+        } else if (!walletAttached) {
+            // The activity was recreated while the wallet kept running.
+            wallet = Wallet.getInstance();
+            new StartWalletTask(this).execute(wallet);
         }
+        walletAttached = true;
     }
 
     @Override
     protected void onStart() {
         super.onStart();
         cancelCloseTimer();
+        if (settings != null && ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED) {
+            // Start the wallet again if the close timer stopped it while the app
+            // was in the background.
+            createWallet();
+        }
     }
 
     Rect outRect = new Rect();
@@ -588,42 +600,52 @@ public class MainActivity extends CloseActivity {
         }
     }
 
-    private static class StartWalletTask extends AsyncTask<Wallet, Void, String> {
-        private Wallet wallet;
+    // StartWalletTask loads the started wallet and shows its balance and transactions. The
+    // wallet calls the listener on background threads, so the listener updates the views on
+    // the UI thread.
+    private static class StartWalletTask {
         private final WeakReference<MainActivity> mainActivityRef;
 
         StartWalletTask(MainActivity mainActivity) {
             mainActivityRef = new WeakReference<>(mainActivity);
         }
 
-        protected String doInBackground(Wallet... wallets) {
-            wallet = wallets[0];
-            wallets[0].start();
-            return "";
-        }
-
-        protected void onPostExecute(String result) {
+        void execute(Wallet wallet) {
             try {
                 WalletEventListener listener = new WalletEventListener() {
                     @Override
                     public void onWalletReady() {
-                        System.out.println("Wallet ready");
                         MainActivity mainActivity = mainActivityRef.get();
                         if (mainActivity == null) {
                             // no can do if we no longer have a reference to MainActivity.
                             // perhaps print a warning.
                             return;
                         }
-                        Intent intent = mainActivity.getIntent();
-                        if (intent != null && intent.getExtras() != null) {
-                            String uri = intent.getExtras().getString("uri");
-                            if (uri != null && !uri.equals("")) {
-                                intent.getExtras().clear();
-                                Intent newIntent = new Intent();
-                                newIntent.putExtra("qrdata", uri);
-                                mainActivity.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, newIntent);
+                        mainActivity.runOnUiThread(() -> {
+                            Intent intent = mainActivity.getIntent();
+                            if (intent != null && intent.getExtras() != null) {
+                                String uri = intent.getExtras().getString("uri");
+                                if (uri != null && !uri.equals("")) {
+                                    intent.getExtras().clear();
+                                    Intent newIntent = new Intent();
+                                    newIntent.putExtra("qrdata", uri);
+                                    mainActivity.onActivityResult(RC_BARCODE_CAPTURE, CommonStatusCodes.SUCCESS, newIntent);
+                                }
                             }
+                        });
+                    }
+
+                    @Override
+                    public void onWalletError(String message) {
+                        MainActivity mainActivity = mainActivityRef.get();
+                        if (mainActivity == null) {
+                            return;
                         }
+                        mainActivity.runOnUiThread(() -> {
+                            Snackbar snackbar = Snackbar.make(mainActivity.mCLayout,
+                                    mainActivity.getString(R.string.wallet_error, message), Snackbar.LENGTH_INDEFINITE);
+                            snackbar.show();
+                        });
                     }
 
                     @Override
@@ -635,20 +657,22 @@ public class MainActivity extends CloseActivity {
                             return;
                         }
                         if (mainActivity.getApplicationContext() != null) {
-                            try {
+                            mainActivity.settings.setLastBalance(bal);
+                            mainActivity.runOnUiThread(() -> {
                                 Amount amt = new Amount(bal);
                                 TextView bchBalanceView = mainActivity.findViewById(R.id.bchBalanceView);
                                 bchBalanceView.setText(mainActivity.getString(R.string.bch_amount, amt.toString()));
-                                String fiatAmount = mainActivity.exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(mainActivity.settings.getFiatCurrency()));
-                                TextView fiatBalanceView = mainActivity.findViewById(R.id.fiatBalanceView);
-                                fiatBalanceView.setText(fiatAmount);
-                                mainActivity.settings.setLastBalance(bal);
+                                try {
+                                    String fiatAmount = mainActivity.exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(mainActivity.settings.getFiatCurrency()));
+                                    TextView fiatBalanceView = mainActivity.findViewById(R.id.fiatBalanceView);
+                                    fiatBalanceView.setText(fiatAmount);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
                                 if (bal > 0) {
                                     mainActivity.maybeSendBackupReminder();
                                 }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
+                            });
                         }
                     }
 

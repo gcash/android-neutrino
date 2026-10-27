@@ -13,7 +13,9 @@ public class CloseActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (wallet != null) {
+        // Keep the wallet running when the activity is only recreated, such as
+        // after the screen rotated.
+        if (isFinishing() && wallet != null) {
             wallet.stop();
             wallet = null;
         }

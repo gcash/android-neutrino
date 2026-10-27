@@ -16,4 +16,9 @@ public class WalletEventListener {
     public void onTransaction(TransactionData tx) {}
 
     public void onScanProgress(int height) {}
+
+    /**
+     * Called when the wallet could not be loaded, with a description of the error.
+     */
+    public void onWalletError(String message) {}
 }

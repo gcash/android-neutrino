@@ -15,7 +15,7 @@ import cash.bchd.android_neutrino.wallet.TransactionData;
 
 public class TransactionStore {
 
-    private final String FILE_NAME = "transactionData.dat";
+    static final String FILE_NAME = "transactionData.dat";
     private ArrayList<TransactionData> transactionDataSet = new ArrayList<TransactionData>();
 
     public TransactionStore(Context context) {
