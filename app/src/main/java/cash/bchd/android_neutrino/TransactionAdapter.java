@@ -73,29 +73,6 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         blockHeight = height;
     }
 
-    public void updateOrInsertTx(TransactionData newTx) {
-        int i = 0;
-        boolean found = false;
-        for (TransactionData tx : mDataset) {
-            if (tx.getTxid().equals(newTx.getTxid())) {
-                tx.setHeight(newTx.getHeight());
-                if (tx.getFiatAmount().equals("")) {
-                    tx.setFiatAmount(newTx.getFiatAmount());
-                }
-                if (tx.getAmount() == 0) {
-                    tx.setAmount(newTx.getAmount());
-                }
-                mDataset.set(i, tx);
-                found = true;
-                break;
-            }
-            i++;
-        }
-        if (!found) {
-            mDataset.add(0, newTx);
-        }
-    }
-
     // Create new views (invoked by the layout manager)
     @Override
     public TransactionAdapter.TxViewHolder onCreateViewHolder(ViewGroup parent,

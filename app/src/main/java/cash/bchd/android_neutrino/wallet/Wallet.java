@@ -278,8 +278,6 @@ public class Wallet implements Serializable {
                                     addrListener.onPaymentReceived(output.getAmount());
                                 }
                             }
-                            TransactionData td = extractTransactionData(tx, block.getHeight(), block.getTimestamp());
-                            listener.onTransaction(td);
                         }
                     }
                 }
@@ -294,8 +292,6 @@ public class Wallet implements Serializable {
                                 addrListener.onPaymentReceived(output.getAmount());
                             }
                         }
-                        TransactionData td = extractTransactionData(tx, 0, System.currentTimeMillis()/1000);
-                        listener.onTransaction(td);
                     }
                 }
 
@@ -303,6 +299,15 @@ public class Wallet implements Serializable {
                     try {
                         long bal = balance();
                         listener.onBalanceChange(bal);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                // The listener rebuilds its list from all of the wallet's transactions, which
+                // also drops the ones the wallet removed and moves the ones a reorg detached.
+                if (hasMinedTransactions || hasUnMinedTransactions || value.getDetachedBlocksCount() > 0) {
+                    try {
+                        getTransactions(listener);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -537,8 +542,10 @@ public class Wallet implements Serializable {
                         txs.add(extractTransactionData(tx, block.getHeight(), block.getTimestamp()));
                     }
                 }
+                // An unmined transaction has the time the wallet received it, which stays the
+                // same when the list is fetched again.
                 for (Api.TransactionDetails tx : result.getUnminedTransactionsList()) {
-                    txs.add(extractTransactionData(tx, 0, System.currentTimeMillis()/1000));
+                    txs.add(extractTransactionData(tx, 0, tx.getTimestamp()));
                 }
                 listener.onGetTransactions(txs, bestHeight);
             }

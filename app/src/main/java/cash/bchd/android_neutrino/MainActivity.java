@@ -67,6 +67,7 @@ import cash.bchd.android_neutrino.wallet.ExchangeRates;
 import cash.bchd.android_neutrino.wallet.Migration;
 import cash.bchd.android_neutrino.wallet.SyncStatus;
 import cash.bchd.android_neutrino.wallet.TransactionData;
+import cash.bchd.android_neutrino.wallet.TransactionList;
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
 import walletrpc.Api;
@@ -813,22 +814,13 @@ public class MainActivity extends CloseActivity {
                             return;
                         }
                         if (mainActivity.getApplicationContext() != null) {
-                            Collections.sort(txs, Collections.reverseOrder());
                             mainActivity.runOnUiThread(() -> {
                                 MainActivity mainActivity2 = mainActivityRef.get();
                                 if (mainActivity2 == null) {
                                     return;
                                 }
-                                if (txs.size() == 0) {
-                                    return;
-                                }
-                                TextView bchPlease = mainActivity2.findViewById(R.id.bchPlease);
-                                bchPlease.setVisibility(View.GONE);
+                                String fiatCurrency = mainActivity2.settings.getFiatCurrency();
                                 for (TransactionData tx : txs) {
-                                    if (tx.getAmount() == 0) {
-                                        continue;
-                                    }
-                                    String fiatCurrency = mainActivity2.settings.getFiatCurrency();
                                     tx.setFiatCurrency(fiatCurrency);
                                     String formattedFiat = "";
                                     try {
@@ -837,10 +829,15 @@ public class MainActivity extends CloseActivity {
                                         e.printStackTrace();
                                     }
                                     tx.setFiatAmount(formattedFiat);
-                                    mainActivity2.mAdapter.updateOrInsertTx(tx);
                                 }
+                                // Show the transactions the wallet has, which drops the ones it no
+                                // longer has, such as one a double spend replaced.
+                                List<TransactionData> list = TransactionList.rebuild(mainActivity2.mAdapter.getData(), txs);
+                                TextView bchPlease = mainActivity2.findViewById(R.id.bchPlease);
+                                bchPlease.setVisibility(list.isEmpty() ? View.VISIBLE : View.GONE);
+                                mainActivity2.mAdapter.setNewData(list);
                                 mainActivity2.mAdapter.notifyDataSetChanged();
-                                mainActivity2.txStore.setData(mainActivity2.mAdapter.getData());
+                                mainActivity2.txStore.setData(list);
                                 try {
                                     mainActivity2.txStore.save(mainActivity2.getApplicationContext());
                                 } catch (Exception e) {
@@ -874,44 +871,6 @@ public class MainActivity extends CloseActivity {
                     public void onScanProgress(int height) {
                         MainActivity mainActivity = mainActivityRef.get();
                         mainActivity.settings.setScanHeight(height);
-                    }
-
-                    @Override
-                    public void onTransaction(TransactionData tx) {
-                        if (tx.getAmount() == 0) {
-                            return;
-                        }
-                        MainActivity mainActivity = mainActivityRef.get();
-                        if (mainActivity == null) {
-                            return;
-                        }
-                        if (mainActivity.getApplicationContext() != null) {
-                            mainActivity.runOnUiThread(() -> {
-                                MainActivity mainActivity2 = mainActivityRef.get();
-                                if (mainActivity2 == null) {
-                                    return;
-                                }
-                                TextView bchPlease = mainActivity2.findViewById(R.id.bchPlease);
-                                bchPlease.setVisibility(View.GONE);
-                                String fiatCurrency = mainActivity2.settings.getFiatCurrency();
-                                tx.setFiatCurrency(fiatCurrency);
-                                String formattedFiat = "";
-                                try {
-                                    formattedFiat = mainActivity2.exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                                tx.setFiatAmount(formattedFiat);
-                                mainActivity2.mAdapter.updateOrInsertTx(tx);
-                                mainActivity2.mAdapter.notifyDataSetChanged();
-                                mainActivity2.txStore.setData(mainActivity2.mAdapter.getData());
-                                try {
-                                    mainActivity2.txStore.save(mainActivity2.getApplicationContext());
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            });
-                        }
                     }
                 };
                 MainActivity mainActivity = mainActivityRef.get();

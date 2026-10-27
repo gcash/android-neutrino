@@ -9,11 +9,12 @@ public class WalletEventListener {
 
     public void onWalletCreated(String seed){}
 
+    /**
+     * Called with all of the wallet's transactions, when it loads and whenever they change.
+     */
     public void onGetTransactions(List<TransactionData> txs, int blockHeight) {}
 
     public void onBlock(int blockHeight, String blockHash) {}
-
-    public void onTransaction(TransactionData tx) {}
 
     public void onScanProgress(int height) {}
 
