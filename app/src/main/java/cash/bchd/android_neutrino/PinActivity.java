@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -32,6 +33,8 @@ public class PinActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pin);
         SystemBars.apply(this);
+        // Keep the recovery phrase and PIN out of screenshots and the recent apps.
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
 
         Intent intent = getIntent();
         boolean enterOnly = intent.getBooleanExtra("enterOnly", false);

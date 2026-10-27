@@ -2,6 +2,7 @@ package cash.bchd.android_neutrino;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.view.WindowManager;
 import android.widget.Button;
 
 import androidx.fragment.app.FragmentActivity;
@@ -20,6 +21,8 @@ public class BackupActivity extends FragmentActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_backup);
         SystemBars.apply(this);
+        // Keep the recovery phrase and PIN out of screenshots and the recent apps.
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
         setUpView();
         setTab();
         fa = this;

@@ -54,8 +54,6 @@ public class FingerprintSetupActivity extends FingerprintActivity {
 
                             String password = BaseEncoding.base16().lowerCase().encode(decrypted);
 
-                            System.out.println(password);
-
                             ListenableFuture<Api.ChangePassphraseResponse> res = wallet.changePasswordAsync(password, Wallet.DEFAULT_PASSPHRASE);
                             Futures.addCallback(res, new FutureCallback<Api.ChangePassphraseResponse>() {
                                 @Override

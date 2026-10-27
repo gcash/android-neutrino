@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -28,6 +29,8 @@ public class RestoreActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recover);
         SystemBars.apply(this);
+        // Keep the recovery phrase and PIN out of screenshots and the recent apps.
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
 
         TextInputLayout layout1 = findViewById(R.id.restoreLayout1);
         TextInputEditText input1 = findViewById(R.id.restoreWord1);

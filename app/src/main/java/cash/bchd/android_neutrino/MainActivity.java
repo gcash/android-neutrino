@@ -696,7 +696,6 @@ public class MainActivity extends CloseActivity {
                             return;
                         }
                         mainActivity.settings.setWalletInitialized(true);
-                        System.out.println(seed);
                         mainActivity.settings.setMnemonic(seed);
                     }
 
