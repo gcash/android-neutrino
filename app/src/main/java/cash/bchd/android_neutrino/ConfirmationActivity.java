@@ -25,6 +25,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Wallet;
@@ -41,6 +42,9 @@ public class ConfirmationActivity extends FingerprintActivity {
     String memo;
     SlideToConfirmView swipeButton;
     EncryptionType encType;
+
+    // Set while the payment is signed and sent, and after it was sent.
+    private final AtomicBoolean sending = new AtomicBoolean(false);
 
     // Enabled once the payment is sent, to leave the send screen on back.
     OnBackPressedCallback afterPayment = new OnBackPressedCallback(false) {
@@ -221,6 +225,11 @@ public class ConfirmationActivity extends FingerprintActivity {
     }
 
     private void signTransaction(byte[] serializedTx, String paymentAddr, String memo, List<Long> inputVals, String password) {
+        // Sign and send the payment once, also when the user confirms again or the fingerprint
+        // is read again before the first attempt has finished (gcash/android-neutrino#23).
+        if (!sending.compareAndSet(false, true)) {
+            return;
+        }
         Wallet wallet = Wallet.getInstance();
         CoordinatorLayout layout = findViewById(R.id.confirmationMainLayout);
         ListenableFuture<Api.SignTransactionResponse> res = wallet.signTransactionAsync(serializedTx, inputVals, password);
@@ -231,6 +240,8 @@ public class ConfirmationActivity extends FingerprintActivity {
                 if (result.getUnsignedInputIndexesList().size() > 0) {
                     Snackbar snackbar = Snackbar.make(layout, "Failed to sign transaction", Snackbar.LENGTH_LONG);
                     snackbar.show();
+                    sending.set(false);
+                    swipeButton.reset();
                     return;
                 }
 
@@ -260,6 +271,8 @@ public class ConfirmationActivity extends FingerprintActivity {
                     }
                     Snackbar snackbar = Snackbar.make(layout, errStr, Snackbar.LENGTH_LONG);
                     snackbar.show();
+                    // Nothing was sent, so the user may try again.
+                    sending.set(false);
                     swipeButton.reset();
                 });
             }
