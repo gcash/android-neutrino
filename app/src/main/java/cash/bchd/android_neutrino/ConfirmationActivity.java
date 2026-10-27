@@ -16,7 +16,6 @@ import android.widget.TextView;
 
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 
-import com.ebanx.swipebtn.SwipeButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.FutureCallback;
@@ -28,7 +27,8 @@ import java.util.List;
 
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Wallet;
-import cdflynn.android.library.checkview.CheckView;
+import cash.bchd.android_neutrino.widget.CheckView;
+import cash.bchd.android_neutrino.widget.SlideToConfirmView;
 import io.grpc.Status;
 import walletrpc.Api;
 
@@ -38,7 +38,7 @@ public class ConfirmationActivity extends FingerprintActivity {
     List<Long> inputVals;
     String paymentAddr;
     String memo;
-    SwipeButton swipeButton;
+    SlideToConfirmView swipeButton;
     EncryptionType encType;
 
     boolean isPaymentRequest;
@@ -128,24 +128,23 @@ public class ConfirmationActivity extends FingerprintActivity {
         }
 
 
-        swipeButton.setOnStateChangeListener(active -> {
-            if (active) {
-                if (encType == EncryptionType.PIN) {
-                    Settings settings = Settings.getInstance();
-                    if (settings.getInvalidPinCount() >= 3 && settings.getLastInvalidPin() + 300000 > System.currentTimeMillis()) {
-                        CoordinatorLayout layout = findViewById(R.id.confirmationMainLayout);
-                        Snackbar snackbar = Snackbar.make(layout, "Too many invalid pin attempts. Wait five minutes.", Snackbar.LENGTH_LONG);
-                        snackbar.show();
-                        return;
-                    }
-
-                    Intent intent1 = new Intent(ConfirmationActivity.this, PinActivity.class);
-                    intent1.putExtra("enterOnly", true);
-                    startActivityForResult(intent1, 1234);
+        swipeButton.setOnConfirmListener(() -> {
+            if (encType == EncryptionType.PIN) {
+                Settings settings = Settings.getInstance();
+                if (settings.getInvalidPinCount() >= 3 && settings.getLastInvalidPin() + 300000 > System.currentTimeMillis()) {
+                    CoordinatorLayout layout = findViewById(R.id.confirmationMainLayout);
+                    Snackbar snackbar = Snackbar.make(layout, "Too many invalid pin attempts. Wait five minutes.", Snackbar.LENGTH_LONG);
+                    snackbar.show();
+                    swipeButton.reset();
                     return;
                 }
-                signTransaction(serializedTx, paymentAddr, memo, inputVals, Wallet.DEFAULT_PASSPHRASE);
+
+                Intent intent1 = new Intent(ConfirmationActivity.this, PinActivity.class);
+                intent1.putExtra("enterOnly", true);
+                startActivityForResult(intent1, 1234);
+                return;
             }
+            signTransaction(serializedTx, paymentAddr, memo, inputVals, Wallet.DEFAULT_PASSPHRASE);
         });
 
         if (encType == EncryptionType.FINGERPRINT) {
@@ -252,7 +251,7 @@ public class ConfirmationActivity extends FingerprintActivity {
                     }
                     Snackbar snackbar = Snackbar.make(layout, errStr, Snackbar.LENGTH_LONG);
                     snackbar.show();
-                    swipeButton.setHasActivationState(false);
+                    swipeButton.reset();
                 });
             }
         });
@@ -328,7 +327,9 @@ public class ConfirmationActivity extends FingerprintActivity {
         super.onActivityResult(requestCode, resultCode, data);
         switch(requestCode) {
             case (1234) : {
-                if (resultCode == Activity.RESULT_OK) {
+                if (resultCode != Activity.RESULT_OK) {
+                    swipeButton.reset();
+                } else {
                     String pin = data.getStringExtra("pin");
                     String pw = "";
                     try {

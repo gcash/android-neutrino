@@ -17,7 +17,7 @@
         android:textSize="20sp"
         app:layout_anchorGravity="center_horizontal" />
 
-    <com.andrognito.pinlockview.IndicatorDots
+    <cash.bchd.android_neutrino.widget.PinDotsView
         android:id="@+id/pinIndicatorDots"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -43,13 +43,13 @@
         android:layout_marginTop="50dp"
         android:gravity="center_horizontal">
 
-        <com.andrognito.pinlockview.PinLockView
+        <cash.bchd.android_neutrino.widget.PinPadView
             android:id="@+id/pinpad"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            app:keypadHorizontalSpacing="60dp"
+            android:layout_height="wrap_content"
+            app:keypadHorizontalSpacing="40dp"
             app:keypadTextColor="@color/darkGreyCircle"
-            app:keypadVerticalSpacing="60dp" />
+            app:keypadVerticalSpacing="16dp" />
 
     </RelativeLayout>
 

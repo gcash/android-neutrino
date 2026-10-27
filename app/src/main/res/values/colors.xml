@@ -13,4 +13,5 @@
     <color name="lightGreyCircle">#e2e2e4</color>
     <color name="darkGreyCircle">#89898d</color>
     <color name="greyBorder">#8e8e92</color>
+    <color name="white">#FFFFFF</color>
 </resources>

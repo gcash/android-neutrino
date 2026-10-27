@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="PinPadView">
+        <attr name="keypadTextColor" format="color" />
+        <attr name="keypadTextSize" format="dimension" />
+        <attr name="keypadButtonSize" format="dimension" />
+        <attr name="keypadHorizontalSpacing" format="dimension" />
+        <attr name="keypadVerticalSpacing" format="dimension" />
+        <attr name="pinLength" format="integer" />
+    </declare-styleable>
+
+    <declare-styleable name="PinDotsView">
+        <attr name="dotEmptyBackground" format="reference" />
+        <attr name="dotFilledBackground" format="reference" />
+        <attr name="dotDiameter" format="dimension" />
+        <attr name="dotSpacing" format="dimension" />
+        <attr name="pinLength" />
+    </declare-styleable>
+
+    <declare-styleable name="CheckView">
+        <attr name="checkView_strokeWidth" format="dimension" />
+        <attr name="checkView_strokeColor" format="color" />
+    </declare-styleable>
+
+    <declare-styleable name="SlideToConfirmView">
+        <attr name="slideText" format="string" />
+        <attr name="slideTrackBackground" format="reference" />
+        <attr name="slideThumbBackground" format="reference" />
+        <attr name="slideThumbIcon" format="reference" />
+        <attr name="slideThumbWidth" format="dimension" />
+        <attr name="slideThumbPadding" format="dimension" />
+    </declare-styleable>
+</resources>

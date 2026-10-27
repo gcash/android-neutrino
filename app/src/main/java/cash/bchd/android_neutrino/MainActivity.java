@@ -61,8 +61,6 @@ import java.util.Collections;
 import java.util.Currency;
 import java.util.List;
 
-import androidmads.library.qrgenearator.QRGContents;
-import androidmads.library.qrgenearator.QRGEncoder;
 import cash.bchd.android_neutrino.wallet.AddressListener;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.BitcoinPaymentURI;
@@ -310,11 +308,7 @@ public class MainActivity extends CloseActivity {
             int height = point.y;
             int smallerDimension = width < height ? width : height;
             String addrURI = wallet.uriPrefix() + addr;
-            QRGEncoder qrgEncoder = new QRGEncoder(
-                    addrURI, null,
-                    QRGContents.Type.TEXT,
-                    smallerDimension);
-            Bitmap bitmap = qrgEncoder.encodeAsBitmap();
+            Bitmap bitmap = QrCodes.encode(addrURI, smallerDimension);
             qrImage = customView.findViewById(R.id.qrCodeView);
             qrImage.setImageBitmap(bitmap);
             qrImage.setOnClickListener(v -> copyToClipboard(addr));

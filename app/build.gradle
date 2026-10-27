@@ -62,13 +62,9 @@ dependencies {
     implementation "io.grpc:grpc-protobuf-lite:${grpcVersion}"
     implementation 'javax.annotation:javax.annotation-api:1.3.2'
     implementation "io.grpc:grpc-stub:${grpcVersion}"
-    implementation 'com.github.clans:fab:1.6.4'
-    implementation 'androidmads.library.qrgenearator:QRGenearator:1.0.3'
+    implementation 'com.google.zxing:core:3.5.4'
     implementation 'com.google.android.gms:play-services-vision:18.0.0'
-    implementation 'com.andrognito.pinlockview:pinlockview:2.1.0'
-    implementation 'com.ebanx:swipe-button:0.8.3'
-    implementation 'com.github.cdflynn:checkview:v1.1'
-    implementation 'com.google.android:flexbox:1.0.0'
+    implementation 'com.google.android.flexbox:flexbox:3.0.0'
 
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'

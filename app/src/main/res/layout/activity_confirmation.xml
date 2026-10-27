@@ -208,32 +208,21 @@
             app:layout_anchorGravity="center_horizontal"
             app:srcCompat="@drawable/fingerprint" />
 
-        <com.ebanx.swipebtn.SwipeButton
+        <cash.bchd.android_neutrino.widget.SlideToConfirmView
             android:id="@+id/swipe_btn"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="80dp"
             android:layout_alignParentBottom="true"
             android:layout_marginStart="20dp"
             android:layout_marginEnd="20dp"
             android:layout_marginBottom="20dp"
             android:visibility="gone"
-            app:button_background="@drawable/shape_button"
-            app:button_bottom_padding="20dp"
-            app:button_image_disabled="@drawable/bitcoin"
-            app:button_image_enabled="@drawable/bitcoin"
-            app:button_image_height="80dp"
-            app:button_image_width="100dp"
-            app:button_left_padding="20dp"
-            app:button_right_padding="20dp"
-            app:button_top_padding="20dp"
-            app:has_activate_state="true"
-            app:initial_state="disabled"
-            app:inner_text="SWIPE TO PAY"
-            app:inner_text_background="@drawable/shape_rounded"
-            app:inner_text_bottom_padding="30dp"
-            app:inner_text_color="@android:color/white"
-            app:inner_text_size="16sp"
-            app:inner_text_top_padding="30dp" />
+            app:slideText="@string/swipe_to_pay"
+            app:slideThumbBackground="@drawable/shape_button"
+            app:slideThumbIcon="@drawable/bitcoin"
+            app:slideThumbPadding="16dp"
+            app:slideThumbWidth="100dp"
+            app:slideTrackBackground="@drawable/shape_rounded" />
 
     </RelativeLayout>
 
@@ -245,7 +234,7 @@
         android:orientation="vertical"
         android:visibility="gone">
 
-        <cdflynn.android.library.checkview.CheckView
+        <cash.bchd.android_neutrino.widget.CheckView
             android:id="@+id/check"
             android:layout_width="200dp"
             android:layout_height="200dp"

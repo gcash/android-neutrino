@@ -10,15 +10,14 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.andrognito.pinlockview.IndicatorDots;
-import com.andrognito.pinlockview.PinLockListener;
-import com.andrognito.pinlockview.PinLockView;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import cash.bchd.android_neutrino.wallet.Wallet;
+import cash.bchd.android_neutrino.widget.PinDotsView;
+import cash.bchd.android_neutrino.widget.PinPadView;
 import io.grpc.Status;
 import walletrpc.Api;
 
@@ -41,9 +40,9 @@ public class PinActivity extends AppCompatActivity {
             pinLabel.setText("Enter Pin");
         }
 
-        IndicatorDots mIndicatorDots = findViewById(R.id.pinIndicatorDots);
-        PinLockView mPinLockView = findViewById(R.id.pinpad);
-        mPinLockView.setPinLockListener(new PinLockListener() {
+        PinDotsView mIndicatorDots = findViewById(R.id.pinIndicatorDots);
+        PinPadView mPinLockView = findViewById(R.id.pinpad);
+        mPinLockView.setPinLockListener(new PinPadView.Listener() {
             @Override
             public void onComplete(String pin) {
                 if (removePin) {
@@ -71,7 +70,7 @@ public class PinActivity extends AppCompatActivity {
                                         Status status = Status.fromThrowable(t);
                                         Snackbar snackbar = Snackbar.make(mCLayout, status.getDescription(), Snackbar.LENGTH_LONG);
                                         snackbar.show();
-                                        mPinLockView.resetPinLockView();
+                                        mPinLockView.reset();
                                     }
                                 });
                             }
@@ -79,7 +78,7 @@ public class PinActivity extends AppCompatActivity {
                     } catch (Exception e) {
                         Snackbar snackbar = Snackbar.make(mCLayout, "Error removing pin", Snackbar.LENGTH_LONG);
                         snackbar.show();
-                        mPinLockView.resetPinLockView();
+                        mPinLockView.reset();
                         e.printStackTrace();
                     }
                     return;
@@ -99,12 +98,12 @@ public class PinActivity extends AppCompatActivity {
 
                     TextView pinLabel = (TextView) findViewById(R.id.pinLabel);
                     pinLabel.setText("Confirm Pin");
-                    mPinLockView.resetPinLockView();
+                    mPinLockView.reset();
                 } else {
                     if (!pin.equals(firstPin)) {
                         TextView invalid = (TextView) findViewById(R.id.invalidPin);
                         invalid.setVisibility(View.VISIBLE);
-                        mPinLockView.resetPinLockView();
+                        mPinLockView.reset();
                         Vibrator vibrator = (Vibrator)getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
                         vibrator.vibrate(500);
                     } else {

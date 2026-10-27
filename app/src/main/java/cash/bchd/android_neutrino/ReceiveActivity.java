@@ -39,8 +39,6 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.nio.charset.Charset;
 import java.util.Currency;
 
-import androidmads.library.qrgenearator.QRGContents;
-import androidmads.library.qrgenearator.QRGEncoder;
 import cash.bchd.android_neutrino.wallet.AddressListener;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.BitcoinPaymentURI;
@@ -277,11 +275,7 @@ public class ReceiveActivity extends AppCompatActivity {
 
             BitcoinPaymentURI uri = builder.build();
 
-            QRGEncoder qrgEncoder = new QRGEncoder(
-                    uri.getURI(), null,
-                    QRGContents.Type.TEXT,
-                    smallerDimension);
-            Bitmap bitmap = qrgEncoder.encodeAsBitmap();
+            Bitmap bitmap = QrCodes.encode(uri.getURI(), smallerDimension);
             ImageView qrImage = customView.findViewById(R.id.requestQRCode);
 
             qrImage.setImageBitmap(bitmap);
@@ -354,14 +348,9 @@ public class ReceiveActivity extends AppCompatActivity {
 
                                 BitcoinPaymentURI newUri = builder.build();
 
-                                QRGEncoder qrgEncoder1 = new QRGEncoder(
-                                        newUri.getURI(), null,
-                                        QRGContents.Type.TEXT,
-                                        finalDimension);
-
                                 Bitmap newBitmap = null;
                                 try {
-                                    newBitmap = qrgEncoder1.encodeAsBitmap();
+                                    newBitmap = QrCodes.encode(newUri.getURI(), finalDimension);
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }

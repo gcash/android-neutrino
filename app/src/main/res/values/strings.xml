@@ -75,4 +75,6 @@
 
     <!--Content Description-->
     <string name="arrow_image">arrow image</string>
+    <string name="pin_delete">Delete</string>
+    <string name="swipe_to_pay">SWIPE TO PAY</string>
 </resources>
