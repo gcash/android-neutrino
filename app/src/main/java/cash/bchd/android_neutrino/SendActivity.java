@@ -193,8 +193,7 @@ public class SendActivity extends AppCompatActivity {
                         double fiatAmount = Double.valueOf(inputAmount.getText().toString().replace(",", "."));
                         toSpend = new Amount(ExchangeRates.getInstance().convertToBCH(fiatAmount, Currency.getInstance(fiatCurrency)));
                     } else {
-                        double bchAmount = Double.valueOf(inputAmount.getText().toString().replace(",", "."));
-                        toSpend = new Amount(bchAmount);
+                        toSpend = Amount.fromBCH(inputAmount.getText().toString());
                     }
                 }
 

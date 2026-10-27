@@ -1,6 +1,7 @@
 package cash.bchd.android_neutrino.wallet;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -33,7 +34,10 @@ public class BitcoinPaymentURI {
         parameters = new HashMap<String, Parameter>();
 
         if (builder.amount != null) {
-            parameters.put(PARAMETER_AMOUNT, new Parameter(String.valueOf(builder.amount), false));
+            // Plain decimal notation, since String.valueOf writes 0.0001 as
+            // 1.0E-4, which wallets don't accept as an amount.
+            String amount = BigDecimal.valueOf(builder.amount).stripTrailingZeros().toPlainString();
+            parameters.put(PARAMETER_AMOUNT, new Parameter(amount, false));
         }
 
         if (builder.label != null) {

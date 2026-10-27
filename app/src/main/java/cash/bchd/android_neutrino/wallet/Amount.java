@@ -1,6 +1,7 @@
 package cash.bchd.android_neutrino.wallet;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 public class Amount {
 
@@ -12,7 +13,19 @@ public class Amount {
     }
 
     public Amount(double bch) {
-        this.satoshis = (long) (bch * SATOSHIS_PER_BCH);
+        // Round, since a decimal amount is rarely exact as a double: 0.03346
+        // BCH times 1e8 is 3345999.9999999995, which truncating made one
+        // satoshi short.
+        this.satoshis = Math.round(bch * SATOSHIS_PER_BCH);
+    }
+
+    /**
+     * Parse an amount of BCH as typed, with a period or a comma as the decimal separator.
+     * Decimals beyond satoshis are rounded.
+     */
+    public static Amount fromBCH(String text) {
+        BigDecimal bch = new BigDecimal(text.trim().replace(",", "."));
+        return new Amount(bch.movePointRight(8).setScale(0, RoundingMode.HALF_UP).longValueExact());
     }
 
     public double toBCH() {
