@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="cash.bchd.android_neutrino">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -12,6 +11,7 @@
 
     <uses-feature android:name="android.hardware.nfc" android:required="false" />
     <uses-feature android:name="android.hardware.fingerprint" android:required="false"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -20,13 +20,16 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <receiver android:name=".BootCompletedIntentReceiver">
+        <receiver
+            android:name=".BootCompletedIntentReceiver"
+            android:exported="false">
         <intent-filter>
             <action android:name="android.intent.action.BOOT_COMPLETED" />
         </intent-filter>
         </receiver>
         <activity
             android:name=".MainActivity"
+            android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait">
@@ -38,12 +41,16 @@
         </activity>
         <activity
             android:name=".ScannerActivity"
+            android:exported="false"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait">
         </activity>
+        <!-- The only entry point for other apps and NFC tags. It reads nothing
+             but the bitcoincash URI and opens the screen that handles it. -->
         <activity
             android:name=".UriActivity"
+            android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait">
@@ -54,11 +61,6 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
             </intent-filter>
-        </activity>
-        <activity
-            android:name=".SendActivity"
-            android:theme="@style/AppTheme.NoActionBar"
-            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED"/>
                 <category android:name="android.intent.category.DEFAULT"/>
@@ -66,76 +68,64 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".SendActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait">
+        </activity>
+        <activity
             android:name=".ReceiveActivity"
+            android:exported="false"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait">
         </activity>
         <activity
             android:name=".ConfirmationActivity"
+            android:exported="false"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait">
         </activity>
         <activity
             android:name=".SettingsActivity"
+            android:exported="false"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait">
         </activity>
         <activity
             android:name=".BackupActivity"
+            android:exported="false"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait">
-
-            <intent-filter>
-                <action android:name="launchBackupFromSettings"/>
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
         </activity>
         <activity
             android:name=".RestoreActivity"
+            android:exported="false"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait">
-
-            <intent-filter>
-                <action android:name="launchRestoreFromSettings"/>
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
         </activity>
         <activity
             android:name=".PinActivity"
+            android:exported="false"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait">
-
-            <intent-filter>
-                <action android:name="launchPinFromSettings"/>
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
         </activity>
         <activity
             android:name=".FingerprintSetupActivity"
+            android:exported="false"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait">
-
-            <intent-filter>
-                <action android:name="launchFingerprintFromSettings"/>
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
         </activity>
         <activity
             android:name=".TorActivity"
+            android:exported="false"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait">
-
-            <intent-filter>
-                <action android:name="launchTorFromSettings"/>
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
         </activity>
-        <service android:name=".NotificationService"/>
+        <service
+            android:name=".NotificationService"
+            android:exported="false"/>
         <meta-data android:name="com.google.android.gms.vision.DEPENDENCIES"
             android:value="barcode"/>
-        <meta-data
-            android:name="com.google.android.gms.version"
-            android:value="@integer/google_play_services_version" />
 
         <meta-data android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/neutrino_small" />

@@ -16,7 +16,9 @@
         android:title="Backup Wallet"
         app:summary="Write down your wallet's recovery seed.">
 
-        <intent android:action="launchBackupFromSettings" />
+        <intent
+            android:targetClass="cash.bchd.android_neutrino.BackupActivity"
+            android:targetPackage="cash.bchd.android_neutrino" />
     </Preference>
 
     <Preference
@@ -25,7 +27,9 @@
         android:title="Recover Wallet"
         app:summary="Recover a wallet from a seed backup.">
 
-        <intent android:action="launchRestoreFromSettings" />
+        <intent
+            android:targetClass="cash.bchd.android_neutrino.RestoreActivity"
+            android:targetPackage="cash.bchd.android_neutrino" />
     </Preference>
 
     <PreferenceScreen
@@ -41,7 +45,9 @@
             android:title="Pin Encryption"
             app:summary="Enter a pin to encrypt the wallet with.">
 
-            <intent android:action="launchPinFromSettings" />
+            <intent
+                android:targetClass="cash.bchd.android_neutrino.PinActivity"
+                android:targetPackage="cash.bchd.android_neutrino" />
         </Preference>
 
         <Preference
@@ -50,7 +56,9 @@
             android:title="Fingerprint Authentication"
             app:summary="Set up fingerprint based encryption.">
 
-            <intent android:action="launchFingerprintFromSettings" />
+            <intent
+                android:targetClass="cash.bchd.android_neutrino.FingerprintSetupActivity"
+                android:targetPackage="cash.bchd.android_neutrino" />
         </Preference>
 
     </PreferenceScreen>
@@ -106,7 +114,9 @@
         android:title="Tor"
         app:summary="Learn how to connect Neutrino wallet to Tor for enhanced privacy.">
 
-        <intent android:action="launchTorFromSettings" />
+        <intent
+            android:targetClass="cash.bchd.android_neutrino.TorActivity"
+            android:targetPackage="cash.bchd.android_neutrino" />
     </Preference>
 
     <PreferenceScreen

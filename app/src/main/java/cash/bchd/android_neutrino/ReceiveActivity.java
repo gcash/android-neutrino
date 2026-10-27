@@ -8,9 +8,6 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.drawable.ColorDrawable;
-import android.nfc.NdefMessage;
-import android.nfc.NdefRecord;
-import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.text.Editable;
@@ -36,7 +33,6 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 
-import java.nio.charset.Charset;
 import java.util.Currency;
 
 import cash.bchd.android_neutrino.wallet.AddressListener;
@@ -290,15 +286,6 @@ public class ReceiveActivity extends AppCompatActivity {
 
             TextView helperText = customView.findViewById(R.id.uriHelpText);
             helperText.setText(getString(R.string.send_bch_to, requestAmount.toString()));
-
-            NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(this);
-            if (nfcAdapter != null) {
-                NdefRecord uriRecord = new NdefRecord(
-                        NdefRecord.TNF_ABSOLUTE_URI,
-                        uri.getURI().getBytes(Charset.forName("US-ASCII")),
-                        new byte[0], new byte[0]);
-                nfcAdapter.setNdefPushMessage(new NdefMessage(uriRecord), this);
-            }
 
             wallet.listenAddress(addr, new AddressListener() {
                 @Override

@@ -7,6 +7,7 @@ import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.ByteString;
 
 import java.io.File;
@@ -439,7 +440,7 @@ public class Wallet implements Serializable {
             public void onFailure(Throwable t) {
                 t.printStackTrace();
             }
-        });
+        }, MoreExecutors.directExecutor());
     }
 
     public void listenRescan(WalletEventListener listener) {

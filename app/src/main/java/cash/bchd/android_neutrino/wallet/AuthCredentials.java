@@ -1,12 +1,18 @@
 package cash.bchd.android_neutrino.wallet;
 
-import io.grpc.*;
-
 import java.util.concurrent.Executor;
 
-import static io.grpc.CallCredentials.ATTR_SECURITY_LEVEL;
+import io.grpc.CallCredentials;
+import io.grpc.Metadata;
+import io.grpc.Status;
 
-public class AuthCredentials implements CallCredentials {
+/**
+ * AuthCredentials adds the wallet's gRPC authentication token to each call.
+ */
+public class AuthCredentials extends CallCredentials {
+    private static final Metadata.Key<String> TOKEN_KEY =
+            Metadata.Key.of("AuthenticationToken", Metadata.ASCII_STRING_MARSHALLER);
+
     private final String token;
 
     public AuthCredentials(String token) {
@@ -14,23 +20,13 @@ public class AuthCredentials implements CallCredentials {
     }
 
     @Override
-    public void applyRequestMetadata(MethodDescriptor<?, ?> methodDescriptor, Attributes attributes, Executor executor, MetadataApplier metadataApplier) {
-        String authority = attributes.get(ATTR_AUTHORITY);
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Metadata headers = new Metadata();
-                    Metadata.Key<String> key = Metadata.Key.of("AuthenticationToken", Metadata.ASCII_STRING_MARSHALLER);
-                    headers.put(key, token);
-                    metadataApplier.apply(headers);
-                } catch (Throwable e) {
-                    metadataApplier.fail(Status.UNAUTHENTICATED.withCause(e));
-                }
-            }
-        });
-    }
-
-    @Override public void thisUsesUnstableApi() {
+    public void applyRequestMetadata(RequestInfo requestInfo, Executor appExecutor, MetadataApplier applier) {
+        try {
+            Metadata headers = new Metadata();
+            headers.put(TOKEN_KEY, token);
+            applier.apply(headers);
+        } catch (Throwable e) {
+            applier.fail(Status.UNAUTHENTICATED.withCause(e));
+        }
     }
 }

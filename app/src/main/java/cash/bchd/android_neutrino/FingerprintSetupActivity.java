@@ -8,6 +8,8 @@ import android.os.Vibrator;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import androidx.core.content.ContextCompat;
+
 import com.google.android.material.snackbar.Snackbar;
 import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.FutureCallback;
@@ -76,7 +78,7 @@ public class FingerprintSetupActivity extends FingerprintActivity {
                                         }
                                     });
                                 }
-                            });
+                            }, ContextCompat.getMainExecutor(FingerprintSetupActivity.this));
                         } catch (Exception e) {
                             runOnUiThread(new Runnable() {
 
@@ -137,7 +139,7 @@ public class FingerprintSetupActivity extends FingerprintActivity {
                                     }
                                 });
                             }
-                        });
+                        }, ContextCompat.getMainExecutor(FingerprintSetupActivity.this));
                     } catch (Exception e) {
                         runOnUiThread(new Runnable() {
 

@@ -15,6 +15,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.google.common.io.BaseEncoding;
@@ -254,7 +255,7 @@ public class ConfirmationActivity extends FingerprintActivity {
                     swipeButton.reset();
                 });
             }
-        });
+        }, ContextCompat.getMainExecutor(ConfirmationActivity.this));
     }
 
     private void publishTransaction(Wallet wallet, Api.SignTransactionResponse result, CoordinatorLayout layout) {
@@ -287,7 +288,7 @@ public class ConfirmationActivity extends FingerprintActivity {
                     }
                 });
             }
-        });
+        }, ContextCompat.getMainExecutor(ConfirmationActivity.this));
     }
 
     private void postPaymentToMerchant(Wallet wallet, Api.SignTransactionResponse result, CoordinatorLayout layout) {
@@ -319,7 +320,7 @@ public class ConfirmationActivity extends FingerprintActivity {
                     }
                 });
             }
-        });
+        }, ContextCompat.getMainExecutor(ConfirmationActivity.this));
     }
 
     @Override

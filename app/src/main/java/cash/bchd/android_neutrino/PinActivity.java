@@ -9,6 +9,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.google.common.util.concurrent.FutureCallback;
@@ -74,7 +75,7 @@ public class PinActivity extends AppCompatActivity {
                                     }
                                 });
                             }
-                        });
+                        }, ContextCompat.getMainExecutor(PinActivity.this));
                     } catch (Exception e) {
                         Snackbar snackbar = Snackbar.make(mCLayout, "Error removing pin", Snackbar.LENGTH_LONG);
                         snackbar.show();
@@ -134,7 +135,7 @@ public class PinActivity extends AppCompatActivity {
                                         }
                                     });
                                 }
-                            });
+                            }, ContextCompat.getMainExecutor(PinActivity.this));
                         } catch (Exception e) {
                             Snackbar snackbar = Snackbar.make(mCLayout, "Error setting password", Snackbar.LENGTH_LONG);
                             snackbar.show();
