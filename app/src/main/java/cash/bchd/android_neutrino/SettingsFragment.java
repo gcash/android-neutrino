@@ -3,6 +3,7 @@ package cash.bchd.android_neutrino;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.InputType;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.preference.EditTextPreference;
@@ -167,12 +168,22 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             EditTextPreference feePref = (EditTextPreference) findPreference("fee");
             feePref.setSummary(settings.getFeePerByte() + " sat/byte");
             feePref.setText(String.valueOf(settings.getFeePerByte()));
+            feePref.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
             feePref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object o) {
-                    settings.setFeePerByte(Integer.valueOf(o.toString()));
-                    feePref.setSummary(Integer.valueOf(o.toString()) + " sat/byte");
-                    feePref.setText(o.toString());
+                    int fee;
+                    try {
+                        fee = Integer.parseInt(o.toString().trim());
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                    if (fee < 1) {
+                        return false;
+                    }
+                    settings.setFeePerByte(fee);
+                    feePref.setSummary(fee + " sat/byte");
+                    feePref.setText(String.valueOf(fee));
                     return false;
                 }
             });

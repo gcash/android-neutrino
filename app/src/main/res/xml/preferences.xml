@@ -91,7 +91,7 @@
 
     <EditTextPreference
         android:icon="@drawable/fees_icon_small"
-        android:inputType="phone"
+        android:inputType="number"
         android:key="fee"
         android:title="Network Fee"
         app:summary="Set the network fee per byte to apply to your transactions." />

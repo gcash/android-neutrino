@@ -113,7 +113,9 @@ public class Settings {
     }
 
     int getFeePerByte() {
-        return prefs.getInt(FEE_PER_BYTE_KEY, 15);
+        // 1 sat/byte is the minimum relay fee of Bitcoin Cash nodes, which
+        // confirms transactions in the next block unless blocks are full.
+        return prefs.getInt(FEE_PER_BYTE_KEY, 1);
     }
 
     void setDefaultLabel(String label) {
