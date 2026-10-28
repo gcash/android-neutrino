@@ -10,7 +10,6 @@ import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -137,23 +136,16 @@ public class SendActivity extends AppCompatActivity {
         }
 
         address = findViewById(R.id.addressInput);
-        address.setOnTouchListener((v, event) -> {
-            final int DRAWABLE_RIGHT = 2;
-
-            if (event.getAction() == MotionEvent.ACTION_UP) {
-                if (event.getX() >= (address.getRight() - address.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
-                    Intent intent12 = new Intent(getApplicationContext(), ScannerActivity.class);
-                    startActivityForResult(intent12, RC_BARCODE_CAPTURE);
-                    return true;
-                }
-            }
-            return false;
+        TextInputLayout addressLayout = findViewById(R.id.addressLayout);
+        addressLayout.setEndIconOnClickListener(v -> {
+            Intent intent12 = new Intent(getApplicationContext(), ScannerActivity.class);
+            startActivityForResult(intent12, RC_BARCODE_CAPTURE);
         });
 
         memo = findViewById(R.id.memoInput);
 
         TextView feeText = findViewById(R.id.feeText);
-        String feeStr = getString(R.string.network_fee_sat_per_byte, satPerByte);
+        String feeStr = getResources().getQuantityString(R.plurals.network_fee_sat_per_byte, satPerByte, satPerByte);
         feeText.setText(feeStr);
 
         address.addTextChangedListener(new TextWatcher() {

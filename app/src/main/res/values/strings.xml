@@ -37,7 +37,10 @@
     <string name="error_creating_transaction_reason">Error creating transaction: %1$s</string>
     <string name="invalid_amount">INVALID AMOUNT</string>
     <string name="invalid_bitcoin_cash_address">INVALID BITCOIN CASH ADDRESS</string>
-    <string name="network_fee_sat_per_byte">Network Fee: %1$d sat/byte</string>
+    <plurals name="network_fee_sat_per_byte">
+        <item quantity="one">Network Fee: %1$d sat/byte</item>
+        <item quantity="other">Network Fee: %1$d sat/byte</item>
+    </plurals>
     <string name="uri_copied_to_clipboard">URI copied to clipboard.</string>
     <string name="send_bch_to">Send %1$s BCH To:</string>
     <string name="send_any_bch_to">Send BCH To:</string>
@@ -98,7 +101,6 @@
     <string name="partial_payment_detected">Partial Payment Detected</string>
     <string name="wallet_address">WALLET ADDRESS</string>
     <string name="bch_please">BCH Please</string>
-    <string name="word">word</string>
     <string name="string_recovery_phrase_1">Keep your recovery phrase safe. If you ever lose or replace your phone, you can use it to recover your funds.</string>
     <string name="string_recovery_phrase_2">Never share your recovery phrase with anyone. To be safe, avoid screenshots and don\'t store it on your mobile device.</string>
 
@@ -120,4 +122,29 @@
     <string name="switch_to_mainnet_message">The app restarts with your mainnet wallet. Your %1$s wallet stays as it is, and you can switch back here.</string>
     <string name="payment_link_other_network">This payment link is for %1$s, and the wallet is on %2$s. Switch networks in Settings to pay it.</string>
     <string name="wallet_birthday_note_test_network">The wallet looks for its coins in the blocks from this date on. Earlier dates take longer to scan.</string>
+    <string name="menu">Menu</string>
+    <string name="receive">Receive</string>
+    <string name="scan_qr_code">Scan a QR code</string>
+    <string name="show_your_address">Show your address</string>
+    <string name="switch_bch_fiat">Switch between BCH and fiat</string>
+    <string name="address_qr_code">QR code of your address</string>
+    <string name="payment_request_qr_code">QR code of the payment request</string>
+    <string name="tor_step_1_image">Orbot\'s page in the Play Store</string>
+    <string name="tor_step_2_image">Orbot with VPN Mode on, and Full Device VPN circled</string>
+    <string name="tor_step_3_image">Orbot\'s list of apps for VPN Mode, with Neutrino checked</string>
+    <string name="tor_step_4_image">Orbot\'s settings, with Start Orbot on Boot checked</string>
+    <string name="your_recovery_phrase">Your recovery phrase</string>
+    <string name="write_down_each_word">Write down each word in order.</string>
+    <string name="tx_details_date">Date</string>
+    <string name="tx_details_status">Status</string>
+    <string name="tx_details_id">ID</string>
+    <string name="tx_details_memo">Memo</string>
+    <string name="tx_details_explorer">Explorer</string>
+    <string name="received_bitcoin_cash">Received Bitcoin Cash</string>
+    <string name="from_bitcoin_cash_address">From Bitcoin Cash Address</string>
+    <string name="sent_bitcoin_cash">Sent Bitcoin Cash</string>
+    <plurals name="confirmations">
+        <item quantity="one">%1$d Confirmation</item>
+        <item quantity="other">%1$d Confirmations</item>
+    </plurals>
 </resources>

@@ -16,4 +16,6 @@
     <color name="white">#FFFFFF</color>
     <color name="networkBadge">#FFC107</color>
     <color name="networkBadgeText">#212121</color>
+    <!-- The color of the QR code icon's image, which an end icon would tint lighter. -->
+    <color name="qrIcon">#424242</color>
 </resources>

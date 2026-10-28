@@ -1,5 +1,6 @@
 package cash.bchd.android_neutrino;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -16,6 +17,9 @@ public class CustomViewPager extends ViewPager {
         this.direction = SwipeDirection.all;
     }
 
+    // It only holds back the swipes that aren't allowed. A pager has no clicks of its own, which
+    // the views of its pages take, so there is no click to call performClick for.
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (this.IsSwipeAllowed(event)) {

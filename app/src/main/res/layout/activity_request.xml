@@ -76,6 +76,7 @@
 
         <ImageView
             android:id="@+id/receiveToggleImage"
+            android:contentDescription="@string/switch_bch_fiat"
             android:layout_width="30dp"
             android:layout_height="20dp"
             android:layout_gravity="end"

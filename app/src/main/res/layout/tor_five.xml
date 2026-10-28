@@ -19,6 +19,7 @@
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:contentDescription="@string/tor_step_4_image"
         android:src="@drawable/tor4"
         android:layout_marginTop="20dp"
         android:layout_marginBottom="50dp"/>

@@ -1,6 +1,7 @@
 package cash.bchd.android_neutrino;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -150,6 +151,42 @@ public class MainActivity extends CloseActivity {
         mAdapter = new TransactionAdapter(txs, this, mCLayout, settings.getLastBlockHeight(), network);
         recyclerView.setAdapter(mAdapter);
         fab.setOnClickListener(view -> toggleFABMenu());
+        listenForMenuSlides();
+        fabQR.setOnClickListener(v -> {
+            fab.bringToFront();
+            displayQRPopup();
+            sendViewToBack(v);
+        });
+        fabScan.setOnClickListener(v -> {
+            fab.bringToFront();
+            displayQRScanner();
+        });
+        fabSend.setOnClickListener(v -> {
+            fab.bringToFront();
+            openSendActivity();
+        });
+        fabReceive.setOnClickListener(v -> {
+            fab.bringToFront();
+            openReceiveActivity();
+        });
+        fabSettings.setOnClickListener(v -> {
+            fab.bringToFront();
+            openSettingsActivity();
+        });
+        Intent intent = getIntent();
+        boolean launchLoveActivity = intent.getBooleanExtra("launchLoveActivity", false);
+        if (launchLoveActivity) {
+            Intent newIntent = new Intent();
+            newIntent.putExtra("qrdata", SettingsFragment.DONATE_URI);
+            this.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
+        }
+    }
+
+    // The menu button opens the menu while it's held down, and presses the menu's button that it's
+    // let go over. A tap goes on as a click, which is also what TalkBack's double tap does, so lint
+    // flags it only because FloatingActionButton isn't one of Android's own views.
+    @SuppressLint("ClickableViewAccessibility")
+    private void listenForMenuSlides() {
         fab.setOnTouchListener((v, event) -> {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
                 toggleFABMenu();
@@ -183,34 +220,6 @@ public class MainActivity extends CloseActivity {
             }
             return true;
         });
-        fabQR.setOnClickListener(v -> {
-            fab.bringToFront();
-            displayQRPopup();
-            sendViewToBack(v);
-        });
-        fabScan.setOnClickListener(v -> {
-            fab.bringToFront();
-            displayQRScanner();
-        });
-        fabSend.setOnClickListener(v -> {
-            fab.bringToFront();
-            openSendActivity();
-        });
-        fabReceive.setOnClickListener(v -> {
-            fab.bringToFront();
-            openReceiveActivity();
-        });
-        fabSettings.setOnClickListener(v -> {
-            fab.bringToFront();
-            openSettingsActivity();
-        });
-        Intent intent = getIntent();
-        boolean launchLoveActivity = intent.getBooleanExtra("launchLoveActivity", false);
-        if (launchLoveActivity) {
-            Intent newIntent = new Intent();
-            newIntent.putExtra("qrdata", SettingsFragment.DONATE_URI);
-            this.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
-        }
     }
 
     public void createWallet() {

@@ -104,14 +104,13 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             confirmations = blockHeight - tx.getHeight() + 1;
         }
         if (confirmations <= 0) {
-            holder.fiatAmount.setText("Unconfirmed");
+            holder.fiatAmount.setText(R.string.unconfirmed);
             holder.confirmationCircle.setImageResource(R.drawable.red_circle);
             holder.confirmationCircle.setVisibility(View.VISIBLE);
         } else if (confirmations < 10) {
             holder.confirmationCircle.setImageResource(R.drawable.yellow_circle);
             holder.confirmationCircle.setVisibility(View.VISIBLE);
-            String confirmedText = confirmations + " Confirmations";
-            holder.fiatAmount.setText(confirmedText);
+            holder.fiatAmount.setText(ctx.getResources().getQuantityString(R.plurals.confirmations, confirmations, confirmations));
         } else {
             holder.confirmationCircle.setVisibility(View.INVISIBLE);
             holder.fiatAmount.setText(tx.getFiatAmount());
@@ -119,17 +118,17 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
 
         holder.txMemo.setEllipsize(TextUtils.TruncateAt.END);
         if (tx.getIncoming()) {
-            holder.txDescription.setText("Received Bitcoin Cash");
+            holder.txDescription.setText(R.string.received_bitcoin_cash);
             holder.arrowImage.setImageResource(R.drawable.receive_arrow);
             holder.bchAmount.setTextColor(ctx.getResources().getColor(R.color.darkGreen));
             if (tx.getMemo().equals("")) {
-                holder.txMemo.setText("From Bitcoin Cash Address");
+                holder.txMemo.setText(R.string.from_bitcoin_cash_address);
             } else {
                 holder.txMemo.setText(tx.getMemo());
             }
         } else {
             holder.arrowImage.setImageResource(R.drawable.send_arrow);
-            holder.txDescription.setText("Sent Bitcoin Cash");
+            holder.txDescription.setText(R.string.sent_bitcoin_cash);
             holder.bchAmount.setTextColor(ctx.getResources().getColor(R.color.neonPurple));
             if (tx.getMemo() == null || tx.getMemo().equals("")) {
                 holder.txMemo.setEllipsize(TextUtils.TruncateAt.MIDDLE);

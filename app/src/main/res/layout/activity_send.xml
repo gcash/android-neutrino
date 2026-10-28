@@ -105,6 +105,7 @@
 
                 <ImageView
                     android:id="@+id/toggleImage"
+                    android:contentDescription="@string/switch_bch_fiat"
                     android:layout_width="30dp"
                     android:layout_height="20dp"
                     android:layout_gravity="end"
@@ -139,13 +140,17 @@
                 android:layout_marginLeft="25dp"
                 android:layout_marginTop="10dp"
                 android:layout_marginRight="25dp"
-                android:layout_marginBottom="25dp">
+                android:layout_marginBottom="25dp"
+                app:endIconContentDescription="@string/scan_qr_code"
+                app:endIconDrawable="@drawable/smallqr"
+                app:endIconMode="custom"
+                app:endIconTint="@color/qrIcon"
+                app:errorIconDrawable="@null">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/addressInput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:drawableRight="@drawable/smallqr"
                     android:hint="@string/to_address" />
 
             </com.google.android.material.textfield.TextInputLayout>
