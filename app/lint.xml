@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- The coin that flips when a payment arrives stays a GIF: animated WebP needs Android 9,
+         and the app runs on Android 7. -->
+    <issue id="GifUsage">
+        <ignore path="src/main/res/drawable-nodpi/coinflip.gif" />
+    </issue>
+    <!-- The small icons, such as the menu's, come in one density, which Android scales as it
+         did when they were in drawable. -->
+    <issue id="IconMissingDensityFolder" severity="ignore" />
+</lint>

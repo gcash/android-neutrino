@@ -1,38 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
+<!-- The dots that show which page of the backup walkthrough is shown. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="15dip"
     android:layout_gravity="bottom"
-    android:orientation="vertical" >
+    android:layout_marginBottom="20dp"
+    android:gravity="center"
+    android:orientation="horizontal"
+    android:padding="15dip">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="20dp"
-        android:gravity="center">
+    <View
+        android:id="@+id/backupCircle1"
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:background="@drawable/rounded_cell" />
 
-        <Button
-            android:layout_height="14dp"
-            android:layout_width="14dp"
-            android:id="@+id/backupCircle1"
-            android:background="@drawable/rounded_cell" />
+    <View
+        android:id="@+id/backupCircle2"
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:layout_marginStart="10dp"
+        android:background="@drawable/rounded_cell" />
 
-        <Button
-            android:layout_height="14dp"
-            android:layout_width="14dp"
-            android:id="@+id/backupCircle2"
-            android:layout_marginStart="10dp"
-            android:background="@drawable/rounded_cell" />
+    <View
+        android:id="@+id/backupCircle3"
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:layout_marginStart="10dp"
+        android:background="@drawable/rounded_cell" />
 
-        <Button
-            android:layout_height="14dp"
-            android:layout_width="14dp"
-            android:id="@+id/backupCircle3"
-            android:layout_marginStart="10dp"
-            android:background="@drawable/rounded_cell" />
-
-    </LinearLayout>
-
-</RelativeLayout>
+</LinearLayout>

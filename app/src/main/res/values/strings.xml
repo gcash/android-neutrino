@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Neutrino</string>
-    <string name="action_settings">Settings</string>
     <string name="bch_amount">%1$s BCH</string>
     <string name="balance_bch_amount">Balance: %1$s BCH</string>
     <string name="balance_fiat_amount">Balance: %1$s</string>
@@ -45,7 +44,6 @@
     <string name="send_bch_to">Send %1$s BCH To:</string>
     <string name="send_any_bch_to">Send BCH To:</string>
     <string name="send_bitcoin_cash">Send Bitcoin Cash</string>
-    <string name="string_space"> </string>
     <string name="string_zero">0</string>
     <string name="string_0_bch">0 BCH</string>
     <string name="send_all">Send All</string>

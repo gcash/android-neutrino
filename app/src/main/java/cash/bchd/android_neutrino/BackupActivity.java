@@ -1,16 +1,18 @@
 package cash.bchd.android_neutrino;
 
 import android.os.Bundle;
+import android.graphics.drawable.GradientDrawable;
+import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
 
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager.widget.ViewPager;
 
 public class BackupActivity extends FragmentActivity {
     private CustomViewPager _mViewPager;
     private BackupAdapter _adapter;
-    private Button _btn1,_btn2,_btn3;
+    private View _btn1,_btn2,_btn3;
 
     /** Called when the activity is first created. */
     @Override
@@ -75,11 +77,10 @@ public class BackupActivity extends FragmentActivity {
         setButton(_btn2,false);
         setButton(_btn3,false);
     }
-    private void setButton(Button btn, boolean active){
-        if (active) {
-            btn.setBackgroundColor(getResources().getColor(R.color.darkGreyCircle));
-        } else {
-            btn.setBackgroundColor(getResources().getColor(R.color.lightGreyCircle));
-        }
+    // Fills the page's dot, darker for the page shown. Its background is an oval, which a color
+    // set as the background replaced with a square.
+    private void setButton(View btn, boolean active) {
+        GradientDrawable dot = (GradientDrawable) btn.getBackground().mutate();
+        dot.setColor(ContextCompat.getColor(this, active ? R.color.darkGreyCircle : R.color.lightGreyCircle));
     }
 }

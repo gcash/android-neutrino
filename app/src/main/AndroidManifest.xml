@@ -17,7 +17,7 @@
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="false"
-        android:icon="@drawable/neutrino"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
@@ -90,13 +90,13 @@
         <activity
             android:name=".BackupActivity"
             android:exported="false"
-            android:theme="@style/AppTheme.NoActionBar"
+            android:theme="@style/AppTheme.NoActionBar.White"
             android:screenOrientation="portrait">
         </activity>
         <activity
             android:name=".RestoreActivity"
             android:exported="false"
-            android:theme="@style/AppTheme.NoActionBar"
+            android:theme="@style/AppTheme.NoActionBar.White"
             android:screenOrientation="portrait">
         </activity>
         <activity
@@ -108,7 +108,7 @@
         <activity
             android:name=".TorActivity"
             android:exported="false"
-            android:theme="@style/AppTheme.NoActionBar"
+            android:theme="@style/AppTheme.NoActionBar.White"
             android:screenOrientation="portrait">
         </activity>
     </application>
