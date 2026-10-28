@@ -857,8 +857,14 @@ public class MainActivity extends CloseActivity {
                                 List<TransactionData> list = TransactionList.rebuild(mainActivity2.mAdapter.getData(), txs);
                                 TextView bchPlease = mainActivity2.findViewById(R.id.bchPlease);
                                 bchPlease.setVisibility(list.isEmpty() ? View.VISIBLE : View.GONE);
+                                // A transaction added at the top goes above the first row shown, so
+                                // the list scrolls to show it when it showed the newest before.
+                                LinearLayoutManager rows = (LinearLayoutManager) mainActivity2.layoutManager;
+                                boolean atTop = rows.findFirstVisibleItemPosition() <= 0;
                                 mainActivity2.mAdapter.setNewData(list);
-                                mainActivity2.mAdapter.notifyDataSetChanged();
+                                if (atTop) {
+                                    rows.scrollToPosition(0);
+                                }
                                 mainActivity2.txStore.setData(list);
                                 try {
                                     mainActivity2.txStore.save(mainActivity2.getApplicationContext());
@@ -882,7 +888,6 @@ public class MainActivity extends CloseActivity {
                                     return;
                                 }
                                 mainActivity2.mAdapter.setBlockHeight(blockHeight);
-                                mainActivity2.mAdapter.notifyDataSetChanged();
                                 mainActivity2.settings.setLastBlockHeight(blockHeight);
                                 mainActivity2.settings.setLastBlockHash(blockHash);
                             });

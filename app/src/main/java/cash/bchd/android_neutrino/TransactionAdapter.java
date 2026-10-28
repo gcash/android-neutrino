@@ -16,6 +16,7 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
@@ -32,6 +33,8 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     private int blockHeight;
     // The network of the transactions.
     private final Network network;
+    // What the rows showed when the transactions or the block height were last set.
+    private List<TransactionRows.Row> shownRows;
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -63,18 +66,35 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         cLayout = layout;
         blockHeight = height;
         this.network = network;
+        shownRows = TransactionRows.of(myDataset, height);
     }
 
+    /**
+     * setNewData shows the transactions, adding, removing, moving and redrawing only the rows
+     * that changed, which the list animates.
+     */
     public void setNewData(List<TransactionData> data) {
+        List<TransactionRows.Row> rows = TransactionRows.of(data, blockHeight);
+        DiffUtil.DiffResult diff = TransactionRows.diff(shownRows, rows);
         mDataset = data;
+        shownRows = rows;
+        diff.dispatchUpdatesTo(this);
     }
 
     public List<TransactionData> getData() {
         return mDataset;
     }
 
+    /**
+     * setBlockHeight shows the transactions' confirmations at the height, redrawing only the
+     * rows that show them differently.
+     */
     public void setBlockHeight(int height) {
         blockHeight = height;
+        List<TransactionRows.Row> rows = TransactionRows.of(mDataset, height);
+        DiffUtil.DiffResult diff = TransactionRows.diff(shownRows, rows);
+        shownRows = rows;
+        diff.dispatchUpdatesTo(this);
     }
 
     // Create new views (invoked by the layout manager)
@@ -99,10 +119,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         String bch = "₿" + new Amount(tx.getAmount()).toString();
         holder.bchAmount.setText(bch);
 
-        int confirmations = 0;
-        if (tx.getHeight() > 0) {
-            confirmations = blockHeight - tx.getHeight() + 1;
-        }
+        int confirmations = TransactionRows.confirmations(tx, blockHeight);
         if (confirmations <= 0) {
             holder.fiatAmount.setText(R.string.unconfirmed);
             holder.confirmationCircle.setImageResource(R.drawable.red_circle);
