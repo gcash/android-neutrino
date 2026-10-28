@@ -3,6 +3,7 @@ package cash.bchd.android_neutrino;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.text.TextPaint;
 import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -129,10 +130,8 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             holder.txDescription.setText("Sent Bitcoin Cash");
             holder.bchAmount.setTextColor(ctx.getResources().getColor(R.color.neonPurple));
             if (tx.getMemo() == null || tx.getMemo().equals("")) {
-                // Shortening an address in the middle keeps its end and how many more addresses
-                // the transaction paid in view.
                 holder.txMemo.setEllipsize(TextUtils.TruncateAt.MIDDLE);
-                holder.txMemo.setText(sentTo(tx));
+                holder.txMemo.setText(sentTo(tx, holder.txMemo));
             } else {
                 holder.txMemo.setText(tx.getMemo());
             }
@@ -185,6 +184,15 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
                     circle.setImageResource(R.drawable.green_circle);
                 }
 
+                String to = tx.getIncoming() ? null : recipients(tx);
+                if (to == null) {
+                    customView.findViewById(R.id.txDetailsToDivider).setVisibility(View.GONE);
+                    customView.findViewById(R.id.txDetailsToRow).setVisibility(View.GONE);
+                } else {
+                    TextView toView = customView.findViewById(R.id.txDetailsTo);
+                    toView.setText(to);
+                }
+
                 TextView memo = customView.findViewById(R.id.txDetailsMemo);
                 memo.setText(tx.getMemo());
 
@@ -204,17 +212,48 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         return mDataset.size();
     }
 
-    private String sentTo(TransactionData tx) {
+    // sentTo says whom a sent transaction paid in the width of the view: the address it paid,
+    // shortened in its middle so that its start and end stay in view, or how many it paid, since
+    // a row has no room for an address beside the count.
+    private String sentTo(TransactionData tx, TextView view) {
         switch (tx.getSentTo()) {
             case YOURSELF:
                 return ctx.getString(R.string.sent_to_yourself);
             case NO_ADDRESS:
                 return ctx.getString(R.string.sent);
             case ADDRESS_AND_MORE:
-                return ctx.getResources().getQuantityString(R.plurals.sent_to_and_more, tx.getMoreRecipients(),
-                        tx.getToAddress(), tx.getMoreRecipients());
+                int addresses = tx.getMoreRecipients() + 1;
+                return ctx.getResources().getQuantityString(R.plurals.sent_to_addresses, addresses, addresses);
             default:
-                return ctx.getString(R.string.sent_to, tx.getToAddress());
+                return ctx.getString(R.string.sent_to,
+                        shorten(tx.getToAddress(), ctx.getString(R.string.sent_to, ""), view));
+        }
+    }
+
+    // shorten shortens an address in its middle to fit beside the text around it in the view's
+    // width, or leaves it whole if the view has no fixed width.
+    private static CharSequence shorten(String address, String around, TextView view) {
+        int width = view.getLayoutParams().width - view.getTotalPaddingLeft() - view.getTotalPaddingRight();
+        if (width <= 0) {
+            return address;
+        }
+        TextPaint paint = view.getPaint();
+        return TextUtils.ellipsize(address, paint, width - paint.measureText(around), TextUtils.TruncateAt.MIDDLE);
+    }
+
+    // recipients says in full whom a sent transaction paid, or is null if no output that pays
+    // someone else pays an address.
+    private String recipients(TransactionData tx) {
+        switch (tx.getSentTo()) {
+            case YOURSELF:
+                return ctx.getString(R.string.tx_details_to_yourself);
+            case NO_ADDRESS:
+                return null;
+            case ADDRESS_AND_MORE:
+                return ctx.getResources().getQuantityString(R.plurals.tx_details_to_and_more,
+                        tx.getMoreRecipients(), tx.getToAddress(), tx.getMoreRecipients());
+            default:
+                return tx.getToAddress();
         }
     }
 }
