@@ -35,6 +35,9 @@ import walletrpc.Api;
 public class ConfirmationActivity extends AppCompatActivity {
 
     private static final int ENTER_PIN = 1234;
+    // The request code to start the screen with for its result, which is RESULT_OK once it has
+    // sent the payment.
+    static final int RC_PAY = 9004;
 
     byte[] serializedTx;
     List<Long> inputVals;
@@ -224,16 +227,11 @@ public class ConfirmationActivity extends AppCompatActivity {
                 });
     }
 
-    // Once the payment is sent, leave the send screen too, so that going back
-    // does not show the filled in payment again.
+    // Once the payment is sent, leave the send screen too, which closes on this result, so that
+    // going back does not show the filled in payment again.
     private void leaveAfterPayment() {
+        setResult(RESULT_OK);
         finish();
-        if (SendActivity.fa != null) {
-            SendActivity.fa.finish();
-        }
-        if (UriActivity.fa != null) {
-            UriActivity.fa.finish();
-        }
     }
 
     private void showPaymentSent() {

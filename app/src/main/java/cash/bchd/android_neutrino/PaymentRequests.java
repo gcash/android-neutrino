@@ -55,7 +55,8 @@ final class PaymentRequests {
             public void onSuccess(Intent intent) {
                 loading.dismiss();
                 if (!activity.isFinishing() && !activity.isDestroyed()) {
-                    activity.startActivity(intent);
+                    // For its result, which closes the send screen once the payment is sent.
+                    activity.startActivityForResult(intent, ConfirmationActivity.RC_PAY);
                 }
             }
 

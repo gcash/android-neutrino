@@ -1,6 +1,5 @@
 package cash.bchd.android_neutrino;
 
-import android.app.Activity;
 import android.os.Bundle;
 
 import android.view.MenuItem;
@@ -18,15 +17,12 @@ import cash.bchd.android_neutrino.wallet.WalletEventListener;
 
 public class SettingsActivity extends AppCompatActivity implements PreferenceFragmentCompat.OnPreferenceStartScreenCallback {
 
-    public static Activity fa;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
         SystemBars.apply(this);
 
-        fa = this;
         if (savedInstanceState == null) {
             // Create the fragment only when the activity is created for the first time.
             // ie. not after orientation changes

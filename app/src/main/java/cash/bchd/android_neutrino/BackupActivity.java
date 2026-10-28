@@ -1,6 +1,5 @@
 package cash.bchd.android_neutrino;
 
-import android.app.Activity;
 import android.os.Bundle;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -13,8 +12,6 @@ public class BackupActivity extends FragmentActivity {
     private BackupAdapter _adapter;
     private Button _btn1,_btn2,_btn3;
 
-    public static Activity fa;
-
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -23,7 +20,6 @@ public class BackupActivity extends FragmentActivity {
         SystemBars.apply(this);
         // Keep the recovery phrase and PIN out of screenshots and the recent apps.
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
-        fa = this;
         // Show the recovery phrase only to someone who can unlock the phone.
         ScreenLock.confirm(this, getString(R.string.screen_lock_show_recovery_phrase), new ScreenLock.Callback() {
             @Override

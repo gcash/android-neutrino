@@ -1,6 +1,5 @@
 package cash.bchd.android_neutrino;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -55,14 +54,12 @@ public class SendActivity extends AppCompatActivity {
     TextView symbolLabel;
     String label;
     int satPerByte;
-    public static Activity fa; // TODO: THIS HAS TO GO SOON, can't have static Context references, huge mem leak
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_send);
         SystemBars.apply(this);
-        fa = this;
 
         CloseActivity.cancelCloseTimer();
 
@@ -247,7 +244,7 @@ public class SendActivity extends AppCompatActivity {
                 if (label != null && !label.equals("")) {
                     intent1.putExtra("label", label);
                 }
-                startActivity(intent1);
+                startActivityForResult(intent1, ConfirmationActivity.RC_PAY);
             } catch (Exception e) {
                 // Say why bchwallet refused the transaction, such as a dust amount, when it did.
                 String reason = Wallet.reasonFor(e);
@@ -432,6 +429,11 @@ public class SendActivity extends AppCompatActivity {
             } else if (resultCode != RESULT_CANCELED) {
                 Snackbar snackbar = Snackbar.make(sendLayout, R.string.barcode_read_error, Snackbar.LENGTH_LONG);
                 snackbar.show();
+            }
+        } else if (requestCode == ConfirmationActivity.RC_PAY) {
+            // The payment was sent, and the confirmation screen closed.
+            if (resultCode == RESULT_OK) {
+                finish();
             }
         } else {
             super.onActivityResult(requestCode, resultCode, data);

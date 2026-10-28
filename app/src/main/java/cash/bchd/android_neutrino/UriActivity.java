@@ -1,6 +1,5 @@
 package cash.bchd.android_neutrino;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -11,12 +10,9 @@ import cash.bchd.android_neutrino.wallet.Wallet;
 
 public class UriActivity extends AppCompatActivity {
 
-    public static Activity fa;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        fa = this;
 
         Intent intent = getIntent();
         Uri uri = intent.getData();
@@ -35,5 +31,10 @@ public class UriActivity extends AppCompatActivity {
                 startActivity(newIntent);
             }
         }
+        // It has no screen of its own, so it closes once it started the one that handles the
+        // URI, instead of staying behind it as a blank screen at the bottom of the task. There
+        // the next link, which a browser opens with FLAG_ACTIVITY_CLEAR_TOP, cleared the task,
+        // and with it the main screen, which stopped the wallet.
+        finish();
     }
 }

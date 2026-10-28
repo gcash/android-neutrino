@@ -1,6 +1,5 @@
 package cash.bchd.android_neutrino;
 
-import android.app.Activity;
 import android.os.Bundle;
 import android.widget.Button;
 
@@ -13,8 +12,6 @@ public class TorActivity extends FragmentActivity {
     private TorAdapter _adapter;
     private Button _btn1, _btn2, _btn3, _btn4, _btn5;
 
-    public static Activity fa;
-
     /**
      * Called when the activity is first created.
      */
@@ -25,7 +22,6 @@ public class TorActivity extends FragmentActivity {
         SystemBars.apply(this);
         setUpView();
         setTab();
-        fa = this;
     }
 
     private void setUpView() {

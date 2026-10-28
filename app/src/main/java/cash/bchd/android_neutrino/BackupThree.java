@@ -89,7 +89,7 @@ public class BackupThree extends Fragment {
                                 settings.setMnemonic("");
                                 Vibrator vibrator = (Vibrator)getContext().getSystemService(Context.VIBRATOR_SERVICE);
                                 vibrator.vibrate(500);
-                                BackupActivity.fa.finish();
+                                requireActivity().finish();
                                 break;
 
                             case DialogInterface.BUTTON_NEGATIVE:
