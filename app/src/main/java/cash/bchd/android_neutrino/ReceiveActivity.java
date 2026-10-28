@@ -39,6 +39,7 @@ import cash.bchd.android_neutrino.wallet.AddressListener;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.BitcoinPaymentURI;
 import cash.bchd.android_neutrino.wallet.ExchangeRates;
+import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.Wallet;
 
 public class ReceiveActivity extends AppCompatActivity {
@@ -49,6 +50,7 @@ public class ReceiveActivity extends AppCompatActivity {
     TextInputEditText receiveAmountInput;
     TextView conversionRate;
     Wallet wallet;
+    Network network;
     LinearLayout receiveLayout;
     TextInputEditText label;
     TextInputEditText memo;
@@ -81,6 +83,8 @@ public class ReceiveActivity extends AppCompatActivity {
         conversionRate = findViewById(R.id.receiveConversionRate);
 
         wallet = Wallet.getInstance();
+        network = Settings.get(this).getNetwork();
+        Networks.showBadge(this, network);
 
         TextView symbolLabel = findViewById(R.id.receiveSymbolLabel);
         receiveLayout = findViewById(R.id.receiveLayout);
@@ -102,6 +106,13 @@ public class ReceiveActivity extends AppCompatActivity {
 
         ImageView toggle = findViewById(R.id.receiveToggleImage);
         toggle.setOnClickListener(v -> toggleBchFiat());
+        if (!network.hasFiat) {
+            // Test coins have no price, so amounts are entered in BCH only.
+            showingFiat = false;
+            symbolLabel.setText("₿");
+            toggle.setVisibility(View.GONE);
+            conversionRate.setVisibility(View.GONE);
+        }
 
         receiveAmountInput.addTextChangedListener(new TextWatcher() {
 
@@ -178,7 +189,7 @@ public class ReceiveActivity extends AppCompatActivity {
 
     public void updateAlternateAmount() {
         Editable receiveAmountInputText = receiveAmountInput.getText();
-        if (receiveAmountInputText == null) {
+        if (receiveAmountInputText == null || !network.hasFiat) {
             return;
         }
         if (showingFiat) {

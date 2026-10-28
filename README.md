@@ -27,6 +27,12 @@ The Neutrino that was on Google Play was signed with a different key, so Android
 this one over it. Write down its recovery phrase, uninstall it, install this one and restore the
 wallet from the phrase.
 
+## Testnet4
+
+Settings → Network switches the app to testnet4, the Bitcoin Cash network for testing, whose coins
+have no value. Each network has a wallet of its own, with its own recovery phrase, so switching
+leaves the other wallet as it is. On testnet4 the app shows a TESTNET4 badge and no fiat amounts.
+
 ## Building
 
 The app embeds the [bchwallet](https://github.com/gcash/bchwallet) daemon, built for Android

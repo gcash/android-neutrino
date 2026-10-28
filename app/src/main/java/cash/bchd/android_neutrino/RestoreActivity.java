@@ -23,21 +23,18 @@ import java.util.Date;
 import java.util.TimeZone;
 
 import cash.bchd.android_neutrino.wallet.Bip39;
+import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.Wallet;
 
 public class RestoreActivity extends AppCompatActivity {
 
-    // August 1, 2017, when Bitcoin Cash split from Bitcoin. The wallet finds coins only in the
-    // blocks from its birthday on, so a phrase that received coins before then needs an earlier
-    // birthday.
-    static final long DEFAULT_BIRTHDAY = 1501545600;
-    // The time of the first block, on January 3, 2009.
-    static final long FIRST_BLOCK_TIME = 1231006505;
-
     private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
-    // The birthday of the restored wallet, in seconds.
-    private long birthday = DEFAULT_BIRTHDAY;
+    // The network of the wallet to restore.
+    private Network network;
+    // The birthday of the restored wallet, in seconds. The wallet finds coins only in the blocks
+    // from its birthday on.
+    private long birthday;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,8 +43,15 @@ public class RestoreActivity extends AppCompatActivity {
         SystemBars.apply(this);
         // Keep the recovery phrase and PIN out of screenshots and the recent apps.
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
+        network = Settings.get(this).getNetwork();
+        birthday = network.defaultRestoreBirthday;
         if (savedInstanceState != null) {
-            birthday = savedInstanceState.getLong("birthday", DEFAULT_BIRTHDAY);
+            birthday = savedInstanceState.getLong("birthday", network.defaultRestoreBirthday);
+        }
+        if (network != Network.MAINNET) {
+            // A test network has no coins from before Bitcoin Cash split from Bitcoin.
+            TextView birthdayNote = findViewById(R.id.restoreBirthdayNote);
+            birthdayNote.setText(R.string.wallet_birthday_note_test_network);
         }
 
         TextInputLayout phraseLayout = findViewById(R.id.restorePhraseLayout);
@@ -115,10 +119,10 @@ public class RestoreActivity extends AppCompatActivity {
             Calendar picked = Calendar.getInstance(UTC);
             picked.clear();
             picked.set(year, month, day);
-            birthday = Math.max(picked.getTimeInMillis() / 1000, FIRST_BLOCK_TIME);
+            birthday = Math.max(picked.getTimeInMillis() / 1000, network.firstBlockTime);
             showBirthday(view);
         }, current.get(Calendar.YEAR), current.get(Calendar.MONTH), current.get(Calendar.DAY_OF_MONTH));
-        dialog.getDatePicker().setMinDate(FIRST_BLOCK_TIME * 1000);
+        dialog.getDatePicker().setMinDate(network.firstBlockTime * 1000);
         dialog.getDatePicker().setMaxDate(System.currentTimeMillis());
         dialog.show();
     }
@@ -137,12 +141,12 @@ public class RestoreActivity extends AppCompatActivity {
         // Stop the wallet, and delete its files once it has closed them, so
         // that MainActivity creates the restored wallet. The cached
         // transactions are only read by the app and can go right away.
-        deleteFile(TransactionStore.FILE_NAME);
+        deleteFile(TransactionStore.fileName(network));
         Wallet wallet = Wallet.getInstance();
         if (wallet != null) {
             wallet.stop();
         }
-        File walletDir = new File(getDataDir(), "mainnet");
+        File walletDir = new File(getDataDir(), network.id);
         Wallet.runAfterStop(() -> deleteRecursive(walletDir));
 
         Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);

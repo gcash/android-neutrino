@@ -10,6 +10,14 @@
         app:key="blockchain"
         app:title="Blockchain" />
 
+    <ListPreference
+        android:entries="@array/network_names"
+        android:entryValues="@array/network_ids"
+        android:icon="@drawable/chain_icon_small"
+        android:key="network"
+        android:persistent="false"
+        android:title="@string/network" />
+
     <Preference
         android:icon="@drawable/seed_icon_small"
         android:key="backup"

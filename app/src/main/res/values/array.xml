@@ -1,4 +1,12 @@
 <resources>
+    <string-array name="network_ids" translatable="false">
+        <item>mainnet</item>
+        <item>testnet4</item>
+    </string-array>
+    <string-array name="network_names">
+        <item>@string/network_mainnet</item>
+        <item>@string/network_testnet4</item>
+    </string-array>
     <string-array name="CurrencyCodes">
         <item>AED</item>
         <item>AFN</item>

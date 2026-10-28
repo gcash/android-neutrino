@@ -9,7 +9,6 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -20,7 +19,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.preference.PreferenceManager;
 import android.transition.ChangeTransform;
 import android.transition.TransitionManager;
 import android.view.Display;
@@ -65,6 +63,7 @@ import cash.bchd.android_neutrino.wallet.BitcoinPaymentURI;
 import cash.bchd.android_neutrino.wallet.Config;
 import cash.bchd.android_neutrino.wallet.ExchangeRates;
 import cash.bchd.android_neutrino.wallet.Migration;
+import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.SyncStatus;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 import cash.bchd.android_neutrino.wallet.TransactionList;
@@ -110,15 +109,19 @@ public class MainActivity extends CloseActivity {
         SystemBars.apply(this);
         cancelCloseTimer();
         layoutManager = new LinearLayoutManager(this);
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        this.settings = new Settings(sharedPref);
-        this.exchangeRates = new ExchangeRates();
-        this.txStore = new TransactionStore(this);
+        this.settings = Settings.load(this);
+        Network network = settings.getNetwork();
+        Networks.showBadge(this, network);
+        this.txStore = new TransactionStore(this, network);
         this.mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         TextView bchBalanceView = findViewById(R.id.bchBalanceView);
         Amount lastBal = new Amount(this.settings.getLastBalance());
         bchBalanceView.setText(getString(R.string.bch_amount, lastBal.toString()));
-        new Thread(new ExchangeRateFetcher(this, lastBal)).start();
+        // Test coins have no price, so a test network's wallet shows no fiat amounts.
+        if (network.hasFiat) {
+            this.exchangeRates = new ExchangeRates();
+            new Thread(new ExchangeRateFetcher(this, lastBal)).start();
+        }
         createWallet();
         fab = findViewById(R.id.fab);
         fabSettings = findViewById(R.id.btnSettings);
@@ -226,7 +229,7 @@ public class MainActivity extends CloseActivity {
             int newRepoVersion = migration.MigrateUp(this);
             settings.setRepoVersion(newRepoVersion);
 
-            Config cfg = new Config(getDataDir().getPath(), !settings.getWalletInitialized(),
+            Config cfg = new Config(getDataDir().getPath(), settings.getNetwork(), !settings.getWalletInitialized(),
                     bchdIP.equals(""), settings.getBlocksOnly(), peersOnly ? peers : none, peersOnly ? none : peers,
                     settings.getBchdIP(), settings.getBchdUsername(),
                     settings.getBchdPassword(), settings.getBchdCert(), birthday);
@@ -553,13 +556,15 @@ public class MainActivity extends CloseActivity {
     public void onResume() {
         super.onResume();
         maybeSendDonationReminder();
-        try {
-            TextView fiatBalanceView = findViewById(R.id.fiatBalanceView);
-            Amount amt = new Amount(settings.getLastBalance());
-            String formatted = exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(settings.getFiatCurrency()));
-            fiatBalanceView.setText(formatted);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (exchangeRates != null) {
+            try {
+                TextView fiatBalanceView = findViewById(R.id.fiatBalanceView);
+                Amount amt = new Amount(settings.getLastBalance());
+                String formatted = exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(settings.getFiatCurrency()));
+                fiatBalanceView.setText(formatted);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         Intent intent = this.getIntent();
         if (intent != null && intent.getExtras() != null && Wallet.getInstance() != null && Wallet.getInstance().isRunning()) {
@@ -670,6 +675,10 @@ public class MainActivity extends CloseActivity {
     // Remind every 45 days that the wallet is free software by volunteers
     // who accept donations. This used to be posted by a background service.
     private void maybeSendDonationReminder() {
+        // The donation address is a mainnet one.
+        if (settings.getNetwork() != Network.MAINNET) {
+            return;
+        }
         long now = System.currentTimeMillis();
         long last = settings.getLastNotification();
         if (last == 0) {
@@ -783,12 +792,14 @@ public class MainActivity extends CloseActivity {
                                 Amount amt = new Amount(bal);
                                 TextView bchBalanceView = mainActivity.findViewById(R.id.bchBalanceView);
                                 bchBalanceView.setText(mainActivity.getString(R.string.bch_amount, amt.toString()));
-                                try {
-                                    String fiatAmount = mainActivity.exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(mainActivity.settings.getFiatCurrency()));
-                                    TextView fiatBalanceView = mainActivity.findViewById(R.id.fiatBalanceView);
-                                    fiatBalanceView.setText(fiatAmount);
-                                } catch (Exception e) {
-                                    e.printStackTrace();
+                                if (mainActivity.exchangeRates != null) {
+                                    try {
+                                        String fiatAmount = mainActivity.exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(mainActivity.settings.getFiatCurrency()));
+                                        TextView fiatBalanceView = mainActivity.findViewById(R.id.fiatBalanceView);
+                                        fiatBalanceView.setText(fiatAmount);
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
                                 }
                                 if (bal > 0) {
                                     mainActivity.maybeSendBackupReminder();
@@ -823,10 +834,12 @@ public class MainActivity extends CloseActivity {
                                 for (TransactionData tx : txs) {
                                     tx.setFiatCurrency(fiatCurrency);
                                     String formattedFiat = "";
-                                    try {
-                                        formattedFiat = mainActivity2.exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
+                                    if (mainActivity2.exchangeRates != null) {
+                                        try {
+                                            formattedFiat = mainActivity2.exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
                                     }
                                     tx.setFiatAmount(formattedFiat);
                                 }

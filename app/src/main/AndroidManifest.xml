@@ -42,7 +42,9 @@
             android:screenOrientation="portrait">
         </activity>
         <!-- The only entry point for other apps and NFC tags. It reads nothing
-             but the bitcoincash URI and opens the screen that handles it. -->
+             but the bitcoincash or bchtest URI and opens the screen that handles
+             it, which says so when the URI is for another network than the
+             wallet's. -->
         <activity
             android:name=".UriActivity"
             android:exported="true"
@@ -52,6 +54,7 @@
 
             <intent-filter>
                 <data android:scheme="bitcoincash" />
+                <data android:scheme="bchtest" />
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
@@ -60,6 +63,7 @@
                 <action android:name="android.nfc.action.NDEF_DISCOVERED"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:scheme="bitcoincash" />
+                <data android:scheme="bchtest" />
             </intent-filter>
         </activity>
         <activity

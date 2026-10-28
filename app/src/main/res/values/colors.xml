@@ -14,4 +14,6 @@
     <color name="darkGreyCircle">#89898d</color>
     <color name="greyBorder">#8e8e92</color>
     <color name="white">#FFFFFF</color>
+    <color name="networkBadge">#FFC107</color>
+    <color name="networkBadgeText">#212121</color>
 </resources>

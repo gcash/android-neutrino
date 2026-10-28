@@ -50,8 +50,6 @@ public class Wallet implements Serializable {
 
     public final static String DEFAULT_PASSPHRASE = "LETMEIN";
 
-    private final String MAINNET_URI_PREFIX = "bitcoincash:";
-
     private HashMap<String, AddressListener> addressListeners = new HashMap<String, AddressListener>();
     // The memos of the transactions the app sent, which the wallet doesn't have, by transaction.
     private HashMap<ByteString, String> memos = new HashMap<ByteString, String>();
@@ -91,10 +89,9 @@ public class Wallet implements Serializable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        // TODO: if we ever add testnet then set the scheme here
-        BitcoinPaymentURI.SCHEME = MAINNET_URI_PREFIX;
+        BitcoinPaymentURI.SCHEME = config.getNetwork().uriPrefix();
 
-        File directory = new File(config.getDataDir()+File.separator+"mainnet");
+        File directory = new File(config.getDataDir()+File.separator+config.getNetwork().id);
         directory.mkdirs();
     }
 
@@ -236,7 +233,11 @@ public class Wallet implements Serializable {
     }
 
     public String uriPrefix() {
-        return MAINNET_URI_PREFIX;
+        return config.getNetwork().uriPrefix();
+    }
+
+    public Network getNetwork() {
+        return config.getNetwork();
     }
 
     public void listenTransactions(WalletEventListener listener) {

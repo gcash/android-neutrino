@@ -7,6 +7,7 @@ import android.text.InputType;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.preference.EditTextPreference;
+import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceScreen;
@@ -15,6 +16,7 @@ import androidx.preference.SwitchPreferenceCompat;
 import java.util.ArrayList;
 import java.util.List;
 
+import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
 import walletrpc.Api;
@@ -77,6 +79,18 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             if (settings.getMnemonic().equals("")) {
                 prefScreen.removePreference(backupPref);
             }
+
+            ListPreference networkPref = findPreference("network");
+            Network network = settings.getNetwork();
+            networkPref.setValue(network.id);
+            networkPref.setSummary(getString(R.string.network_summary, Networks.name(requireContext(), network)));
+            networkPref.setOnPreferenceChangeListener((preference, o) -> {
+                Network chosen = Network.fromId(o.toString());
+                if (chosen != network) {
+                    confirmNetworkSwitch(chosen);
+                }
+                return false;
+            });
 
             Preference currencyPref = (Preference) findPreference("currency_preference");
             currencyPref.setSummary(settings.getFiatCurrency().toUpperCase());
@@ -194,7 +208,10 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             });
 
             Preference lovePref = (Preference) findPreference("love");
-            //prefScreen.removePreference(lovePref);
+            // The donation address is a mainnet one.
+            if (network != Network.MAINNET) {
+                prefScreen.removePreference(lovePref);
+            }
             lovePref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
@@ -325,6 +342,21 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 }
             });
         }
+    }
+
+    // confirmNetworkSwitch asks whether to switch the app to the network's wallet, and switches.
+    private void confirmNetworkSwitch(Network network) {
+        String to = Networks.name(requireContext(), network);
+        String from = Networks.name(requireContext(), settings.getNetwork());
+        String message = network == Network.MAINNET
+                ? getString(R.string.switch_to_mainnet_message, from)
+                : getString(R.string.switch_to_test_network_message, to, from);
+        new AlertDialog.Builder(requireContext())
+                .setTitle(getString(R.string.switch_network_title, to))
+                .setMessage(message)
+                .setPositiveButton(R.string.switch_network, (dialog, which) -> Networks.switchTo(requireActivity(), network))
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
     }
 
     @Override

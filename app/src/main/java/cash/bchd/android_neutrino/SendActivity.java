@@ -11,6 +11,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -32,6 +33,7 @@ import java.util.List;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.BitcoinPaymentURI;
 import cash.bchd.android_neutrino.wallet.ExchangeRates;
+import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.Wallet;
 import walletrpc.Api;
 
@@ -40,6 +42,7 @@ public class SendActivity extends AppCompatActivity {
     public static final int RC_BARCODE_CAPTURE = 9001;
 
     Wallet wallet;
+    Network network;
     TextView balanceTxtView;
     Amount balance;
     String fiatCurrency;
@@ -72,6 +75,8 @@ public class SendActivity extends AppCompatActivity {
         satPerByte = intent.getExtras().getInt("feePerByte");
 
         wallet = Wallet.getInstance();
+        network = Settings.get(this).getNetwork();
+        Networks.showBadge(this, network);
 
         Toolbar myToolbar = findViewById(R.id.sendToolbar);
         setSupportActionBar(myToolbar);
@@ -85,8 +90,11 @@ public class SendActivity extends AppCompatActivity {
         balanceTxtView = findViewById(R.id.sendBalance);
         try {
             balance = new Amount(wallet.balance());
-            balanceTxtView.setText(getString(R.string.balance_fiat_amount, ExchangeRates.getInstance().getFormattedAmountInFiat(balance, Currency.getInstance(fiatCurrency))));
-
+            if (network.hasFiat) {
+                balanceTxtView.setText(getString(R.string.balance_fiat_amount, ExchangeRates.getInstance().getFormattedAmountInFiat(balance, Currency.getInstance(fiatCurrency))));
+            } else {
+                balanceTxtView.setText(getString(R.string.balance_bch_amount, balance.toString()));
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -120,6 +128,13 @@ public class SendActivity extends AppCompatActivity {
 
         ImageView toggle = findViewById(R.id.toggleImage);
         toggle.setOnClickListener(v -> toggleBchFiat());
+        if (!network.hasFiat) {
+            // Test coins have no price, so amounts are entered in BCH only.
+            showingFiat = false;
+            symbolLabel.setText("₿");
+            toggle.setVisibility(View.GONE);
+            conversionRate.setVisibility(View.GONE);
+        }
 
         address = findViewById(R.id.addressInput);
         address.setOnTouchListener((v, event) -> {
@@ -217,7 +232,7 @@ public class SendActivity extends AppCompatActivity {
                     inputVals = tx.getInputValuesList();
                 }
 
-                String fiatFormatted = ExchangeRates.getInstance().getFormattedAmountInFiat(toSpend, Currency.getInstance(fiatCurrency));
+                String fiatFormatted = network.hasFiat ? ExchangeRates.getInstance().getFormattedAmountInFiat(toSpend, Currency.getInstance(fiatCurrency)) : "";
                 ArrayList<String> inputStrings = new ArrayList<>();
 
                 if (inputVals != null && !inputVals.isEmpty()) {
@@ -332,7 +347,7 @@ public class SendActivity extends AppCompatActivity {
 
     public void updateAlternateAmount() {
         Editable inputAmountText = inputAmount.getText();
-        if (inputAmountText == null) {
+        if (inputAmountText == null || !network.hasFiat) {
             return;
         }
         if (showingFiat) {
@@ -378,6 +393,14 @@ public class SendActivity extends AppCompatActivity {
             if (resultCode == RESULT_OK) {
                 if (data != null) {
                     String qrdata = data.getStringExtra("qrdata");
+                    Network linkNetwork = Network.ofUri(qrdata);
+                    if (linkNetwork != null && linkNetwork != network) {
+                        Snackbar snackbar = Snackbar.make(sendLayout, getString(R.string.payment_link_other_network,
+                                Networks.name(this, linkNetwork), Networks.name(this, network)), Snackbar.LENGTH_LONG);
+                        snackbar.setTextMaxLines(5);
+                        snackbar.show();
+                        return;
+                    }
 
                     BitcoinPaymentURI uri = BitcoinPaymentURI.parse(qrdata);
                     if (uri != null) {

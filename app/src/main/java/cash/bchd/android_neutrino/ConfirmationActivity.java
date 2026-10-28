@@ -68,6 +68,7 @@ public class ConfirmationActivity extends AppCompatActivity {
         getOnBackPressedDispatcher().addCallback(this, afterPayment);
 
         CloseActivity.cancelCloseTimer();
+        Networks.showBadge(this, Settings.get(this).getNetwork());
 
         Intent intent = getIntent();
         swipeButton = findViewById(R.id.swipe_btn);

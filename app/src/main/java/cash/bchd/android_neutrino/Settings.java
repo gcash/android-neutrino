@@ -1,23 +1,40 @@
 package cash.bchd.android_neutrino;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 
+import androidx.preference.PreferenceManager;
+
+import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.WalletSecret;
 
+/**
+ * Settings keeps the app's settings. Each network's wallet has its own, such as its recovery
+ * phrase, passphrase and peers: mainnet's in the default preferences, where earlier versions kept
+ * them, and another network's in a file of its own. The others, such as the fiat currency and the
+ * fee, are the same on every network and are kept in the default preferences.
+ */
 public class Settings {
 
-    private static final String INITIALIZED_KEY = "Initialized";
-    private static final String MNEMONIC_KEY = "Mnemonic";
-    private static final String SEALED_MNEMONIC_KEY = "SealedMnemonic";
+    // The settings of the app, the same on every network.
+    private static final String NETWORK_KEY = "Network";
     private static final String BLOCKS_ONLY_KEY = "BlocksOnly";
-    private static final String LAST_BALANCE_KEY = "LastBalance";
     private static final String FIAT_CURRENCY_KEY = "FiatCurrency";
-    private static final String LAST_ADDRESS_KEY = "LastAddress";
-    private static final String LAST_BLOCK_HEIGHT_KEY = "LastBlockHeight";
-    private static final String LAST_BLOCK_HASH_KEY = "LastBlockHash";
     private static final String FEE_PER_BYTE_KEY = "FeePerByte";
     private static final String DEFAULT_LABEL_KEY = "DefaultLabel";
     private static final String DEFAULT_MEMO_KEY = "DefaultMemo";
+    private static final String LAST_NOTIFICATION_KEY = "LastNotification";
+    private static final String REPO_VERSION_KEY = "RepoVersion";
+    private static final String NOTIFICATIONS_REQUESTED_KEY = "NotificationsRequested";
+
+    // The settings of a network's wallet.
+    private static final String INITIALIZED_KEY = "Initialized";
+    private static final String MNEMONIC_KEY = "Mnemonic";
+    private static final String SEALED_MNEMONIC_KEY = "SealedMnemonic";
+    private static final String LAST_BALANCE_KEY = "LastBalance";
+    private static final String LAST_ADDRESS_KEY = "LastAddress";
+    private static final String LAST_BLOCK_HEIGHT_KEY = "LastBlockHeight";
+    private static final String LAST_BLOCK_HASH_KEY = "LastBlockHash";
     private static final String BCHD_IP_KEY = "BchdIP";
     private static final String BCHD_USERNAME_KEY = "BchdUsername";
     private static final String BCHD_PASSWORD_KEY = "BchdPassword";
@@ -28,26 +45,68 @@ public class Settings {
     private static final String ENCRYPTED_PASSWORD_KEY = "EncryptedPassword";
     private static final String FINGERPRINT_IV_KEY = "FingerprintIV";
     private static final String SEALED_PASSPHRASE_KEY = "SealedPassphrase";
-    private static final String LAST_NOTIFICATION_KEY = "LastNotification";
     private static final String BACKUP_REMINDER_KEY = "BackupReminder";
     private static final String WALLET_BIRTHDAY_KEY = "WalletBirthday";
-    private static final String REPO_VERSION_KEY = "RepoVersion";
     private static final String SCAN_HEIGHT_KEY = "ScanHeight";
-    private static final String NOTIFICATIONS_REQUESTED_KEY = "NotificationsRequested";
     private static final String PEERS_KEY = "Peers";
     private static final String PEERS_ONLY_KEY = "PeersOnly";
 
+    // The settings of the app, and those of the network's wallet, which are the same on mainnet.
+    private final SharedPreferences appPrefs;
     private final SharedPreferences prefs;
+    private final Network network;
 
     private static Settings instance;
 
-    Settings(SharedPreferences prefs) {
+    Settings(SharedPreferences appPrefs, SharedPreferences prefs, Network network) {
+        this.appPrefs = appPrefs;
         this.prefs = prefs;
+        this.network = network;
         instance = this;
+    }
+
+    /**
+     * load reads the settings of the network the app was switched to last, or mainnet, and makes
+     * them the instance.
+     */
+    static Settings load(Context context) {
+        SharedPreferences appPrefs = PreferenceManager.getDefaultSharedPreferences(context);
+        Network network = Network.fromId(appPrefs.getString(NETWORK_KEY, Network.MAINNET.id));
+        SharedPreferences prefs = network == Network.MAINNET ? appPrefs
+                : context.getSharedPreferences(walletPrefsName(network), Context.MODE_PRIVATE);
+        return new Settings(appPrefs, prefs, network);
+    }
+
+    /**
+     * get returns the instance, after loading it when the app's process was started for another
+     * screen than MainActivity, as when Android restores a screen of an app it had stopped.
+     */
+    static Settings get(Context context) {
+        Settings settings = instance;
+        return settings != null ? settings : load(context);
+    }
+
+    // The name of the preferences file of a network's wallet other than mainnet's.
+    static String walletPrefsName(Network network) {
+        return "wallet_" + network.id;
     }
 
     public static Settings getInstance() {
         return instance;
+    }
+
+    /**
+     * getNetwork returns the network whose wallet these settings are for.
+     */
+    public Network getNetwork() {
+        return network;
+    }
+
+    /**
+     * setNetwork makes the app run the network's wallet once it loads the settings again.
+     */
+    void setNetwork(Network network) {
+        appPrefs.edit().putString(NETWORK_KEY, network.id).apply();
     }
 
     void setWalletInitialized(boolean initialized) {
@@ -96,11 +155,11 @@ public class Settings {
     }
 
     void setBlocksOnly(boolean blocksOnly) {
-        putBoolean(BLOCKS_ONLY_KEY, blocksOnly);
+        appPrefs.edit().putBoolean(BLOCKS_ONLY_KEY, blocksOnly).apply();
     }
 
     Boolean getBlocksOnly() {
-        return prefs.getBoolean(BLOCKS_ONLY_KEY, false);
+        return appPrefs.getBoolean(BLOCKS_ONLY_KEY, false);
     }
 
     void setLastBalance(long balance) {
@@ -112,11 +171,11 @@ public class Settings {
     }
 
     void setFiatCurrency(String currency) {
-        putString(FIAT_CURRENCY_KEY, currency);
+        appPrefs.edit().putString(FIAT_CURRENCY_KEY, currency).apply();
     }
 
     String getFiatCurrency() {
-        return prefs.getString(FIAT_CURRENCY_KEY, "usd");
+        return appPrefs.getString(FIAT_CURRENCY_KEY, "usd");
     }
 
     void setLastAddress(String addr) {
@@ -144,29 +203,29 @@ public class Settings {
     }
 
     void setFeePerByte(int satPerByte) {
-        putInt(FEE_PER_BYTE_KEY, satPerByte);
+        appPrefs.edit().putInt(FEE_PER_BYTE_KEY, satPerByte).apply();
     }
 
     int getFeePerByte() {
         // 1 sat/byte is the minimum relay fee of Bitcoin Cash nodes, which
         // confirms transactions in the next block unless blocks are full.
-        return prefs.getInt(FEE_PER_BYTE_KEY, 1);
+        return appPrefs.getInt(FEE_PER_BYTE_KEY, 1);
     }
 
     void setDefaultLabel(String label) {
-        putString(DEFAULT_LABEL_KEY, label);
+        appPrefs.edit().putString(DEFAULT_LABEL_KEY, label).apply();
     }
 
     String getDefaultLabel() {
-        return prefs.getString(DEFAULT_LABEL_KEY, "");
+        return appPrefs.getString(DEFAULT_LABEL_KEY, "");
     }
 
     void setDefaultMemo(String memo) {
-        putString(DEFAULT_MEMO_KEY, memo);
+        appPrefs.edit().putString(DEFAULT_MEMO_KEY, memo).apply();
     }
 
     String getDefaultMemo() {
-        return prefs.getString(DEFAULT_MEMO_KEY, "");
+        return appPrefs.getString(DEFAULT_MEMO_KEY, "");
     }
 
     void setBchdIP(String ip) {
@@ -264,11 +323,11 @@ public class Settings {
     }
 
     void setLastNotification(long timestamp) {
-        putLong(LAST_NOTIFICATION_KEY, timestamp);
+        appPrefs.edit().putLong(LAST_NOTIFICATION_KEY, timestamp).apply();
     }
 
     long getLastNotification() {
-        return prefs.getLong(LAST_NOTIFICATION_KEY, 0);
+        return appPrefs.getLong(LAST_NOTIFICATION_KEY, 0);
     }
 
     void setBackupReminder(boolean reminded) {
@@ -288,11 +347,11 @@ public class Settings {
     }
 
     void setRepoVersion(int version) {
-        putInt(REPO_VERSION_KEY, version);
+        appPrefs.edit().putInt(REPO_VERSION_KEY, version).apply();
     }
 
     int getRepoVersion() {
-        return prefs.getInt(REPO_VERSION_KEY, 2);
+        return appPrefs.getInt(REPO_VERSION_KEY, 2);
     }
 
     void setScanHeight(int scanHeight) {
@@ -338,11 +397,11 @@ public class Settings {
     }
 
     void setNotificationsRequested(boolean requested) {
-        putBoolean(NOTIFICATIONS_REQUESTED_KEY, requested);
+        appPrefs.edit().putBoolean(NOTIFICATIONS_REQUESTED_KEY, requested).apply();
     }
 
     Boolean getNotificationsRequested() {
-        return prefs.getBoolean(NOTIFICATIONS_REQUESTED_KEY, false);
+        return appPrefs.getBoolean(NOTIFICATIONS_REQUESTED_KEY, false);
     }
 
     private void putBoolean(final String key, final boolean val) {

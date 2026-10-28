@@ -11,16 +11,19 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 
 public class TransactionStore {
 
     static final String FILE_NAME = "transactionData.dat";
+    private final String fileName;
     private ArrayList<TransactionData> transactionDataSet = new ArrayList<TransactionData>();
 
-    public TransactionStore(Context context) {
+    public TransactionStore(Context context, Network network) {
+        fileName = fileName(network);
         try {
-            FileInputStream fis = context.openFileInput(FILE_NAME);
+            FileInputStream fis = context.openFileInput(fileName);
             ObjectInputStream is = new ObjectInputStream(fis);
             transactionDataSet = (ArrayList<TransactionData>) is.readObject();
             is.close();
@@ -33,11 +36,19 @@ public class TransactionStore {
     }
 
     public void save(Context context) throws Exception {
-        FileOutputStream fos = context.openFileOutput(FILE_NAME, Context.MODE_PRIVATE);
+        FileOutputStream fos = context.openFileOutput(fileName, Context.MODE_PRIVATE);
         ObjectOutputStream os = new ObjectOutputStream(fos);
         os.writeObject(transactionDataSet);
         os.close();
         fos.close();
+    }
+
+    /**
+     * fileName returns the name of the file of the network's transactions. Mainnet's keeps the
+     * name earlier versions gave it.
+     */
+    static String fileName(Network network) {
+        return network == Network.MAINNET ? FILE_NAME : "transactionData_" + network.id + ".dat";
     }
 
     public List<TransactionData> getData() {

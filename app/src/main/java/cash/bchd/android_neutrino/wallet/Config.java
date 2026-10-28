@@ -49,6 +49,9 @@ public class Config {
     // The app data directory
     private String dataDir;
 
+    // The network to run the wallet on
+    private Network network;
+
     // The authentication token to use with the gRPC API
     private String authToken;
 
@@ -62,10 +65,11 @@ public class Config {
     /**
      * Construct the config file.
      */
-    public Config(String dataDir, Boolean noInitialLoad, Boolean useSPV, Boolean blocksOnly, String[] connect, String[] addPeers, String rpcConnect,
+    public Config(String dataDir, Network network, Boolean noInitialLoad, Boolean useSPV, Boolean blocksOnly, String[] connect, String[] addPeers, String rpcConnect,
                   String bchdUsername, String bchdPassword, String cert, long birthday) {
         this.birthday = birthday;
         this.dataDir = dataDir;
+        this.network = network;
         this.useSPV = useSPV;
         this.blocksOnly = blocksOnly;
         this.connect = connect;
@@ -98,6 +102,9 @@ public class Config {
         String configFileContents = "[Application Options]\n\nappdata="+this.dataDir+"\nlogdir="+ this.dataDir+
                 "/logs\nexperimentalrpclisten=127.0.0.1:"+ this.rpcPort+ "\nnoservertls=1\nauthtoken="+ this.authToken+ "\n";
 
+        if (!this.network.configOption.equals("")) {
+            configFileContents += this.network.configOption + "\n";
+        }
         if (this.noInitialLoad) {
             configFileContents += "noinitialload=1\n";
         }
@@ -161,6 +168,10 @@ public class Config {
 
     public String getDataDir() {
         return this.dataDir;
+    }
+
+    public Network getNetwork() {
+        return this.network;
     }
 
     public String getCaFilePath() {
