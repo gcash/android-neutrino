@@ -19,6 +19,7 @@ import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Random;
 
 import cash.bchd.android_neutrino.R;
@@ -39,15 +40,7 @@ public class BackupThree extends Fragment {
         String mnemonic = settings.getMnemonic();
         String[] words = mnemonic.split("\\ ");
 
-        ArrayList<Integer> list = new ArrayList<Integer>();
-        for (int i=0; i<12; i++) {
-            list.add(i);
-        }
-        Collections.shuffle(list);
-        int[] ns = new int[3];
-        for (int i=0; i<3; i++) {
-            ns[i] = list.get(i);
-        }
+        int[] ns = quizIndexes(words.length, new Random());
 
         TextInputEditText enter1 = root.findViewById(R.id.enterWord1);
         TextInputEditText enter2 = root.findViewById(R.id.enterWord2);
@@ -66,19 +59,19 @@ public class BackupThree extends Fragment {
             @Override
             public void onClick(View v) {
                 boolean error = false;
-                if (enter1.getText().toString().equals(words[ns[0]])) {
+                if (matches(enter1.getText(), words[ns[0]])) {
                     layout1.setError(null);
                 } else {
                     layout1.setError(errStr);
                     error = true;
                 }
-                if (enter2.getText().toString().equals(words[ns[1]])) {
+                if (matches(enter2.getText(), words[ns[1]])) {
                     layout2.setError(null);
                 } else {
                     layout2.setError(errStr);
                     error = true;
                 }
-                if (enter3.getText().toString().equals(words[ns[2]])) {
+                if (matches(enter3.getText(), words[ns[2]])) {
                     layout3.setError(null);
                 } else {
                     layout3.setError(errStr);
@@ -115,4 +108,24 @@ public class BackupThree extends Fragment {
         return root;
     }
 
+    /**
+     * quizIndexes returns the positions of three different words of a phrase of wordCount words,
+     * any of them, for the user to enter.
+     */
+    static int[] quizIndexes(int wordCount, Random random) {
+        ArrayList<Integer> list = new ArrayList<Integer>();
+        for (int i = 0; i < wordCount; i++) {
+            list.add(i);
+        }
+        Collections.shuffle(list, random);
+        return new int[]{list.get(0), list.get(1), list.get(2)};
+    }
+
+    /**
+     * matches returns whether the word was entered, whatever its case and the spaces around it,
+     * such as the one a keyboard adds after a word it suggested.
+     */
+    static boolean matches(CharSequence typed, String word) {
+        return String.valueOf(typed).trim().toLowerCase(Locale.ROOT).equals(word);
+    }
 }
