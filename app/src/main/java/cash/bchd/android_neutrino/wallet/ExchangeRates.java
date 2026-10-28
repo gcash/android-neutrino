@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -33,9 +35,19 @@ public class ExchangeRates {
     // The price of one BCH in each fiat currency, by ISO 4217 code.
     private volatile Map<String, Double> rates;
 
-    public ExchangeRates() {
-        instance = this;
+    private ExchangeRates() {
         startExchangeRateService();
+    }
+
+    /**
+     * start returns the exchange rates, which it starts to fetch every five minutes the first
+     * time, so that they are fetched once however often the main screen is created again.
+     */
+    public static synchronized ExchangeRates start() {
+        if (instance == null) {
+            instance = new ExchangeRates();
+        }
+        return instance;
     }
 
     public static ExchangeRates getInstance() {
@@ -54,8 +66,10 @@ public class ExchangeRates {
             }
         };
 
+        // A fixed delay, since at a fixed rate the fetches that a cached process missed would all
+        // run at once when it runs again.
         final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleAtFixedRate(service, 5, 5, TimeUnit.MINUTES);
+        scheduler.scheduleWithFixedDelay(service, 5, 5, TimeUnit.MINUTES);
     }
 
     /**
@@ -141,19 +155,20 @@ public class ExchangeRates {
     }
 
     public String getFormattedAmountInFiat(Amount bchAmount, Currency currencyCode) throws Exception {
-        double fiat = round(rate(currencyCode) * bchAmount.toBCH(), 2);
-        String fiatStr = String.valueOf(fiat);
-        if (fiatStr.indexOf(".") != 0) {
-            String afterDecimal = fiatStr.substring(fiatStr.indexOf(".")+1);
-            if (afterDecimal.length() == 1) {
-                fiatStr = fiatStr + "0";
-            }
-        }
-        String s = String.format("%.12f", 12.345);
-        if (s.contains(",")) {
-            fiatStr = fiatStr.replace(".", ",");
-        }
-        return currencyCode.getSymbol() + fiatStr;
+        return currencyCode.getSymbol() + getAmountInFiat(bchAmount, currencyCode);
+    }
+
+    /**
+     * getAmountInFiat returns what the amount is worth in the currency, with two decimals and
+     * without the currency's symbol, as the amount fields show and read amounts.
+     */
+    public String getAmountInFiat(Amount bchAmount, Currency currencyCode) throws Exception {
+        return fiat(rate(currencyCode), bchAmount);
+    }
+
+    static String fiat(double rate, Amount bchAmount) {
+        BigDecimal value = BigDecimal.valueOf(rate).multiply(BigDecimal.valueOf(bchAmount.getSatoshis(), 8));
+        return Amount.localize(value.setScale(2, RoundingMode.HALF_UP).toPlainString());
     }
 
     public double convertToBCH(double amount, Currency currencyCode) throws Exception {

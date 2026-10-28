@@ -17,7 +17,7 @@ public class BackupTwo extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        ViewGroup root = (ViewGroup) inflater.inflate(R.layout.backup_two, null);
+        ViewGroup root = (ViewGroup) inflater.inflate(R.layout.backup_two, container, false);
 
         Settings settings = Settings.getInstance();
         String mnemonic = settings.getMnemonic();

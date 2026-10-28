@@ -21,11 +21,10 @@
 
     </androidx.appcompat.widget.Toolbar>
 
-    <fragment
+    <!-- SettingsActivity adds the settings to it, once. -->
+    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragment_container"
-        android:name="cash.bchd.android_neutrino.SettingsFragment"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:tag=".SettingsFragment" />
+        android:layout_height="match_parent" />
 
 </LinearLayout>

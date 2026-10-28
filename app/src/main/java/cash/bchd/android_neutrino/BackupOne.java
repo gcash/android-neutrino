@@ -15,6 +15,6 @@ public class BackupOne extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.backup_one, null);
+        return inflater.inflate(R.layout.backup_one, container, false);
     }
 }

@@ -33,4 +33,33 @@ public class AmountTest {
     public void rejectsText() {
         Amount.fromBCH("one BCH");
     }
+
+    @Test
+    public void writesDigitsThatReadBackInEveryLanguage() {
+        // Arabic and Persian write numbers with digits of their own, which BigDecimal can't read.
+        for (String language : new String[]{"ar-EG", "fa-IR", "en-US"}) {
+            InLocale.run(language, () -> {
+                assertEquals(language, "1.5", new Amount(150000000).toString());
+                assertEquals(language, "-0.00012", new Amount(-12000).toString());
+            });
+        }
+    }
+
+    @Test
+    public void writesACommaWhereTheLanguageDoes() {
+        InLocale.run("de-DE", () -> {
+            assertEquals("1,5", new Amount(150000000).toString());
+            assertEquals(150000000, Amount.fromBCH(new Amount(150000000).toString()).getSatoshis());
+        });
+    }
+
+    @Test
+    public void writesAmountsExactlyInPlainNotation() {
+        InLocale.run("en-US", () -> {
+            assertEquals("21000000", new Amount(2100000000000000L).toString());
+            assertEquals("0.00000001", new Amount(1).toString());
+            assertEquals("0.03346", new Amount(3346000).toString());
+            assertEquals("0", new Amount(0).toString());
+        });
+    }
 }

@@ -33,7 +33,7 @@ public class BackupThree extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        ViewGroup root = (ViewGroup) inflater.inflate(R.layout.backup_three, null);
+        ViewGroup root = (ViewGroup) inflater.inflate(R.layout.backup_three, container, false);
 
         Settings settings = Settings.getInstance();
         String mnemonic = settings.getMnemonic();
@@ -41,7 +41,7 @@ public class BackupThree extends Fragment {
 
         ArrayList<Integer> list = new ArrayList<Integer>();
         for (int i=0; i<12; i++) {
-            list.add(new Integer(i));
+            list.add(i);
         }
         Collections.shuffle(list);
         int[] ns = new int[3];

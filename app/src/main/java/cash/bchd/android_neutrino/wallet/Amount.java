@@ -2,6 +2,7 @@ package cash.bchd.android_neutrino.wallet;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.DecimalFormatSymbols;
 
 public class Amount {
 
@@ -33,28 +34,25 @@ public class Amount {
         return sats.doubleValue() / SATOSHIS_PER_BCH;
     }
 
+    /**
+     * toString writes the amount in BCH, exactly and without trailing zeros, as the app shows
+     * amounts and reads them back.
+     */
     public String toString() {
         if (this.satoshis == 0) {
             return "0";
         }
-        return removeTrailingZeros(toBCH());
+        return localize(BigDecimal.valueOf(this.satoshis, 8).stripTrailingZeros().toPlainString());
     }
 
-    private static String removeTrailingZeros(double d) {
-        String s = String.format("%.12f", d);
-        boolean euroStyle = false;
-        if (s.contains(",")) {
-            euroStyle = true;
-            s = s.replace(",", ".");
-        }
-        BigDecimal stripedVal = new BigDecimal(s).stripTrailingZeros();
-        if (stripedVal.toString().contains("E")) {
-            return String.format("%.0f", stripedVal);
-        }
-        if (euroStyle) {
-            return stripedVal.toString().replace(".", ",");
-        }
-        return stripedVal.toString();
+    /**
+     * localize writes a plain decimal number, such as 0.5, with a comma for its point where the
+     * phone's language writes decimals with one, which Amount.fromBCH and the fiat amount
+     * fields read back. Its digits stay 0 to 9, which formatting in the phone's language would
+     * write in another script for some languages, such as Arabic and Persian.
+     */
+    static String localize(String plain) {
+        return DecimalFormatSymbols.getInstance().getDecimalSeparator() == ',' ? plain.replace('.', ',') : plain;
     }
 
     public long getSatoshis() {

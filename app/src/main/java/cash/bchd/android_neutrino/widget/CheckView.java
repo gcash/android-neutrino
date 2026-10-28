@@ -19,7 +19,6 @@
 package cash.bchd.android_neutrino.widget;
 
 import android.animation.ValueAnimator;
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
@@ -28,11 +27,9 @@ import android.graphics.Path;
 import android.graphics.PathMeasure;
 import android.graphics.PointF;
 import android.graphics.RectF;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
-import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.view.animation.PathInterpolator;
 
@@ -131,7 +128,6 @@ public class CheckView extends View {
         init(context, attrs);
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public CheckView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init(context, attrs);
@@ -264,11 +260,7 @@ public class CheckView extends View {
     }
 
     private Interpolator createCheckInterpolatorCompat() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return new PathInterpolator(0.755F, 0.05F, 0.855F, 0.06F);
-        } else {
-            return new AccelerateInterpolator();
-        }
+        return new PathInterpolator(0.755F, 0.05F, 0.855F, 0.06F);
     }
 
     /**

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -204,11 +205,14 @@ public class BitcoinPaymentURI {
             return null;
         }
 
-        if (!string.toLowerCase().startsWith(SCHEME)) {
+        // The scheme's case doesn't matter, and QR codes often write URIs in capitals. It's
+        // lowercased without the phone's language, since in Turkish a capital I lowercases to a
+        // dotless i.
+        if (!string.toLowerCase(Locale.ROOT).startsWith(SCHEME)) {
             return null;
         }
 
-        String bitcoinPaymentURIWithoutScheme = string.replaceFirst(SCHEME, "");
+        String bitcoinPaymentURIWithoutScheme = string.substring(SCHEME.length());
         ArrayList<String> bitcoinPaymentURIElements = new ArrayList<>(Arrays.asList(bitcoinPaymentURIWithoutScheme.split("\\?")));
         if (bitcoinPaymentURIElements.size() != 1 && bitcoinPaymentURIElements.size() != 2) {
             return null;

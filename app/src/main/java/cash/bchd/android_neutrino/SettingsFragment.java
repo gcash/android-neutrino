@@ -15,6 +15,7 @@ import androidx.preference.SwitchPreferenceCompat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.Wallet;
@@ -93,12 +94,12 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             });
 
             Preference currencyPref = (Preference) findPreference("currency_preference");
-            currencyPref.setSummary(settings.getFiatCurrency().toUpperCase());
+            currencyPref.setSummary(settings.getFiatCurrency().toUpperCase(Locale.ROOT));
             currencyPref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object o) {
                     settings.setFiatCurrency(o.toString());
-                    currencyPref.setSummary(o.toString().toUpperCase());
+                    currencyPref.setSummary(o.toString().toUpperCase(Locale.ROOT));
                     return false;
                 }
             });

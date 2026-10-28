@@ -329,8 +329,7 @@ public class SendActivity extends AppCompatActivity {
                     if (!amt.equals("")) {
                         try {
                             Amount bchRate = new Amount(Double.valueOf(amt));
-                            String formatted = ExchangeRates.getInstance().getFormattedAmountInFiat(bchRate, Currency.getInstance(fiatCurrency));
-                            inputAmount.setText(formatted.substring(1));
+                            inputAmount.setText(ExchangeRates.getInstance().getAmountInFiat(bchRate, Currency.getInstance(fiatCurrency)));
                         } catch (Exception e) {
                             e.printStackTrace();
                         }

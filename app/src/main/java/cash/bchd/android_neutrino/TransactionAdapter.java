@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.text.TextPaint;
 import android.text.TextUtils;
+import android.text.format.DateUtils;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,9 +18,6 @@ import android.widget.TextView;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 
 import cash.bchd.android_neutrino.wallet.Amount;
@@ -140,7 +138,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         holder.layout.setOnClickListener(new LinearLayout.OnClickListener() {
             @Override
             public void onClick(View v) {
-                View customView = LayoutInflater.from(ctx).inflate(R.layout.txdetailspopup, null);
+                View customView = LayoutInflater.from(ctx).inflate(R.layout.txdetailspopup, cLayout, false);
                 PopupWindow popupWindow = new PopupWindow(customView, CoordinatorLayout.LayoutParams.WRAP_CONTENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT, true);
                 popupWindow.showAtLocation(cLayout, Gravity.CENTER, 0, 0);
                 popupWindow.setOutsideTouchable(true);
@@ -161,10 +159,9 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
                 fiatAmount.setText(tx.getFiatAmount());
 
                 TextView dateView = customView.findViewById(R.id.txDetailsDate);
-                Date date = new Date(tx.getTimestamp() * 1000);
-                DateFormat formatter = new SimpleDateFormat("hh:mm a - MMM dd, yyyy");
-                String dateFormatted = formatter.format(date);
-                dateView.setText(dateFormatted);
+                // In the phone's language and its 12 or 24 hour clock.
+                dateView.setText(DateUtils.formatDateTime(ctx, tx.getTimestamp() * 1000, DateUtils.FORMAT_SHOW_DATE
+                        | DateUtils.FORMAT_SHOW_TIME | DateUtils.FORMAT_SHOW_YEAR | DateUtils.FORMAT_ABBREV_MONTH));
 
                 TextView status = customView.findViewById(R.id.txDetailsStatus);
                 ImageView circle = customView.findViewById(R.id.confirmationCircle);

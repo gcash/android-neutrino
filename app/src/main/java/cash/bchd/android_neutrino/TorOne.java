@@ -15,7 +15,7 @@ public class TorOne extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        ViewGroup root = (ViewGroup) inflater.inflate(R.layout.tor_one, null);
+        ViewGroup root = (ViewGroup) inflater.inflate(R.layout.tor_one, container, false);
         return root;
     }
 

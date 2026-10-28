@@ -119,7 +119,7 @@ public class MainActivity extends CloseActivity {
         bchBalanceView.setText(getString(R.string.bch_amount, lastBal.toString()));
         // Test coins have no price, so a test network's wallet shows no fiat amounts.
         if (network.hasFiat) {
-            this.exchangeRates = new ExchangeRates();
+            this.exchangeRates = ExchangeRates.start();
             new Thread(new ExchangeRateFetcher(this, lastBal)).start();
         }
         createWallet();
@@ -308,7 +308,7 @@ public class MainActivity extends CloseActivity {
         }
         toggleFABMenu();
         LayoutInflater layoutInflater = (LayoutInflater) MainActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View customView = layoutInflater.inflate(R.layout.qrpopup, null);
+        View customView = layoutInflater.inflate(R.layout.qrpopup, mCLayout, false);
         PopupWindow popupWindow = new PopupWindow(customView, CoordinatorLayout.LayoutParams.WRAP_CONTENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT, true);
         popupWindow.showAtLocation(findViewById(R.id.coordinator_layout), Gravity.CENTER, 0, 0);
         popupWindow.setOutsideTouchable(true);

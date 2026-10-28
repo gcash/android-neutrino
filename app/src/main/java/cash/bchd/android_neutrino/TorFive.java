@@ -15,7 +15,7 @@ public class TorFive extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        ViewGroup root = (ViewGroup) inflater.inflate(R.layout.tor_five, null);
+        ViewGroup root = (ViewGroup) inflater.inflate(R.layout.tor_five, container, false);
         return root;
     }
 

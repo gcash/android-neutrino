@@ -40,6 +40,7 @@
     <string name="network_fee_sat_per_byte">Network Fee: %1$d sat/byte</string>
     <string name="uri_copied_to_clipboard">URI copied to clipboard.</string>
     <string name="send_bch_to">Send %1$s BCH To:</string>
+    <string name="send_any_bch_to">Send BCH To:</string>
     <string name="send_bitcoin_cash">Send Bitcoin Cash</string>
     <string name="string_space"> </string>
     <string name="string_zero">0</string>

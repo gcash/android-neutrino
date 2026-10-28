@@ -1,5 +1,7 @@
 package cash.bchd.android_neutrino;
 
+import java.util.Locale;
+
 /**
  * EncryptionType is how the wallet's private passphrase is kept. KEYSTORE is a random passphrase
  * sealed with WalletSecret. The others are what earlier versions used, which the app replaces with
@@ -20,7 +22,7 @@ public enum EncryptionType {
     }
 
     public static EncryptionType fromString(String s) {
-        switch(s.toLowerCase()) {
+        switch(s.toLowerCase(Locale.ROOT)) {
             case "pin":
                 return PIN;
             case "fingerprint":

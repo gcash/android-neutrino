@@ -152,7 +152,7 @@ public class ReceiveActivity extends AppCompatActivity {
         }
         TextView symbolLabel = findViewById(R.id.receiveSymbolLabel);
         if (showingFiat) {
-            String amt = receiveAmountInput.getText().toString();
+            String amt = receiveAmountInput.getText().toString().replace(",", ".");
             symbolLabel.setText("₿");
             if (!amt.equals("")) {
                 try {
@@ -168,12 +168,11 @@ public class ReceiveActivity extends AppCompatActivity {
         } else {
             try {
                 symbolLabel.setText(Currency.getInstance(fiatCurrency).getSymbol());
-                String amt = receiveAmountInput.getText().toString();
+                String amt = receiveAmountInput.getText().toString().replace(",", ".");
                 if (!amt.equals("")) {
                     try {
                         Amount bchRate = new Amount(Double.valueOf(amt));
-                        String formatted = ExchangeRates.getInstance().getFormattedAmountInFiat(bchRate, Currency.getInstance(fiatCurrency));
-                        receiveAmountInput.setText(formatted.substring(1));
+                        receiveAmountInput.setText(ExchangeRates.getInstance().getAmountInFiat(bchRate, Currency.getInstance(fiatCurrency)));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -233,7 +232,7 @@ public class ReceiveActivity extends AppCompatActivity {
             }
         }
         LayoutInflater layoutInflater = (LayoutInflater) ReceiveActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View customView = layoutInflater.inflate(R.layout.requestpopup, null);
+        View customView = layoutInflater.inflate(R.layout.requestpopup, receiveLayout, false);
         PopupWindow popupWindow = new PopupWindow(customView, CoordinatorLayout.LayoutParams.WRAP_CONTENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT, true);
         popupWindow.showAtLocation(findViewById(R.id.receiveLayout), Gravity.CENTER, 0, 0);
         popupWindow.setOutsideTouchable(true);
@@ -258,16 +257,17 @@ public class ReceiveActivity extends AppCompatActivity {
             BitcoinPaymentURI.Builder builder = new BitcoinPaymentURI.Builder();
             builder.address(addr);
 
+            // A request without an amount, as for the field's 0, lets the payer choose it.
             Amount requestAmount = null;
             if (receiveAmountInput.getText() != null && !receiveAmountInput.getText().toString().equals("")) {
+                double bchAmount = Double.valueOf(receiveAmountInput.getText().toString().replace(",", "."));
                 if (showingFiat) {
-                    double bchAmount = ExchangeRates.getInstance().convertToBCH(Double.valueOf(receiveAmountInput.getText().toString().replace(",", ".")), Currency.getInstance(fiatCurrency));
-                    requestAmount = new Amount(bchAmount);
-                    builder.amount(bchAmount);
-                } else {
-                    double bchAmount = Double.valueOf(receiveAmountInput.getText().toString().replace(",", "."));
-                    requestAmount = new Amount(bchAmount);
-                    builder.amount(bchAmount);
+                    bchAmount = ExchangeRates.getInstance().convertToBCH(bchAmount, Currency.getInstance(fiatCurrency));
+                }
+                Amount amount = new Amount(bchAmount);
+                if (amount.getSatoshis() > 0) {
+                    requestAmount = amount;
+                    builder.amount(amount.toBCH());
                 }
             }
 
@@ -297,7 +297,8 @@ public class ReceiveActivity extends AppCompatActivity {
             addrText.setOnClickListener(onClickListener);
 
             TextView helperText = customView.findViewById(R.id.uriHelpText);
-            helperText.setText(getString(R.string.send_bch_to, requestAmount.toString()));
+            helperText.setText(requestAmount != null ? getString(R.string.send_bch_to, requestAmount.toString())
+                    : getString(R.string.send_any_bch_to));
 
             wallet.listenAddress(addr, new AddressListener() {
                 @Override
@@ -305,7 +306,7 @@ public class ReceiveActivity extends AppCompatActivity {
                     if (getApplicationContext() != null) {
                         runOnUiThread(() -> {
                             totalReceived += amount;
-                            if (totalReceived >= compareAmount.getSatoshis()) {
+                            if (compareAmount == null || totalReceived >= compareAmount.getSatoshis()) {
                                 Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
                                 vibrator.vibrate(500);
                                 LinearLayout qrLayout = customView.findViewById(R.id.requestQRLayout);

@@ -18,7 +18,7 @@ public class TorThree extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        ViewGroup root = (ViewGroup) inflater.inflate(R.layout.tor_three, null);
+        ViewGroup root = (ViewGroup) inflater.inflate(R.layout.tor_three, container, false);
         return root;
     }
 

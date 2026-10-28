@@ -30,4 +30,13 @@ public class ExchangeRatesTest {
         assertEquals(42992.2591139337, rates.get("JPY"), 0);
         assertFalse(rates.containsKey("BAD"));
     }
+
+    @Test
+    public void writesFiatAmountsWithTwoDecimals() {
+        InLocale.run("en-US", () -> assertEquals("135.66", ExchangeRates.fiat(271.31, new Amount(50000000))));
+        InLocale.run("de-DE", () -> assertEquals("135,66", ExchangeRates.fiat(271.31, new Amount(50000000))));
+        InLocale.run("ar-EG", () -> assertEquals("12.00", ExchangeRates.fiat(240, new Amount(5000000))));
+        // In plain notation, where String.valueOf would write 1.0E7.
+        InLocale.run("en-US", () -> assertEquals("10000000.00", ExchangeRates.fiat(500, new Amount(2000000000000L))));
+    }
 }
