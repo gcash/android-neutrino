@@ -41,4 +41,11 @@ public class NetworkTest {
         assertFalse(Network.TESTNET4.hasFiat);
         assertEquals("bchtest:", Network.TESTNET4.uriPrefix());
     }
+
+    @Test
+    public void linksTransactionsToTheirNetworksExplorer() {
+        String txid = "057072a39e8ae3f9fd93d9aad11b6d8e7f0338d868fd8e5793c78cf8c8ab42fd";
+        assertEquals("https://testnet4.imaginary.cash/tx/" + txid, Network.TESTNET4.explorerUrl(txid));
+        assertEquals("https://www.blockchain.com/bch/tx/" + txid, Network.MAINNET.explorerUrl(txid));
+    }
 }

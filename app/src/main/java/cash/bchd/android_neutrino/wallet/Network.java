@@ -8,9 +8,11 @@ import java.util.Locale;
  * never mix.
  */
 public enum Network {
-    MAINNET("mainnet", "bitcoincash", "", 1231006505L, 1501545600L, true),
+    MAINNET("mainnet", "bitcoincash", "", 1231006505L, 1501545600L, true,
+            "https://www.blockchain.com/bch/tx/"),
     // Testnet4's coins have no value, and its first block was mined on August 19, 2020.
-    TESTNET4("testnet4", "bchtest", "testnet4=1", 1597811185L, 1597811185L, false);
+    TESTNET4("testnet4", "bchtest", "testnet4=1", 1597811185L, 1597811185L, false,
+            "https://testnet4.imaginary.cash/tx/");
 
     // The name of the network's directory in bchwallet's data, which also saves the choice.
     public final String id;
@@ -25,15 +27,18 @@ public enum Network {
     public final long defaultRestoreBirthday;
     // Whether the network's coins have a price, so that amounts are shown in fiat too.
     public final boolean hasFiat;
+    // The address of a block explorer's page for a transaction, without its ID.
+    private final String explorerTxUrl;
 
     Network(String id, String scheme, String configOption, long firstBlockTime,
-            long defaultRestoreBirthday, boolean hasFiat) {
+            long defaultRestoreBirthday, boolean hasFiat, String explorerTxUrl) {
         this.id = id;
         this.scheme = scheme;
         this.configOption = configOption;
         this.firstBlockTime = firstBlockTime;
         this.defaultRestoreBirthday = defaultRestoreBirthday;
         this.hasFiat = hasFiat;
+        this.explorerTxUrl = explorerTxUrl;
     }
 
     /**
@@ -41,6 +46,13 @@ public enum Network {
      */
     public String uriPrefix() {
         return scheme + ":";
+    }
+
+    /**
+     * explorerUrl returns the address of a block explorer's page for the network's transaction.
+     */
+    public String explorerUrl(String txid) {
+        return explorerTxUrl + txid;
     }
 
     /**

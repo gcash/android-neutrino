@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import cash.bchd.android_neutrino.wallet.Amount;
+import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 
 public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.TxViewHolder> {
@@ -29,6 +30,8 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     private Context ctx;
     private CoordinatorLayout cLayout;
     private int blockHeight;
+    // The network of the transactions.
+    private final Network network;
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -54,11 +57,12 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public TransactionAdapter(List<TransactionData> myDataset, Context context, CoordinatorLayout layout, int height) {
+    public TransactionAdapter(List<TransactionData> myDataset, Context context, CoordinatorLayout layout, int height, Network network) {
         mDataset = myDataset;
         ctx = context;
         cLayout = layout;
         blockHeight = height;
+        this.network = network;
     }
 
     public void setNewData(List<TransactionData> data) {
@@ -197,8 +201,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
                 txid.setText(tx.getTxid());
 
                 TextView link = customView.findViewById(R.id.txDetailsLink);
-                String url = "https://www.blockchain.com/bch/tx/" + tx.getTxid();
-                link.setText(url);
+                link.setText(network.explorerUrl(tx.getTxid()));
             }
         });
     }

@@ -147,7 +147,7 @@ public class MainActivity extends CloseActivity {
             TextView bchPlease = findViewById(R.id.bchPlease);
             bchPlease.setVisibility(View.GONE);
         }
-        mAdapter = new TransactionAdapter(txs, this, mCLayout, settings.getLastBlockHeight());
+        mAdapter = new TransactionAdapter(txs, this, mCLayout, settings.getLastBlockHeight(), network);
         recyclerView.setAdapter(mAdapter);
         fab.setOnClickListener(view -> toggleFABMenu());
         fab.setOnTouchListener((v, event) -> {
