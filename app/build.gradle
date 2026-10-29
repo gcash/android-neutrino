@@ -5,11 +5,11 @@ plugins {
 
 android {
     namespace = 'cash.bchd.android_neutrino'
-    compileSdk = 36
+    compileSdk = 37
     defaultConfig {
         applicationId = "cash.bchd.android_neutrino"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 24
         versionName = "v0.2.0-beta1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

@@ -20,6 +20,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.text.TextUtils;
 import android.transition.ChangeTransform;
 import android.transition.TransitionManager;
 import android.view.Display;
@@ -36,6 +37,7 @@ import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.app.ActivityCompat;
@@ -51,6 +53,8 @@ import com.google.android.material.snackbar.Snackbar;
 
 import java.lang.ref.WeakReference;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Currency;
 import java.util.List;
@@ -98,10 +102,14 @@ public class MainActivity extends CloseActivity {
     boolean walletAttached;
     // Shows the wallet's sync status while this activity is in front.
     private ScheduledExecutorService syncStatusPoller;
+    // Set while the user is asked to let the app reach the local network, which the wallet's
+    // start waits for.
+    private boolean askingForLocalNetwork;
 
     private static final long DONATION_REMINDER_INTERVAL = TimeUnit.DAYS.toMillis(45);
     private static final long SYNC_STATUS_POLL_MILLIS = 2000;
     private static final int RC_UPGRADE_PIN = 9003;
+    private static final int RC_LOCAL_NETWORK = 9005;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -223,11 +231,17 @@ public class MainActivity extends CloseActivity {
     }
 
     public void createWallet() {
+        if (askingForLocalNetwork) {
+            return;
+        }
         if (Wallet.getInstance() == null) {
             String[] peers = settings.getPeerList();
             String[] none = new String[0];
             boolean peersOnly = settings.getPeersOnly() && peers.length > 0;
             String bchdIP = settings.getBchdIP();
+            if (!mayStartWallet(peers, bchdIP)) {
+                return;
+            }
             long birthday = settings.getWalletBirthday();
             if (birthday == 0) {
                 birthday = System.currentTimeMillis() / 1000;
@@ -251,6 +265,43 @@ public class MainActivity extends CloseActivity {
             new StartWalletTask(this).execute(wallet);
         }
         walletAttached = true;
+    }
+
+    // mayStartWallet returns whether the wallet can start now. Android 17 and newer let the app
+    // reach the local network only with the user's permission, so a wallet set to connect to
+    // nodes there asks for it first, once for those nodes, and starts once the user has
+    // answered, since a bchd node that it can't reach stops it.
+    private boolean mayStartWallet(String[] peers, String bchdIP) {
+        List<String> nodes = new ArrayList<>(Arrays.asList(peers));
+        if (!bchdIP.isEmpty()) {
+            nodes.add(bchdIP);
+        }
+        List<String> local = LocalNetwork.local(nodes);
+        if (local.isEmpty() || Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN
+                || ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_LOCAL_NETWORK) == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        }
+        String asked = TextUtils.join(",", local);
+        if (!asked.equals(settings.getLocalNetworkAsked())) {
+            settings.setLocalNetworkAsked(asked);
+            askingForLocalNetwork = true;
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_LOCAL_NETWORK}, RC_LOCAL_NETWORK);
+            return false;
+        }
+        Snackbar snackbar = Snackbar.make(findViewById(R.id.coordinator_layout),
+                getString(R.string.local_network_denied, TextUtils.join(", ", local)), Snackbar.LENGTH_LONG);
+        snackbar.setTextMaxLines(5);
+        snackbar.show();
+        return true;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == RC_LOCAL_NETWORK) {
+            askingForLocalNetwork = false;
+            createWallet();
+        }
     }
 
     @Override

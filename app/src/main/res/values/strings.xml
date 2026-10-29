@@ -60,6 +60,7 @@
     <string name="screen_lock_show_recovery_phrase">Show your recovery phrase</string>
     <string name="no_screen_lock_notice">This phone has no screen lock, so anyone holding it can send from this wallet.</string>
     <string name="wallet_key_missing">The key that unlocks this wallet is gone. Restore the wallet from its recovery phrase.</string>
+    <string name="local_network_denied">Without the Nearby devices permission, the wallet can\'t reach %1$s on your local network.</string>
     <string name="fingerprint_key_gone">Android removed the fingerprint key that unlocked this wallet, which it does when the screen lock or the fingerprints change. Restore the wallet from its recovery phrase.</string>
     <string name="fingerprint_prompt_title">Confirm with your fingerprint</string>
     <string name="upgrade_title">Use your screen lock</string>

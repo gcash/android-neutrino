@@ -50,6 +50,7 @@ public class Settings {
     private static final String SCAN_HEIGHT_KEY = "ScanHeight";
     private static final String PEERS_KEY = "Peers";
     private static final String PEERS_ONLY_KEY = "PeersOnly";
+    private static final String LOCAL_NETWORK_ASKED_KEY = "LocalNetworkAsked";
 
     // The settings of the app, and those of the network's wallet, which are the same on mainnet.
     private final SharedPreferences appPrefs;
@@ -394,6 +395,16 @@ public class Settings {
 
     Boolean getPeersOnly() {
         return prefs.getBoolean(PEERS_ONLY_KEY, false);
+    }
+
+    // The nodes on the local network, joined by commas, that the user was last asked to let the
+    // app reach.
+    void setLocalNetworkAsked(String nodes) {
+        putString(LOCAL_NETWORK_ASKED_KEY, nodes);
+    }
+
+    String getLocalNetworkAsked() {
+        return prefs.getString(LOCAL_NETWORK_ASKED_KEY, "");
     }
 
     void setNotificationsRequested(boolean requested) {
