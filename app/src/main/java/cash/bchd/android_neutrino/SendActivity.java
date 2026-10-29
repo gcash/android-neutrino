@@ -282,6 +282,12 @@ public class SendActivity extends AppCompatActivity {
             return;
         }
 
+        byte[] paymentRequest = intent.getByteArrayExtra(PaymentRequestFile.EXTRA);
+        if (paymentRequest != null) {
+            PaymentRequests.payFile(this, sendLayout, wallet, paymentRequest, fiatCurrency, satPerByte);
+            return;
+        }
+
         Uri data = getIntent().getData();
         if (data != null) {
             Intent newIntent = new Intent();

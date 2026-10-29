@@ -43,9 +43,9 @@
             android:screenOrientation="portrait">
         </activity>
         <!-- The only entry point for other apps and NFC tags. It reads nothing
-             but the bitcoincash or bchtest URI and opens the screen that handles
-             it, which says so when the URI is for another network than the
-             wallet's. -->
+             but the bitcoincash or bchtest URI, or a BIP70 payment request, and
+             opens the screen that handles it, which says so when the URI is for
+             another network than the wallet's. -->
         <activity
             android:name=".UriActivity"
             android:exported="true"
@@ -64,6 +64,19 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:scheme="bitcoincash" />
                 <data android:scheme="bchtest" />
+            </intent-filter>
+            <!-- A BIP70 payment request that a merchant hands over as a file, which a
+                 browser downloads and opens, or the link to one. Bitcoin's types, such as
+                 application/bitcoin-paymentrequest, are left out: the outputs of a BTC
+                 request are valid BCH scripts, so paying one would send BCH to a BTC
+                 merchant. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="https" />
+                <data android:mimeType="application/bitcoincash-paymentrequest" />
             </intent-filter>
         </activity>
         <!-- Large screens ignore the portrait lock, so the screens below that hold a payment or

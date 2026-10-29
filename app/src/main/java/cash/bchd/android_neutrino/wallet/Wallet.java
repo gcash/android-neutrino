@@ -475,6 +475,17 @@ public class Wallet implements Serializable {
         return reply;
     }
 
+    /**
+     * parsePaymentRequest checks a BIP70 payment request that the app has as a file, as
+     * downloadPaymentRequest checks a downloaded one, and returns what that returns.
+     */
+    public Api.DownloadPaymentRequestResponse parsePaymentRequest(byte[] paymentRequest) throws Exception {
+        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
+        Api.ParsePaymentRequestRequest request = Api.ParsePaymentRequestRequest.newBuilder()
+                .setPaymentRequest(ByteString.copyFrom(paymentRequest)).build();
+        return stub.parsePaymentRequest(request);
+    }
+
     public long balance() throws Exception {
         WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
         Api.BalanceRequest request = Api.BalanceRequest.newBuilder().setAccountNumber(0).setRequiredConfirmations(0).build();

@@ -1,6 +1,7 @@
 package cash.bchd.android_neutrino;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.view.View;
 
@@ -16,18 +17,21 @@ import com.google.common.util.concurrent.MoreExecutors;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.ExchangeRates;
 import cash.bchd.android_neutrino.wallet.Wallet;
+import io.grpc.Status;
 import walletrpc.Api;
 
 /**
- * PaymentRequests pays the payment request of a URI with an r parameter. The wallet downloads
- * the merchant's request, with BitPay's JSON Payment Protocol or BIP70, and creates the
- * transaction that pays it, off the UI thread since the download can take seconds, and the
- * confirmation screen then shows the payment.
+ * PaymentRequests pays the payment request of a URI with an r parameter, or a BIP70 one that a
+ * merchant handed over as a file. The wallet downloads the merchant's request, with BitPay's JSON
+ * Payment Protocol or BIP70, or checks the file, and creates the transaction that pays it, off
+ * the UI thread since the download can take seconds, and the confirmation screen then shows the
+ * payment.
  */
 final class PaymentRequests {
 
@@ -47,9 +51,24 @@ final class PaymentRequests {
      * the layout why it can't.
      */
     static void pay(Activity activity, View layout, Wallet wallet, String uri, String fiatCurrency, int feePerByte) {
+        prepare(activity, layout, () -> confirmation(activity, wallet, wallet.downloadPaymentRequest(uri),
+                fiatCurrency, feePerByte));
+    }
+
+    /**
+     * payFile is pay for a BIP70 payment request that the app has as a file, which the wallet
+     * checks as it checks a downloaded one.
+     */
+    static void payFile(Activity activity, View layout, Wallet wallet, byte[] paymentRequest, String fiatCurrency,
+                        int feePerByte) {
+        prepare(activity, layout, () -> confirmation(activity, wallet, wallet.parsePaymentRequest(paymentRequest),
+                fiatCurrency, feePerByte));
+    }
+
+    private static void prepare(Activity activity, View layout, Callable<Intent> prepareConfirmation) {
         Snackbar loading = Snackbar.make(layout, R.string.loading_payment_request, Snackbar.LENGTH_INDEFINITE);
         loading.show();
-        ListenableFuture<Intent> confirmation = background.submit(() -> confirmation(activity, wallet, uri, fiatCurrency, feePerByte));
+        ListenableFuture<Intent> confirmation = background.submit(prepareConfirmation);
         Futures.addCallback(confirmation, new FutureCallback<Intent>() {
             @Override
             public void onSuccess(Intent intent) {
@@ -62,19 +81,34 @@ final class PaymentRequests {
 
             @Override
             public void onFailure(Throwable t) {
-                int message = t instanceof InsufficientFundsException ? R.string.insufficient_funds : R.string.invalid_payment_request;
-                Snackbar.make(layout, message, Snackbar.LENGTH_LONG).show();
+                loading.dismiss();
+                Snackbar snackbar = Snackbar.make(layout, failure(activity, t), Snackbar.LENGTH_LONG);
+                snackbar.setTextMaxLines(5);
+                snackbar.show();
                 t.printStackTrace();
             }
         }, ContextCompat.getMainExecutor(activity));
     }
 
+    // failure returns why a payment request can't be paid: the wallet's reason for refusing it,
+    // such as an expired request or an untrusted certificate, when it gave one.
+    private static String failure(Context context, Throwable t) {
+        if (t instanceof InsufficientFundsException) {
+            return context.getString(R.string.insufficient_funds);
+        }
+        String reason = Status.fromThrowable(t).getDescription();
+        if (reason == null || reason.isEmpty()) {
+            return context.getString(R.string.invalid_payment_request);
+        }
+        return context.getString(R.string.invalid_payment_request_reason, reason);
+    }
+
     /**
-     * confirmation downloads the URI's payment request, creates the transaction that pays it and
-     * returns the intent that shows the payment on the confirmation screen.
+     * confirmation creates the transaction that pays a checked payment request and returns the
+     * intent that shows the payment on the confirmation screen.
      */
-    private static Intent confirmation(Activity activity, Wallet wallet, String uri, String fiatCurrency, int feePerByte) throws Exception {
-        Api.DownloadPaymentRequestResponse pr = wallet.downloadPaymentRequest(uri);
+    private static Intent confirmation(Activity activity, Wallet wallet, Api.DownloadPaymentRequestResponse pr,
+                                       String fiatCurrency, int feePerByte) throws Exception {
         List<Api.CreateTransactionRequest.Output> outputs = new ArrayList<>();
         long totalSatoshis = 0;
         for (Api.DownloadPaymentRequestResponse.Output out : pr.getOutputsList()) {

@@ -634,9 +634,9 @@ public class MainActivity extends CloseActivity {
         startSyncStatusPoller();
     }
 
-    // openLaunchPayment opens the payment link that started the app, and removes it from the
-    // intent itself, of which getExtras returns a copy, so that it opens once rather than every
-    // time this screen comes back.
+    // openLaunchPayment opens the payment link or payment request file that started the app,
+    // and removes it from the intent itself, of which getExtras returns a copy, so that it opens
+    // once rather than every time this screen comes back.
     private void openLaunchPayment() {
         Intent intent = getIntent();
         if (intent == null) {
@@ -648,6 +648,12 @@ public class MainActivity extends CloseActivity {
             Intent newIntent = new Intent();
             newIntent.putExtra("qrdata", uri);
             onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
+        }
+        byte[] paymentRequest = intent.getByteArrayExtra(PaymentRequestFile.EXTRA);
+        if (paymentRequest != null) {
+            intent.removeExtra(PaymentRequestFile.EXTRA);
+            PaymentRequests.payFile(this, mCLayout, wallet, paymentRequest, settings.getFiatCurrency(),
+                    settings.getFeePerByte());
         }
     }
 

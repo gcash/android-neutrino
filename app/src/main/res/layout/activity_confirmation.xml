@@ -277,6 +277,19 @@
             android:textColor="@color/neonGreen"
             android:textSize="30sp" />
 
+        <!-- The memo of the merchant's acknowledgement of a payment request's payment. -->
+        <TextView
+            android:id="@+id/merchantMemo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="20dp"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:visibility="gone" />
+
     </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

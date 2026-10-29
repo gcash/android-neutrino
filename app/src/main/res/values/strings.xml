@@ -26,6 +26,9 @@
     <string name="address_copied_to_clipboard">Address copied to clipboard.</string>
     <string name="insufficient_funds">Insufficient Funds</string>
     <string name="invalid_payment_request">Invalid Payment Request</string>
+    <string name="invalid_payment_request_reason">Invalid payment request: %1$s</string>
+    <string name="payment_request_too_large">This payment request is larger than the 50,000 bytes that BIP70 allows.</string>
+    <string name="payment_request_unreadable">The payment request can\'t be read.</string>
     <string name="loading_payment_request">Loading payment request…</string>
     <string name="barcode_read_error">Barcode Read Error</string>
     <string name="backup_your_wallet">Backup Your Wallet</string>

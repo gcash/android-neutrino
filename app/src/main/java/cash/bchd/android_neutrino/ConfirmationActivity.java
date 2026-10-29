@@ -234,11 +234,18 @@ public class ConfirmationActivity extends AppCompatActivity {
         finish();
     }
 
-    private void showPaymentSent() {
+    // showPaymentSent shows that the payment was sent, with the memo of the merchant's
+    // acknowledgement when it has one.
+    private void showPaymentSent(String merchantMemo) {
         RelativeLayout rLayout = findViewById(R.id.confirmationLayout);
         CheckView checkView = findViewById(R.id.check);
         LinearLayout checkLayout = findViewById(R.id.checkLayout);
         checkLayout.setOnClickListener(v -> leaveAfterPayment());
+        if (merchantMemo != null && !merchantMemo.isEmpty()) {
+            TextView memoView = findViewById(R.id.merchantMemo);
+            memoView.setText(merchantMemo);
+            memoView.setVisibility(View.VISIBLE);
+        }
         rLayout.setVisibility(View.GONE);
         checkLayout.setVisibility(View.VISIBLE);
         checkView.check();
@@ -270,7 +277,9 @@ public class ConfirmationActivity extends AppCompatActivity {
                     return;
                 }
 
-                if (!isPaymentRequest) {
+                // A BIP70 request may have no payment URL to send the payment to, and is then
+                // paid as an address is.
+                if (!isPaymentRequest || paymentURL == null || paymentURL.isEmpty()) {
                     publishTransaction(wallet, result, layout);
                 } else {
                     postPaymentToMerchant(wallet, result, layout);
@@ -302,7 +311,7 @@ public class ConfirmationActivity extends AppCompatActivity {
         Futures.addCallback(resp, new FutureCallback<Api.PublishTransactionResponse>() {
             @Override
             public void onSuccess(Api.PublishTransactionResponse result) {
-                runOnUiThread(() -> showPaymentSent());
+                runOnUiThread(() -> showPaymentSent(null));
             }
 
             @Override
@@ -323,7 +332,7 @@ public class ConfirmationActivity extends AppCompatActivity {
         Futures.addCallback(resp, new FutureCallback<Api.PostPaymentResponse>() {
             @Override
             public void onSuccess(Api.PostPaymentResponse result) {
-                runOnUiThread(() -> showPaymentSent());
+                runOnUiThread(() -> showPaymentSent(result.getMemo()));
             }
 
             @Override
@@ -332,8 +341,13 @@ public class ConfirmationActivity extends AppCompatActivity {
                     Status status = Status.fromThrowable(t);
                     if (status.getDescription() != null) {
                         Snackbar snackbar = Snackbar.make(layout, status.getDescription(), Snackbar.LENGTH_LONG);
+                        snackbar.setTextMaxLines(5);
                         snackbar.show();
                     }
+                    // The wallet records the payment only once the merchant has accepted it,
+                    // so it can be sent again.
+                    sending.set(false);
+                    swipeButton.reset();
                 });
             }
         }, ContextCompat.getMainExecutor(ConfirmationActivity.this));
