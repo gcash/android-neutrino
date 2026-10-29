@@ -23,7 +23,7 @@ public class BackupActivity extends FragmentActivity {
         // Keep the recovery phrase and PIN out of screenshots and the recent apps.
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
         // Show the recovery phrase only to someone who can unlock the phone.
-        ScreenLock.confirm(this, getString(R.string.screen_lock_show_recovery_phrase), new ScreenLock.Callback() {
+        ScreenLock.prompt(this, new ScreenLock.Callback() {
             @Override
             public void onConfirmed() {
                 setUpView();
@@ -34,7 +34,7 @@ public class BackupActivity extends FragmentActivity {
             public void onCancelled() {
                 finish();
             }
-        });
+        }).confirm(getString(R.string.screen_lock_show_recovery_phrase));
     }
     private void setUpView(){
         _mViewPager = findViewById(R.id.viewPager);

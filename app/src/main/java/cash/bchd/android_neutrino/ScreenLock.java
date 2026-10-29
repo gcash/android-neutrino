@@ -37,29 +37,50 @@ final class ScreenLock {
     }
 
     /**
-     * confirm asks for the screen lock, if the phone has one, and calls the callback on the UI
-     * thread once the user confirmed or cancelled.
+     * prompt returns a prompt for the screen lock that tells the activity's callback, which the
+     * activity creates in onCreate. The prompt outlives the activity when Android recreates it,
+     * as for a configuration change while the prompt shows, and tells the recreated activity,
+     * whose callback replaces the one before.
      */
-    static void confirm(FragmentActivity activity, CharSequence title, Callback callback) {
-        if (!isSet(activity)) {
-            callback.onConfirmed();
-            return;
-        }
-        BiometricPrompt prompt = new BiometricPrompt(activity, ContextCompat.getMainExecutor(activity),
-                new BiometricPrompt.AuthenticationCallback() {
-                    @Override
-                    public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
-                        callback.onConfirmed();
-                    }
+    static Prompt prompt(FragmentActivity activity, Callback callback) {
+        return new Prompt(activity, callback);
+    }
 
-                    @Override
-                    public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
-                        callback.onCancelled();
-                    }
-                });
-        prompt.authenticate(new BiometricPrompt.PromptInfo.Builder()
-                .setTitle(title)
-                .setAllowedAuthenticators(AUTHENTICATORS)
-                .build());
+    static final class Prompt {
+        private final FragmentActivity activity;
+        private final Callback callback;
+        private final BiometricPrompt prompt;
+
+        private Prompt(FragmentActivity activity, Callback callback) {
+            this.activity = activity;
+            this.callback = callback;
+            prompt = new BiometricPrompt(activity, ContextCompat.getMainExecutor(activity),
+                    new BiometricPrompt.AuthenticationCallback() {
+                        @Override
+                        public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
+                            callback.onConfirmed();
+                        }
+
+                        @Override
+                        public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
+                            callback.onCancelled();
+                        }
+                    });
+        }
+
+        /**
+         * confirm asks for the screen lock, if the phone has one, and calls the callback on the
+         * UI thread once the user confirmed or cancelled.
+         */
+        void confirm(CharSequence title) {
+            if (!isSet(activity)) {
+                callback.onConfirmed();
+                return;
+            }
+            prompt.authenticate(new BiometricPrompt.PromptInfo.Builder()
+                    .setTitle(title)
+                    .setAllowedAuthenticators(AUTHENTICATORS)
+                    .build());
+        }
     }
 }

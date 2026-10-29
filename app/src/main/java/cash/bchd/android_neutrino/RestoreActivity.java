@@ -60,6 +60,20 @@ public class RestoreActivity extends AppCompatActivity {
         showBirthday(birthdayView);
         birthdayView.setOnClickListener(v -> pickBirthday(birthdayView));
 
+        // Restoring deletes the current wallet, so it asks for the screen lock as sending does.
+        // The phrase is read once the user confirmed, from the field that a recreated screen
+        // gets back.
+        ScreenLock.Prompt screenLock = ScreenLock.prompt(this, new ScreenLock.Callback() {
+            @Override
+            public void onConfirmed() {
+                restore(Bip39.normalize(String.valueOf(phraseInput.getText())));
+            }
+
+            @Override
+            public void onCancelled() {
+            }
+        });
+
         Button confirmBtn = findViewById(R.id.restoreConfirmBtn);
         confirmBtn.setOnClickListener(v -> {
             // Check the phrase as bchwallet will before the current wallet is deleted.
@@ -83,18 +97,7 @@ public class RestoreActivity extends AppCompatActivity {
                     .setTitle("Are you sure?")
                     .setMessage("Once you continue the existing wallet will be overridden with the new wallet and any coins in the existing wallet will be lost. Please backup the existing wallet if you need to do so before continuing.")
                     .setPositiveButton("Yes, restore", (dialog, which) ->
-                            // Restoring deletes the current wallet, so it asks for the screen
-                            // lock as sending does.
-                            ScreenLock.confirm(RestoreActivity.this, getString(R.string.screen_lock_restore), new ScreenLock.Callback() {
-                                @Override
-                                public void onConfirmed() {
-                                    restore(phrase);
-                                }
-
-                                @Override
-                                public void onCancelled() {
-                                }
-                            }))
+                            screenLock.confirm(getString(R.string.screen_lock_restore)))
                     .setNegativeButton("Cancel", null)
                     .show();
         });

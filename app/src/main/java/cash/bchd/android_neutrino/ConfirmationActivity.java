@@ -44,6 +44,7 @@ public class ConfirmationActivity extends AppCompatActivity {
     String paymentAddr;
     String memo;
     SlideToConfirmView swipeButton;
+    ScreenLock.Prompt screenLock;
 
     // Set while the payment is signed and sent, and after it was sent.
     private final AtomicBoolean sending = new AtomicBoolean(false);
@@ -75,6 +76,17 @@ public class ConfirmationActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         swipeButton = findViewById(R.id.swipe_btn);
+        screenLock = ScreenLock.prompt(this, new ScreenLock.Callback() {
+            @Override
+            public void onConfirmed() {
+                signWithScreenLock();
+            }
+
+            @Override
+            public void onCancelled() {
+                swipeButton.reset();
+            }
+        });
         if (!ScreenLock.isSet(this)) {
             findViewById(R.id.noScreenLockNotice).setVisibility(View.VISIBLE);
         }
@@ -178,31 +190,29 @@ public class ConfirmationActivity extends AppCompatActivity {
                 });
                 return;
             default:
-                ScreenLock.confirm(this, getString(R.string.screen_lock_confirm_payment), new ScreenLock.Callback() {
-                    @Override
-                    public void onConfirmed() {
-                        String passphrase = Wallet.DEFAULT_PASSPHRASE;
-                        if (settings.getEncryptionType() == EncryptionType.KEYSTORE) {
-                            try {
-                                passphrase = WalletSecret.open(settings.getSealedPassphrase());
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                                Snackbar snackbar = Snackbar.make(layout, R.string.wallet_key_missing, Snackbar.LENGTH_LONG);
-                                snackbar.setTextMaxLines(5);
-                                snackbar.show();
-                                swipeButton.reset();
-                                return;
-                            }
-                        }
-                        signTransaction(serializedTx, paymentAddr, memo, inputVals, passphrase);
-                    }
-
-                    @Override
-                    public void onCancelled() {
-                        swipeButton.reset();
-                    }
-                });
+                screenLock.confirm(getString(R.string.screen_lock_confirm_payment));
         }
+    }
+
+    // signWithScreenLock signs with the wallet's passphrase once the screen lock was confirmed,
+    // which a sealed passphrase needs to be opened.
+    private void signWithScreenLock() {
+        Settings settings = Settings.getInstance();
+        String passphrase = Wallet.DEFAULT_PASSPHRASE;
+        if (settings.getEncryptionType() == EncryptionType.KEYSTORE) {
+            try {
+                passphrase = WalletSecret.open(settings.getSealedPassphrase());
+            } catch (Exception e) {
+                e.printStackTrace();
+                CoordinatorLayout layout = findViewById(R.id.confirmationMainLayout);
+                Snackbar snackbar = Snackbar.make(layout, R.string.wallet_key_missing, Snackbar.LENGTH_LONG);
+                snackbar.setTextMaxLines(5);
+                snackbar.show();
+                swipeButton.reset();
+                return;
+            }
+        }
+        signTransaction(serializedTx, paymentAddr, memo, inputVals, passphrase);
     }
 
     // upgradeAndSign replaces the passphrase of an earlier version with a sealed one, if the phone
