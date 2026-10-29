@@ -184,6 +184,8 @@ public class MainActivity extends CloseActivity {
         Intent intent = getIntent();
         boolean launchLoveActivity = intent.getBooleanExtra("launchLoveActivity", false);
         if (launchLoveActivity) {
+            // Once, also when the activity is recreated with this intent.
+            intent.removeExtra("launchLoveActivity");
             Intent newIntent = new Intent();
             newIntent.putExtra("qrdata", SettingsFragment.DONATE_URI);
             this.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
@@ -626,17 +628,27 @@ public class MainActivity extends CloseActivity {
                 e.printStackTrace();
             }
         }
-        Intent intent = this.getIntent();
-        if (intent != null && intent.getExtras() != null && Wallet.getInstance() != null && Wallet.getInstance().isRunning()) {
-            String uri = intent.getExtras().getString("uri");
-            if (uri != null && !uri.equals("")) {
-                this.getIntent().getExtras().clear();
-                Intent newIntent = new Intent();
-                newIntent.putExtra("qrdata", uri);
-                this.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
-            }
+        if (Wallet.getInstance() != null && Wallet.getInstance().isRunning()) {
+            openLaunchPayment();
         }
         startSyncStatusPoller();
+    }
+
+    // openLaunchPayment opens the payment link that started the app, and removes it from the
+    // intent itself, of which getExtras returns a copy, so that it opens once rather than every
+    // time this screen comes back.
+    private void openLaunchPayment() {
+        Intent intent = getIntent();
+        if (intent == null) {
+            return;
+        }
+        String uri = intent.getStringExtra("uri");
+        if (uri != null && !uri.equals("")) {
+            intent.removeExtra("uri");
+            Intent newIntent = new Intent();
+            newIntent.putExtra("qrdata", uri);
+            onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
+        }
     }
 
     @Override
@@ -811,16 +823,7 @@ public class MainActivity extends CloseActivity {
                             return;
                         }
                         mainActivity.runOnUiThread(() -> {
-                            Intent intent = mainActivity.getIntent();
-                            if (intent != null && intent.getExtras() != null) {
-                                String uri = intent.getExtras().getString("uri");
-                                if (uri != null && !uri.equals("")) {
-                                    intent.getExtras().clear();
-                                    Intent newIntent = new Intent();
-                                    newIntent.putExtra("qrdata", uri);
-                                    mainActivity.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
-                                }
-                            }
+                            mainActivity.openLaunchPayment();
                             mainActivity.upgradeWalletPassphrase();
                         });
                     }
