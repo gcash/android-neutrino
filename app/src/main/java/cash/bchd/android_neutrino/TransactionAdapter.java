@@ -45,7 +45,6 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         TextView txDescription;
         TextView txMemo;
         ImageView arrowImage;
-        ImageView confirmationCircle;
         LinearLayout layout;
         public TxViewHolder(LinearLayout v) {
             super(v);
@@ -55,7 +54,6 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             txDescription = v.findViewById(R.id.txDescription);
             txMemo = v.findViewById(R.id.txMemo);
             arrowImage = v.findViewById(R.id.arrowImage);
-            confirmationCircle = v.findViewById(R.id.confirmationCircle);
         }
     }
 
@@ -119,17 +117,16 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         String bch = "₿" + new Amount(tx.getAmount()).toString();
         holder.bchAmount.setText(bch);
 
+        // The status shows a dot before it until the transaction has ten confirmations.
         int confirmations = TransactionRows.confirmations(tx, blockHeight);
         if (confirmations <= 0) {
             holder.fiatAmount.setText(R.string.unconfirmed);
-            holder.confirmationCircle.setImageResource(R.drawable.red_circle);
-            holder.confirmationCircle.setVisibility(View.VISIBLE);
+            holder.fiatAmount.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.red_circle, 0, 0, 0);
         } else if (confirmations < 10) {
-            holder.confirmationCircle.setImageResource(R.drawable.yellow_circle);
-            holder.confirmationCircle.setVisibility(View.VISIBLE);
+            holder.fiatAmount.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.yellow_circle, 0, 0, 0);
             holder.fiatAmount.setText(ctx.getResources().getQuantityString(R.plurals.confirmations, confirmations, confirmations));
         } else {
-            holder.confirmationCircle.setVisibility(View.INVISIBLE);
+            holder.fiatAmount.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0);
             holder.fiatAmount.setText(tx.getFiatAmount());
         }
 
