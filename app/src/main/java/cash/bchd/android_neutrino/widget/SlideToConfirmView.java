@@ -110,6 +110,20 @@ public class SlideToConfirmView extends FrameLayout {
         animateThumb(0, false);
     }
 
+    /**
+     * Show the thumb at the end, as once the user confirmed, without telling the listener, for
+     * a recreated screen whose confirmed action goes on.
+     */
+    public void showConfirmed() {
+        confirmed = true;
+        dragging = false;
+        // The end is known once the view is laid out.
+        post(() -> {
+            thumb.setTranslationX(maxTranslation());
+            label.setAlpha(0);
+        });
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {

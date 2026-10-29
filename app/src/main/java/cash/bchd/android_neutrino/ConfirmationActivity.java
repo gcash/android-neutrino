@@ -14,6 +14,9 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModel;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.google.common.util.concurrent.FutureCallback;
@@ -45,9 +48,34 @@ public class ConfirmationActivity extends AppCompatActivity {
     String memo;
     SlideToConfirmView swipeButton;
     ScreenLock.Prompt screenLock;
+    Payment payment;
 
-    // Set while the payment is signed and sent, and after it was sent.
-    private final AtomicBoolean sending = new AtomicBoolean(false);
+    /**
+     * Payment keeps the screen's payment while it is sent and once it was, through a recreation
+     * of the screen, as for a configuration change, so that the recreated screen shows it as
+     * sending, sent or failed, rather than as a payment to swipe for.
+     */
+    public static class Payment extends ViewModel {
+        // Set while the payment is signed and sent, and after it was sent.
+        final AtomicBoolean sending = new AtomicBoolean(false);
+        // The memo of the merchant's acknowledgement once the payment was sent, or "".
+        final MutableLiveData<String> sent = new MutableLiveData<>();
+        // Why the payment wasn't sent or accepted, until the screen showed it.
+        final MutableLiveData<Failure> failure = new MutableLiveData<>();
+        // Whether the screen showed the payment as sent, which it marks once with a vibration.
+        boolean shownSent;
+    }
+
+    // Failure is why a payment wasn't sent or accepted, and whether it may be sent again.
+    static final class Failure {
+        final String message;
+        final boolean retry;
+
+        Failure(String message, boolean retry) {
+            this.message = message;
+            this.retry = retry;
+        }
+    }
 
     // Enabled once the payment is sent, to leave the send screen on back.
     OnBackPressedCallback afterPayment = new OnBackPressedCallback(false) {
@@ -155,6 +183,27 @@ public class ConfirmationActivity extends AppCompatActivity {
 
 
         swipeButton.setOnConfirmListener(this::unlockAndSign);
+
+        payment = new ViewModelProvider(this).get(Payment.class);
+        if (payment.sending.get()) {
+            swipeButton.showConfirmed();
+        }
+        payment.sent.observe(this, this::showPaymentSent);
+        payment.failure.observe(this, failure -> {
+            if (failure == null) {
+                return;
+            }
+            payment.failure.setValue(null);
+            if (failure.message != null) {
+                CoordinatorLayout layout = findViewById(R.id.confirmationMainLayout);
+                Snackbar snackbar = Snackbar.make(layout, failure.message, Snackbar.LENGTH_LONG);
+                snackbar.setTextMaxLines(5);
+                snackbar.show();
+            }
+            if (failure.retry) {
+                swipeButton.reset();
+            }
+        });
     }
 
     // unlockAndSign gets the wallet's private passphrase the way the wallet keeps it: after the
@@ -260,105 +309,93 @@ public class ConfirmationActivity extends AppCompatActivity {
         checkLayout.setVisibility(View.VISIBLE);
         checkView.check();
         afterPayment.setEnabled(true);
+        if (payment.shownSent) {
+            return;
+        }
+        payment.shownSent = true;
         Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
         if (vibrator != null) {
             vibrator.vibrate(500);
         }
     }
 
+    // signTransaction signs and sends the payment, and tells the screen's Payment how that went,
+    // which tells the screen showing then.
     private void signTransaction(byte[] serializedTx, String paymentAddr, String memo, List<Long> inputVals, String password) {
         // Sign and send the payment once, also when the user confirms again or the fingerprint
         // is read again before the first attempt has finished (gcash/android-neutrino#23).
-        if (!sending.compareAndSet(false, true)) {
+        Payment payment = this.payment;
+        if (!payment.sending.compareAndSet(false, true)) {
             return;
         }
         Wallet wallet = Wallet.getInstance();
-        CoordinatorLayout layout = findViewById(R.id.confirmationMainLayout);
         ListenableFuture<Api.SignTransactionResponse> res = wallet.signTransactionAsync(serializedTx, inputVals, password);
         Futures.addCallback(res, new FutureCallback<Api.SignTransactionResponse>() {
             @Override
             public void onSuccess(Api.SignTransactionResponse result) {
                 Settings.getInstance().setInvalidPinCount(0);
                 if (result.getUnsignedInputIndexesList().size() > 0) {
-                    Snackbar snackbar = Snackbar.make(layout, "Failed to sign transaction", Snackbar.LENGTH_LONG);
-                    snackbar.show();
-                    sending.set(false);
-                    swipeButton.reset();
+                    payment.sending.set(false);
+                    payment.failure.setValue(new Failure("Failed to sign transaction", true));
                     return;
                 }
 
                 // A BIP70 request may have no payment URL to send the payment to, and is then
                 // paid as an address is.
                 if (!isPaymentRequest || paymentURL == null || paymentURL.isEmpty()) {
-                    publishTransaction(wallet, result, layout);
+                    publishTransaction(wallet, result, payment);
                 } else {
-                    postPaymentToMerchant(wallet, result, layout);
+                    postPaymentToMerchant(wallet, result, payment);
                 }
             }
 
             @Override
             public void onFailure(Throwable t) {
-                runOnUiThread(() -> {
-                    Status status = Status.fromThrowable(t);
-                    String errStr = status.getDescription();
-                    Settings settings = Settings.getInstance();
-                    if (settings.getEncryptionType() == EncryptionType.PIN && Wallet.isWrongPassphrase(t)) {
-                        errStr = "Invalid Pin";
-                        settings.countInvalidPin();
-                    }
-                    Snackbar snackbar = Snackbar.make(layout, errStr, Snackbar.LENGTH_LONG);
-                    snackbar.show();
-                    // Nothing was sent, so the user may try again.
-                    sending.set(false);
-                    swipeButton.reset();
-                });
+                Status status = Status.fromThrowable(t);
+                String errStr = status.getDescription();
+                Settings settings = Settings.getInstance();
+                if (settings.getEncryptionType() == EncryptionType.PIN && Wallet.isWrongPassphrase(t)) {
+                    errStr = "Invalid Pin";
+                    settings.countInvalidPin();
+                }
+                // Nothing was sent, so the user may try again.
+                payment.sending.set(false);
+                payment.failure.setValue(new Failure(errStr, true));
             }
         }, ContextCompat.getMainExecutor(ConfirmationActivity.this));
     }
 
-    private void publishTransaction(Wallet wallet, Api.SignTransactionResponse result, CoordinatorLayout layout) {
+    private void publishTransaction(Wallet wallet, Api.SignTransactionResponse result, Payment payment) {
         ListenableFuture<Api.PublishTransactionResponse> resp = wallet.publishTransactionAsync(result.getTransaction().toByteArray(), memo);
         Futures.addCallback(resp, new FutureCallback<Api.PublishTransactionResponse>() {
             @Override
             public void onSuccess(Api.PublishTransactionResponse result) {
-                runOnUiThread(() -> showPaymentSent(null));
+                payment.sent.setValue("");
             }
 
             @Override
             public void onFailure(Throwable t) {
-                runOnUiThread(() -> {
-                    Status status = Status.fromThrowable(t);
-                    if (status.getDescription() != null) {
-                        Snackbar snackbar = Snackbar.make(layout, status.getDescription(), Snackbar.LENGTH_LONG);
-                        snackbar.show();
-                    }
-                });
+                Status status = Status.fromThrowable(t);
+                payment.failure.setValue(new Failure(status.getDescription(), false));
             }
         }, ContextCompat.getMainExecutor(ConfirmationActivity.this));
     }
 
-    private void postPaymentToMerchant(Wallet wallet, Api.SignTransactionResponse result, CoordinatorLayout layout) {
+    private void postPaymentToMerchant(Wallet wallet, Api.SignTransactionResponse result, Payment payment) {
         ListenableFuture<Api.PostPaymentResponse> resp = wallet.postPaymentAsync(refundAddress, refundAmount, result.getTransaction().toByteArray(), paymentURL, paymentProtocol, merchantData, memo);
         Futures.addCallback(resp, new FutureCallback<Api.PostPaymentResponse>() {
             @Override
             public void onSuccess(Api.PostPaymentResponse result) {
-                runOnUiThread(() -> showPaymentSent(result.getMemo()));
+                payment.sent.setValue(result.getMemo());
             }
 
             @Override
             public void onFailure(Throwable t) {
-                runOnUiThread(() -> {
-                    Status status = Status.fromThrowable(t);
-                    if (status.getDescription() != null) {
-                        Snackbar snackbar = Snackbar.make(layout, status.getDescription(), Snackbar.LENGTH_LONG);
-                        snackbar.setTextMaxLines(5);
-                        snackbar.show();
-                    }
-                    // The wallet records the payment only once the merchant has accepted it,
-                    // so it can be sent again.
-                    sending.set(false);
-                    swipeButton.reset();
-                });
+                Status status = Status.fromThrowable(t);
+                // The wallet records the payment only once the merchant has accepted it,
+                // so it can be sent again.
+                payment.sending.set(false);
+                payment.failure.setValue(new Failure(status.getDescription(), true));
             }
         }, ContextCompat.getMainExecutor(ConfirmationActivity.this));
     }
