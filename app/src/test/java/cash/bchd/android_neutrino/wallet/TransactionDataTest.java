@@ -4,7 +4,6 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
@@ -29,13 +28,13 @@ public class TransactionDataTest {
     @Test
     public void readsTheTransactionsSavedBeforeItHadRecipients() throws Exception {
         byte[] saved = Base64.getDecoder().decode(SAVED_BEFORE_RECIPIENTS);
-        List<TransactionData> list;
+        List<?> list;
         try (ObjectInputStream is = new ObjectInputStream(new ByteArrayInputStream(saved))) {
-            list = (ArrayList<TransactionData>) is.readObject();
+            list = (List<?>) is.readObject();
         }
         assertEquals(2, list.size());
 
-        TransactionData sent = list.get(0);
+        TransactionData sent = (TransactionData) list.get(0);
         assertEquals("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16", sent.getTxid());
         assertFalse(sent.getIncoming());
         assertEquals("lunch", sent.getMemo());
@@ -49,7 +48,7 @@ public class TransactionDataTest {
         assertFalse(sent.getToYourself());
         assertEquals(TransactionData.SentTo.ADDRESS, sent.getSentTo());
 
-        TransactionData received = list.get(1);
+        TransactionData received = (TransactionData) list.get(1);
         assertEquals("0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098", received.getTxid());
         assertTrue(received.getIncoming());
         assertEquals(100000, received.getAmount());

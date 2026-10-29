@@ -6,19 +6,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.Point;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.Display;
+import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -282,13 +280,8 @@ public class ReceiveActivity extends AppCompatActivity {
             } else {
                 addr = lastAddr;
             }
-            WindowManager manager = (WindowManager) getSystemService(WINDOW_SERVICE);
-            Display display = manager.getDefaultDisplay();
-            Point point = new Point();
-            display.getSize(point);
-            int width = point.x;
-            int height = point.y;
-            int smallerDimension = width < height ? width : height;
+            DisplayMetrics metrics = getResources().getDisplayMetrics();
+            int smallerDimension = Math.min(metrics.widthPixels, metrics.heightPixels);
             final int finalDimension = smallerDimension;
 
             BitcoinPaymentURI.Builder builder = new BitcoinPaymentURI.Builder();

@@ -16,6 +16,7 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -137,7 +138,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         if (tx.getIncoming()) {
             holder.txDescription.setText(R.string.received_bitcoin_cash);
             holder.arrowImage.setImageResource(R.drawable.receive_arrow);
-            holder.bchAmount.setTextColor(ctx.getResources().getColor(R.color.darkGreen));
+            holder.bchAmount.setTextColor(ContextCompat.getColor(ctx, R.color.darkGreen));
             if (tx.getMemo().equals("")) {
                 holder.txMemo.setText(R.string.from_bitcoin_cash_address);
             } else {
@@ -146,7 +147,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         } else {
             holder.arrowImage.setImageResource(R.drawable.send_arrow);
             holder.txDescription.setText(R.string.sent_bitcoin_cash);
-            holder.bchAmount.setTextColor(ctx.getResources().getColor(R.color.neonPurple));
+            holder.bchAmount.setTextColor(ContextCompat.getColor(ctx, R.color.neonPurple));
             if (tx.getMemo() == null || tx.getMemo().equals("")) {
                 holder.txMemo.setEllipsize(TextUtils.TruncateAt.MIDDLE);
                 holder.txMemo.setText(sentTo(tx, holder.txMemo));

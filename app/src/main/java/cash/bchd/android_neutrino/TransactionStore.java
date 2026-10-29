@@ -5,6 +5,8 @@ import android.content.Context;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -25,7 +27,7 @@ public class TransactionStore {
         try {
             FileInputStream fis = context.openFileInput(fileName);
             ObjectInputStream is = new ObjectInputStream(fis);
-            transactionDataSet = (ArrayList<TransactionData>) is.readObject();
+            transactionDataSet = read(is);
             is.close();
             fis.close();
         } catch (FileNotFoundException | NotSerializableException e) {
@@ -33,6 +35,25 @@ public class TransactionStore {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * read returns the transactions that save wrote to the stream. It refuses anything but a list
+     * of TransactionData, which leaves the store empty, as an unreadable file does.
+     */
+    static ArrayList<TransactionData> read(ObjectInputStream is) throws IOException, ClassNotFoundException {
+        Object saved = is.readObject();
+        if (!(saved instanceof List)) {
+            throw new InvalidObjectException("not a list of transactions");
+        }
+        ArrayList<TransactionData> transactions = new ArrayList<>();
+        for (Object tx : (List<?>) saved) {
+            if (!(tx instanceof TransactionData)) {
+                throw new InvalidObjectException("not a transaction");
+            }
+            transactions.add((TransactionData) tx);
+        }
+        return transactions;
     }
 
     public void save(Context context) throws Exception {
