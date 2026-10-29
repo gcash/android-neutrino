@@ -9,10 +9,10 @@ import java.util.Locale;
  */
 public enum Network {
     MAINNET("mainnet", "bitcoincash", "", 1231006505L, 1501545600L, true,
-            "https://www.blockchain.com/bch/tx/"),
+            "https://explore.cash/mainnet/tx/"),
     // Testnet4's coins have no value, and its first block was mined on August 19, 2020.
     TESTNET4("testnet4", "bchtest", "testnet4=1", 1597811185L, 1597811185L, false,
-            "https://testnet4.imaginary.cash/tx/");
+            "https://explore.cash/testnet4/tx/");
 
     // The name of the network's directory in bchwallet's data, which also saves the choice.
     public final String id;
