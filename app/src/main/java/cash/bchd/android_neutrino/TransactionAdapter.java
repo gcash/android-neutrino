@@ -35,6 +35,9 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     private final Network network;
     // What the rows showed when the transactions or the block height were last set.
     private List<TransactionRows.Row> shownRows;
+    // The popup with a transaction's details, and the transaction, while it shows.
+    private PopupWindow detailsPopup;
+    private TransactionData detailsTx;
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -152,71 +155,92 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             }
         }
 
-        holder.layout.setOnClickListener(new LinearLayout.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                View customView = LayoutInflater.from(ctx).inflate(R.layout.txdetailspopup, cLayout, false);
-                PopupWindow popupWindow = new PopupWindow(customView, CoordinatorLayout.LayoutParams.WRAP_CONTENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT, true);
-                popupWindow.showAtLocation(cLayout, Gravity.CENTER, 0, 0);
-                popupWindow.setOutsideTouchable(true);
-                popupWindow.setFocusable(true);
-                popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        holder.layout.setOnClickListener(v -> showDetails(tx));
+    }
 
-                ImageView arrow = customView.findViewById(R.id.txDetailsArrow);
-                if (tx.getIncoming()) {
-                    arrow.setImageResource(R.drawable.receive_arrow);
-                } else {
-                    arrow.setImageResource(R.drawable.send_arrow);
-                }
-                TextView bchAmount = customView.findViewById(R.id.txDetailsBchAmount);
-                String detailsAmount = ctx.getString(R.string.bch_amount, new Amount(tx.getAmount()).toString());
-                bchAmount.setText(detailsAmount);
+    /**
+     * showDetails shows a transaction's details in a popup.
+     */
+    void showDetails(TransactionData tx) {
+        View customView = LayoutInflater.from(ctx).inflate(R.layout.txdetailspopup, cLayout, false);
+        PopupWindow popupWindow = new PopupWindow(customView, CoordinatorLayout.LayoutParams.WRAP_CONTENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT, true);
+        popupWindow.showAtLocation(cLayout, Gravity.CENTER, 0, 0);
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setFocusable(true);
+        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        detailsPopup = popupWindow;
+        detailsTx = tx;
 
-                TextView fiatAmount = customView.findViewById(R.id.txDetailsFiatAmount);
-                fiatAmount.setText(tx.getFiatAmount());
+        ImageView arrow = customView.findViewById(R.id.txDetailsArrow);
+        if (tx.getIncoming()) {
+            arrow.setImageResource(R.drawable.receive_arrow);
+        } else {
+            arrow.setImageResource(R.drawable.send_arrow);
+        }
+        TextView bchAmount = customView.findViewById(R.id.txDetailsBchAmount);
+        String detailsAmount = ctx.getString(R.string.bch_amount, new Amount(tx.getAmount()).toString());
+        bchAmount.setText(detailsAmount);
 
-                TextView dateView = customView.findViewById(R.id.txDetailsDate);
-                // In the phone's language and its 12 or 24 hour clock.
-                dateView.setText(DateUtils.formatDateTime(ctx, tx.getTimestamp() * 1000, DateUtils.FORMAT_SHOW_DATE
-                        | DateUtils.FORMAT_SHOW_TIME | DateUtils.FORMAT_SHOW_YEAR | DateUtils.FORMAT_ABBREV_MONTH));
+        TextView fiatAmount = customView.findViewById(R.id.txDetailsFiatAmount);
+        fiatAmount.setText(tx.getFiatAmount());
 
-                TextView status = customView.findViewById(R.id.txDetailsStatus);
-                ImageView circle = customView.findViewById(R.id.confirmationCircle);
+        TextView dateView = customView.findViewById(R.id.txDetailsDate);
+        // In the phone's language and its 12 or 24 hour clock.
+        dateView.setText(DateUtils.formatDateTime(ctx, tx.getTimestamp() * 1000, DateUtils.FORMAT_SHOW_DATE
+                | DateUtils.FORMAT_SHOW_TIME | DateUtils.FORMAT_SHOW_YEAR | DateUtils.FORMAT_ABBREV_MONTH));
 
-                int confirmations = 0;
-                if (tx.getHeight() > 0) {
-                    confirmations = blockHeight - tx.getHeight() + 1;
-                }
-                if (confirmations <= 0) {
-                    status.setText(R.string.unconfirmed);
-                    circle.setImageResource(R.drawable.red_circle);
-                } else if (confirmations < 10) {
-                    status.setText(R.string.pending);
-                    circle.setImageResource(R.drawable.yellow_circle);
-                } else {
-                    status.setText(R.string.confirmed);
-                    circle.setImageResource(R.drawable.green_circle);
-                }
+        TextView status = customView.findViewById(R.id.txDetailsStatus);
+        ImageView circle = customView.findViewById(R.id.confirmationCircle);
 
-                String to = tx.getIncoming() ? null : recipients(tx);
-                if (to == null) {
-                    customView.findViewById(R.id.txDetailsToDivider).setVisibility(View.GONE);
-                    customView.findViewById(R.id.txDetailsToRow).setVisibility(View.GONE);
-                } else {
-                    TextView toView = customView.findViewById(R.id.txDetailsTo);
-                    toView.setText(to);
-                }
+        int confirmations = 0;
+        if (tx.getHeight() > 0) {
+            confirmations = blockHeight - tx.getHeight() + 1;
+        }
+        if (confirmations <= 0) {
+            status.setText(R.string.unconfirmed);
+            circle.setImageResource(R.drawable.red_circle);
+        } else if (confirmations < 10) {
+            status.setText(R.string.pending);
+            circle.setImageResource(R.drawable.yellow_circle);
+        } else {
+            status.setText(R.string.confirmed);
+            circle.setImageResource(R.drawable.green_circle);
+        }
 
-                TextView memo = customView.findViewById(R.id.txDetailsMemo);
-                memo.setText(tx.getMemo());
+        String to = tx.getIncoming() ? null : recipients(tx);
+        if (to == null) {
+            customView.findViewById(R.id.txDetailsToDivider).setVisibility(View.GONE);
+            customView.findViewById(R.id.txDetailsToRow).setVisibility(View.GONE);
+        } else {
+            TextView toView = customView.findViewById(R.id.txDetailsTo);
+            toView.setText(to);
+        }
 
-                TextView txid = customView.findViewById(R.id.txDetailsTxid);
-                txid.setText(tx.getTxid());
+        TextView memo = customView.findViewById(R.id.txDetailsMemo);
+        memo.setText(tx.getMemo());
 
-                TextView link = customView.findViewById(R.id.txDetailsLink);
-                link.setText(network.explorerUrl(tx.getTxid()));
-            }
-        });
+        TextView txid = customView.findViewById(R.id.txDetailsTxid);
+        txid.setText(tx.getTxid());
+
+        TextView link = customView.findViewById(R.id.txDetailsLink);
+        link.setText(network.explorerUrl(tx.getTxid()));
+    }
+
+    /**
+     * shownDetails returns the transaction whose details show, or null, for a recreated screen
+     * to show them again.
+     */
+    TransactionData shownDetails() {
+        return detailsPopup != null && detailsPopup.isShowing() ? detailsTx : null;
+    }
+
+    /**
+     * dismissDetails closes the popup with a transaction's details, if it shows.
+     */
+    void dismissDetails() {
+        if (detailsPopup != null) {
+            detailsPopup.dismiss();
+        }
     }
 
     // Return the size of your dataset (invoked by the layout manager)

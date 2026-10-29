@@ -46,8 +46,10 @@ import cash.bchd.android_neutrino.wallet.Wallet;
 public class ReceiveActivity extends AppCompatActivity {
 
     // A recreated screen needs the unit the amount is in besides the fields, which Android
-    // restores.
+    // restores, and shows the request's popup again with what was paid toward it.
     private static final String STATE_SHOWING_FIAT = "showingFiat";
+    private static final String STATE_REQUEST_POPUP = "requestPopup";
+    private static final String STATE_TOTAL_RECEIVED = "totalReceived";
 
     boolean showingFiat = true;
     String fiatCurrency;
@@ -60,6 +62,7 @@ public class ReceiveActivity extends AppCompatActivity {
     TextInputEditText label;
     TextInputEditText memo;
     long totalReceived;
+    PopupWindow requestPopup;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -145,12 +148,30 @@ public class ReceiveActivity extends AppCompatActivity {
             totalReceived = 0;
             displayQRPopup();
         });
+
+        // The popup shows once the screen's window is there, and the fields it is made from are
+        // restored.
+        if (savedInstanceState != null && savedInstanceState.getBoolean(STATE_REQUEST_POPUP)) {
+            totalReceived = savedInstanceState.getLong(STATE_TOTAL_RECEIVED);
+            receiveLayout.post(this::displayQRPopup);
+        }
     }
 
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean(STATE_SHOWING_FIAT, showingFiat);
+        outState.putBoolean(STATE_REQUEST_POPUP, requestPopup != null && requestPopup.isShowing());
+        outState.putLong(STATE_TOTAL_RECEIVED, totalReceived);
+    }
+
+    @Override
+    protected void onDestroy() {
+        // The popup goes with its window, which a recreated screen replaces.
+        if (requestPopup != null) {
+            requestPopup.dismiss();
+        }
+        super.onDestroy();
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -250,6 +271,7 @@ public class ReceiveActivity extends AppCompatActivity {
         View customView = layoutInflater.inflate(R.layout.requestpopup, receiveLayout, false);
         PopupWindow popupWindow = new PopupWindow(customView, CoordinatorLayout.LayoutParams.WRAP_CONTENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT, true);
         popupWindow.showAtLocation(findViewById(R.id.receiveLayout), Gravity.CENTER, 0, 0);
+        requestPopup = popupWindow;
         popupWindow.setOutsideTouchable(true);
         popupWindow.setFocusable(true);
         popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));

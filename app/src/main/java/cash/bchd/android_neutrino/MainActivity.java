@@ -44,6 +44,7 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.os.BundleCompat;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -102,6 +103,7 @@ public class MainActivity extends CloseActivity {
     CoordinatorLayout mCLayout;
     ImageView qrImage;
     TextView addrText;
+    PopupWindow qrPopup;
     TransactionStore txStore;
     RecyclerView.LayoutManager layoutManager;
     TransactionAdapter mAdapter;
@@ -118,6 +120,9 @@ public class MainActivity extends CloseActivity {
     private static final long SYNC_STATUS_POLL_MILLIS = 2000;
     private static final int RC_UPGRADE_PIN = 9003;
     private static final int RC_LOCAL_NETWORK = 9005;
+    // The popup a recreated screen shows again: the address's QR code, or a transaction's details.
+    private static final String STATE_QR_POPUP = "qrPopup";
+    private static final String STATE_TX_DETAILS = "txDetails";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -171,7 +176,7 @@ public class MainActivity extends CloseActivity {
         listenForMenuSlides();
         fabQR.setOnClickListener(v -> {
             fab.bringToFront();
-            displayQRPopup();
+            displayQRPopup(true);
             sendViewToBack(v);
         });
         fabScan.setOnClickListener(v -> {
@@ -199,6 +204,37 @@ public class MainActivity extends CloseActivity {
             newIntent.putExtra("qrdata", SettingsFragment.DONATE_URI);
             this.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
         }
+        if (savedInstanceState != null) {
+            boolean qr = savedInstanceState.getBoolean(STATE_QR_POPUP);
+            TransactionData details = BundleCompat.getSerializable(savedInstanceState,
+                    STATE_TX_DETAILS, TransactionData.class);
+            // A popup shows once the screen's window is there.
+            mCLayout.post(() -> {
+                if (qr) {
+                    displayQRPopup(false);
+                }
+                if (details != null) {
+                    mAdapter.showDetails(details);
+                }
+            });
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(STATE_QR_POPUP, qrPopup != null && qrPopup.isShowing());
+        outState.putSerializable(STATE_TX_DETAILS, mAdapter.shownDetails());
+    }
+
+    @Override
+    protected void onDestroy() {
+        // A popup goes with its window, which a recreated screen replaces.
+        if (qrPopup != null) {
+            qrPopup.dismiss();
+        }
+        mAdapter.dismissDetails();
+        super.onDestroy();
     }
 
     // The menu button opens the menu while it's held down, and presses the menu's button that it's
@@ -216,7 +252,7 @@ public class MainActivity extends CloseActivity {
                     v.performClick();
                 } else {
                     if (inViewInBounds(fabQR, (int) event.getRawX(), (int) event.getRawY())) {
-                        displayQRPopup();
+                        displayQRPopup(true);
                         toggleFABMenu();
                     }
                     if (inViewInBounds(fabScan, (int) event.getRawX(), (int) event.getRawY())) {
@@ -367,7 +403,9 @@ public class MainActivity extends CloseActivity {
         startActivityForResult(intent, RC_BARCODE_CAPTURE);
     }
 
-    private void displayQRPopup() {
+    // displayQRPopup shows the wallet's address and its QR code in a popup, from the menu, which
+    // it closes, or again on a recreated screen.
+    private void displayQRPopup(boolean fromMenu) {
         String lastAddr = "";
         if (!wallet.isRunning()) {
             lastAddr = settings.getLastAddress();
@@ -377,7 +415,9 @@ public class MainActivity extends CloseActivity {
                 return;
             }
         }
-        toggleFABMenu();
+        if (fromMenu) {
+            toggleFABMenu();
+        }
         LayoutInflater layoutInflater = (LayoutInflater) MainActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View customView = layoutInflater.inflate(R.layout.qrpopup, mCLayout, false);
         PopupWindow popupWindow = new PopupWindow(customView, CoordinatorLayout.LayoutParams.WRAP_CONTENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT, true);
@@ -385,6 +425,7 @@ public class MainActivity extends CloseActivity {
         popupWindow.setOutsideTouchable(true);
         popupWindow.setFocusable(true);
         popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        qrPopup = popupWindow;
         try {
             String addr;
             if (wallet.isRunning()) {
