@@ -46,6 +46,12 @@ android {
     }
 }
 
+// javac names each deprecated call and unchecked cast, with its file and line, rather than noting
+// in a summary that there are some.
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked']
+}
+
 def grpcVersion = '1.85.1'
 def protobufVersion = '4.36.2'
 
