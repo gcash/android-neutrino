@@ -16,6 +16,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -38,6 +39,11 @@ import walletrpc.Api;
 public class SendActivity extends AppCompatActivity {
 
     public static final int RC_BARCODE_CAPTURE = 9001;
+
+    // What a recreated screen needs besides the fields, which Android restores: the unit the
+    // amount is in, and the label of the payment link that filled them in.
+    private static final String STATE_SHOWING_FIAT = "showingFiat";
+    private static final String STATE_LABEL = "label";
 
     Wallet wallet;
     Network network;
@@ -130,6 +136,16 @@ public class SendActivity extends AppCompatActivity {
             symbolLabel.setText("₿");
             toggle.setVisibility(View.GONE);
             conversionRate.setVisibility(View.GONE);
+        }
+        if (savedInstanceState != null) {
+            label = savedInstanceState.getString(STATE_LABEL);
+            if (network.hasFiat && !savedInstanceState.getBoolean(STATE_SHOWING_FIAT, true)) {
+                showingFiat = false;
+                symbolLabel.setText("₿");
+                if (balance != null) {
+                    balanceTxtView.setText(getString(R.string.balance_bch_amount, balance.toString()));
+                }
+            }
         }
 
         address = findViewById(R.id.addressInput);
@@ -275,6 +291,12 @@ public class SendActivity extends AppCompatActivity {
                 inputAmount.setEnabled(true);
             }
         });
+
+        // The link or payment request the screen was opened for is handled once: a recreated
+        // screen has the fields it filled in, or went on to the confirmation screen.
+        if (savedInstanceState != null) {
+            return;
+        }
 
         String qrData = intent.getExtras().getString("qrdata");
         if (qrData != null) {
@@ -444,6 +466,13 @@ public class SendActivity extends AppCompatActivity {
         } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(STATE_SHOWING_FIAT, showingFiat);
+        outState.putString(STATE_LABEL, label);
     }
 
     @Override

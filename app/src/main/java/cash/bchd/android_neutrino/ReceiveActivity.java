@@ -25,6 +25,7 @@ import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -43,6 +44,10 @@ import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.Wallet;
 
 public class ReceiveActivity extends AppCompatActivity {
+
+    // A recreated screen needs the unit the amount is in besides the fields, which Android
+    // restores.
+    private static final String STATE_SHOWING_FIAT = "showingFiat";
 
     boolean showingFiat = true;
     String fiatCurrency;
@@ -112,6 +117,10 @@ public class ReceiveActivity extends AppCompatActivity {
             symbolLabel.setText("₿");
             toggle.setVisibility(View.GONE);
             conversionRate.setVisibility(View.GONE);
+        } else if (savedInstanceState != null
+                && !savedInstanceState.getBoolean(STATE_SHOWING_FIAT, true)) {
+            showingFiat = false;
+            symbolLabel.setText("₿");
         }
 
         receiveAmountInput.addTextChangedListener(new TextWatcher() {
@@ -136,6 +145,12 @@ public class ReceiveActivity extends AppCompatActivity {
             totalReceived = 0;
             displayQRPopup();
         });
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(STATE_SHOWING_FIAT, showingFiat);
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
