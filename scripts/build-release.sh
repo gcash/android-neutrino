@@ -50,10 +50,12 @@ if ! KS_PASS=$PASSWORD "$KEYTOOL" -list -keystore "$KEYSTORE" -alias "$ALIAS" \
     exit 1
 fi
 
-# Build the unsigned APKs afresh, so that none is left from an earlier build.
+# Build the app from scratch, so that the release depends on nothing left from
+# an earlier build. Only the app module is cleaned, since the project's clean
+# also deletes build/, and with it the earlier releases in build/release/.
 APKS="$ROOT/app/build/outputs/apk/release"
-rm -rf "$APKS" "$OUT"
-(cd "$ROOT" && ./gradlew --console=plain assembleRelease -PabiSplits)
+rm -rf "$OUT"
+(cd "$ROOT" && ./gradlew --console=plain :app:clean assembleRelease -PabiSplits)
 mkdir -p "$OUT"
 
 for ABI in arm64-v8a armeabi-v7a x86_64 universal; do
