@@ -31,6 +31,12 @@ if [ -z "$TOOLS" ] || [ ! -x "$TOOLS/apksigner" ] || [ ! -x "$TOOLS/zipalign" ];
     echo "No build-tools with apksigner and zipalign in $ANDROID_HOME/build-tools" >&2
     exit 1
 fi
+# apksigner loads a native library, which Java 24 and newer warn about on every
+# run unless native access is enabled. Its wrapper passes -J options on to
+# java, and Java 17 and newer accept this one.
+apksigner() {
+    "$TOOLS/apksigner" -J-enable-native-access=ALL-UNNAMED "$@"
+}
 KEYTOOL=${JAVA_HOME:+$JAVA_HOME/bin/}keytool
 VERSION=$(sed -n 's/^ *versionName = "\(.*\)"$/\1/p' "$ROOT/app/build.gradle")
 if [ -z "$VERSION" ]; then
@@ -53,26 +59,29 @@ fi
 # Build the app from scratch, so that the release depends on nothing left from
 # an earlier build. Only the app module is cleaned, since the project's clean
 # also deletes build/, and with it the earlier releases in build/release/.
+# Gradle prints only errors, and in a terminal its progress bar.
 APKS="$ROOT/app/build/outputs/apk/release"
 rm -rf "$OUT"
-(cd "$ROOT" && ./gradlew --console=plain :app:clean assembleRelease -PabiSplits)
+echo "Building $VERSION..."
+(cd "$ROOT" && ./gradlew --quiet :app:clean assembleRelease -PabiSplits)
 mkdir -p "$OUT"
 
+echo "Signing..."
 for ABI in arm64-v8a armeabi-v7a x86_64 universal; do
     UNSIGNED="$APKS/app-$ABI-release-unsigned.apk"
     SIGNED="$OUT/neutrino-$VERSION-$ABI.apk"
     # The native libraries must stay aligned to 16 KB pages, and signing has
     # to follow the alignment, so check it before signing.
     "$TOOLS/zipalign" -c -P 16 4 "$UNSIGNED"
-    KS_PASS=$PASSWORD "$TOOLS/apksigner" sign --ks "$KEYSTORE" \
+    KS_PASS=$PASSWORD apksigner sign --ks "$KEYSTORE" \
         --ks-key-alias "$ALIAS" --ks-pass env:KS_PASS --out "$SIGNED" "$UNSIGNED"
-    "$TOOLS/apksigner" verify --min-sdk-version 24 "$SIGNED"
+    apksigner verify --min-sdk-version 24 "$SIGNED"
 done
 
 (cd "$OUT" && sha256sum -- *.apk > SHA256SUMS)
 echo
 echo "Signed with:"
-"$TOOLS/apksigner" verify --print-certs "$OUT/neutrino-$VERSION-universal.apk" |
+apksigner verify --print-certs "$OUT/neutrino-$VERSION-universal.apk" |
     grep -E "certificate (DN|SHA-256 digest)"
 echo
 echo "Wrote $OUT:"

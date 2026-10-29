@@ -30,6 +30,16 @@ android {
             universalApk = true
         }
     }
+    packaging {
+        jniLibs {
+            // The Go linker strips libgojni.so already, as
+            // scripts/build-bchwallet-aar.sh links it with -s -w. Packaging it
+            // as the AAR has it, rather than stripping it again with the NDK
+            // AGP looks for, spares the warning of a machine without that NDK
+            // and gives the same APK on every machine.
+            keepDebugSymbols += '**/libgojni.so'
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
