@@ -25,123 +25,140 @@
 
     </androidx.appcompat.widget.Toolbar>
 
-    <include
-        layout="@layout/network_badge"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="16dp" />
-
-    <FrameLayout
+    <!-- Scrolls on small screens, so that the request button can always be
+         reached at its size, and keeps it at the bottom on larger ones. -->
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="50dp">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
 
-        <RelativeLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center">
+            android:orientation="vertical">
+
+            <include
+                layout="@layout/network_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="50dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center">
+
+                    <TextView
+                        android:id="@+id/receiveSymbolLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_marginTop="21dp"
+                        android:text=""
+                        android:textColor="@color/neonPurple"
+                        android:textSize="40sp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/receiveAmountLayout"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_toEndOf="@+id/receiveSymbolLabel"
+                        android:minWidth="50dp">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/receiveAmountInput"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="10dp"
+                            android:inputType="numberDecimal"
+                            android:text="@string/string_zero"
+                            android:textColor="@color/neonPurple"
+                            android:textColorHint="@color/grey"
+                            android:textSize="40sp" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                </RelativeLayout>
+
+                <ImageView
+                    android:id="@+id/receiveToggleImage"
+                    android:contentDescription="@string/switch_bch_fiat"
+                    android:layout_width="30dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="40dp"
+                    android:layout_marginEnd="20dp"
+                    app:srcCompat="@drawable/up_down_arrow" />
+
+            </FrameLayout>
 
             <TextView
-                android:id="@+id/receiveSymbolLabel"
+                android:id="@+id/receiveConversionRate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_marginTop="21dp"
-                android:text=""
-                android:textColor="@color/neonPurple"
-                android:textSize="40sp" />
+                android:layout_gravity="center"
+                android:text="@string/string_0_bch" />
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/receiveAmountLayout"
-                android:layout_width="wrap_content"
+                android:id="@+id/labelLayout"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_toEndOf="@+id/receiveSymbolLabel"
-                android:minWidth="50dp">
+                android:layout_marginLeft="25dp"
+                android:layout_marginTop="50dp"
+                android:layout_marginRight="25dp"
+                android:layout_marginBottom="25dp">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/receiveAmountInput"
-                    android:layout_width="wrap_content"
+                    android:id="@+id/labelInput"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="10dp"
-                    android:inputType="numberDecimal"
-                    android:text="@string/string_zero"
-                    android:textColor="@color/neonPurple"
-                    android:textColorHint="@color/grey"
-                    android:textSize="40sp" />
+                    android:hint="@string/your_name_optional" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
-        </RelativeLayout>
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="25dp"
+                android:layout_marginTop="50dp">
 
-        <ImageView
-            android:id="@+id/receiveToggleImage"
-            android:contentDescription="@string/switch_bch_fiat"
-            android:layout_width="30dp"
-            android:layout_height="20dp"
-            android:layout_gravity="end"
-            android:layout_marginTop="40dp"
-            android:layout_marginEnd="20dp"
-            app:srcCompat="@drawable/up_down_arrow" />
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/receiveMemoInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/memo_optional" />
 
-    </FrameLayout>
+            </com.google.android.material.textfield.TextInputLayout>
 
-    <TextView
-        android:id="@+id/receiveConversionRate"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="@string/string_0_bch" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dip"
+                android:layout_weight="1"
+                android:gravity="center|bottom"
+                android:orientation="vertical">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/labelLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="25dp"
-        android:layout_marginTop="50dp"
-        android:layout_marginRight="25dp"
-        android:layout_marginBottom="25dp">
+                <Button
+                    android:id="@+id/requestBtn"
+                    android:layout_width="match_parent"
+                    android:layout_height="65dp"
+                    android:layout_gravity="bottom"
+                    android:layout_margin="25dp"
+                    android:background="@color/neonBlue"
+                    android:text="@string/request"
+                    android:textColor="@android:color/white"
+                    android:textSize="20sp" />
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/labelInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/your_name_optional" />
+            </LinearLayout>
 
-    </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="25dp"
-        android:layout_marginTop="50dp">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/receiveMemoInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/memo_optional" />
-
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dip"
-        android:layout_weight="1"
-        android:gravity="center|bottom"
-        android:orientation="vertical">
-
-        <Button
-            android:id="@+id/requestBtn"
-            android:layout_width="match_parent"
-            android:layout_height="65dp"
-            android:layout_gravity="bottom"
-            android:layout_margin="25dp"
-            android:background="@color/neonBlue"
-            android:text="@string/request"
-            android:textColor="@android:color/white"
-            android:textSize="20sp" />
-
-    </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
 </LinearLayout>

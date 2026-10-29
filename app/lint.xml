@@ -8,4 +8,12 @@
     <!-- The small icons, such as the menu's, come in one density, which Android scales as it
          did when they were in drawable. -->
     <issue id="IconMissingDensityFolder" severity="ignore" />
+    <!-- Phones keep every screen in portrait. Android 16 and newer ignore the lock on large
+         screens, where every screen works in both orientations. -->
+    <issue id="LockedOrientationActivity">
+        <ignore path="src/main/AndroidManifest.xml" />
+    </issue>
+    <issue id="DiscouragedApi">
+        <ignore regexp="Fixed screen orientations" />
+    </issue>
 </lint>

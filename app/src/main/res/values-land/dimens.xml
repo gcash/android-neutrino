@@ -1,0 +1,4 @@
+<resources>
+    <!-- Less space above the PIN pad, so that it fits on a tablet held sideways. -->
+    <dimen name="pin_label_margin_top">24dp</dimen>
+</resources>

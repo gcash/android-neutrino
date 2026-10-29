@@ -1,44 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Scrolls when the PIN pad doesn't fit, as in a short window, so that every key can be
+     reached. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/setPinLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical">
+    android:fillViewport="true">
 
-    <TextView
-        android:id="@+id/pinLabel"
+    <LinearLayout
+        android:id="@+id/setPinLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="100dp"
-        android:text="@string/enter_pin"
-        android:textAlignment="center"
-        android:textSize="20sp"
-        app:layout_anchorGravity="center_horizontal" />
+        android:gravity="center"
+        android:orientation="vertical">
 
-    <cash.bchd.android_neutrino.widget.PinDotsView
-        android:id="@+id/pinIndicatorDots"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="50dp"
-        app:dotEmptyBackground="@drawable/dot_empty"
-        app:dotFilledBackground="@drawable/dot_filled" />
+        <TextView
+            android:id="@+id/pinLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/pin_label_margin_top"
+            android:text="@string/enter_pin"
+            android:textAlignment="center"
+            android:textSize="20sp"
+            app:layout_anchorGravity="center_horizontal" />
 
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="50dp"
-        android:gravity="center_horizontal">
-
-        <cash.bchd.android_neutrino.widget.PinPadView
-            android:id="@+id/pinpad"
+        <cash.bchd.android_neutrino.widget.PinDotsView
+            android:id="@+id/pinIndicatorDots"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:keypadHorizontalSpacing="40dp"
-            app:keypadTextColor="@color/darkGreyCircle"
-            app:keypadVerticalSpacing="16dp" />
+            android:layout_marginTop="50dp"
+            app:dotEmptyBackground="@drawable/dot_empty"
+            app:dotFilledBackground="@drawable/dot_filled" />
 
-    </RelativeLayout>
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="50dp"
+            android:gravity="center_horizontal">
 
-</LinearLayout>
+            <cash.bchd.android_neutrino.widget.PinPadView
+                android:id="@+id/pinpad"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:keypadHorizontalSpacing="40dp"
+                app:keypadTextColor="@color/darkGreyCircle"
+                app:keypadVerticalSpacing="16dp" />
+
+        </RelativeLayout>
+
+    </LinearLayout>
+
+</ScrollView>

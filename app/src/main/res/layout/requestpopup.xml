@@ -9,12 +9,17 @@
     android:orientation="vertical"
     android:padding="10dp">
 
+    <!-- Takes the height that the text below leaves, so that the text shows also when the
+         screen is short, as on a tablet held sideways. It spans the text's width, white
+         around a code made smaller. -->
     <ImageView
         android:id="@+id/requestQRCode"
         android:contentDescription="@string/payment_request_qr_code"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:adjustViewBounds="true"
+        android:background="@android:color/white"
         android:scaleType="fitCenter" />
 
     <TextView

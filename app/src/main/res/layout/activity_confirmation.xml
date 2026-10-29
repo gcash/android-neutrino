@@ -13,197 +13,212 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <include
-            layout="@layout/network_badge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="20dp" />
-
-        <TextView
-            android:id="@+id/sendTxt"
+        <!-- Scrolls when the details don't fit above the slider, as on a tablet held
+             sideways, so that they never cover it. -->
+        <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="50dp"
-            android:text="@string/send"
-            android:textAlignment="center"
-            android:textColor="@android:color/white"
-            android:textSize="40sp"
-            app:layout_anchorGravity="center_horizontal" />
+            android:layout_height="match_parent"
+            android:layout_above="@+id/noScreenLockNotice">
 
-        <TextView
-            android:id="@+id/confirmBchAmount"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/sendTxt"
-            android:textAlignment="center"
-            android:textColor="@android:color/white"
-            android:textSize="40sp"
-            app:layout_anchorGravity="center_horizontal" />
-
-        <TextView
-            android:id="@+id/confirmFiatAmount"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/confirmBchAmount"
-            android:textAlignment="center"
-            android:textColor="@android:color/white"
-            android:textSize="20sp"
-            app:layout_anchorGravity="center_horizontal" />
-
-        <androidx.cardview.widget.CardView
-            android:id="@+id/detailsCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/confirmFiatAmount"
-            android:layout_marginLeft="15dp"
-            android:layout_marginTop="30dp"
-            android:layout_marginRight="15dp"
-            android:layout_marginBottom="10dp"
-            android:background="@android:color/white"
-            android:visibility="visible">
-
-            <LinearLayout
+            <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical">
+                android:layout_height="wrap_content">
+
+                <include
+                    layout="@layout/network_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginTop="20dp" />
 
                 <TextView
-                    android:id="@+id/payToLabel"
-                    android:layout_width="200dp"
+                    android:id="@+id/sendTxt"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="start"
-                    android:layout_marginStart="10dp"
-                    android:layout_marginTop="10dp"
-                    android:layout_marginBottom="5dp"
-                    android:layout_weight="1"
-                    android:ellipsize="end"
-                    android:text="@string/pay_to"
-                    android:textColor="@color/grey"
-                    android:textSize="16sp" />
+                    android:layout_marginTop="50dp"
+                    android:text="@string/send"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="40sp"
+                    app:layout_anchorGravity="center_horizontal" />
 
                 <TextView
-                    android:id="@+id/payTo"
+                    android:id="@+id/confirmBchAmount"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="start"
-                    android:layout_marginStart="10dp"
-                    android:layout_marginEnd="10dp"
-                    android:layout_weight="1"
-                    android:background="@color/liteGrey"
-                    android:drawablePadding="6dp"
-                    android:ellipsize="end"
-                    android:padding="10dp"
-                    android:textColor="@android:color/black"
-                    android:textSize="14sp" />
+                    android:layout_below="@+id/sendTxt"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="40sp"
+                    app:layout_anchorGravity="center_horizontal" />
 
-                <View
-                    android:id="@+id/divider7"
+                <TextView
+                    android:id="@+id/confirmFiatAmount"
                     android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="10dp"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/confirmBchAmount"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="20sp"
+                    app:layout_anchorGravity="center_horizontal" />
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/detailsCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/confirmFiatAmount"
+                    android:layout_marginLeft="15dp"
+                    android:layout_marginTop="30dp"
+                    android:layout_marginRight="15dp"
                     android:layout_marginBottom="10dp"
-                    android:background="?android:attr/listDivider" />
+                    android:background="@android:color/white"
+                    android:visibility="visible">
 
-                <TextView
-                    android:id="@+id/paymentAddrLabel"
-                    android:layout_width="200dp"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="start"
-                    android:layout_marginStart="10dp"
-                    android:layout_marginBottom="5dp"
-                    android:layout_weight="1"
-                    android:ellipsize="end"
-                    android:text="@string/payment_address"
-                    android:textColor="@color/grey"
-                    android:textSize="16sp" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/paymentAddress"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="start"
-                    android:layout_marginStart="10dp"
-                    android:layout_marginEnd="10dp"
-                    android:layout_weight="1"
-                    android:background="@color/liteGrey"
-                    android:ellipsize="end"
-                    android:padding="10dp"
-                    android:textColor="@android:color/black"
-                    android:textSize="14sp" />
+                        <TextView
+                            android:id="@+id/payToLabel"
+                            android:layout_width="200dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginTop="10dp"
+                            android:layout_marginBottom="5dp"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:text="@string/pay_to"
+                            android:textColor="@color/grey"
+                            android:textSize="16sp" />
 
-                <View
-                    android:id="@+id/divider8"
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="10dp"
-                    android:layout_marginBottom="10dp"
-                    android:background="?android:attr/listDivider" />
+                        <TextView
+                            android:id="@+id/payTo"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginEnd="10dp"
+                            android:layout_weight="1"
+                            android:background="@color/liteGrey"
+                            android:drawablePadding="6dp"
+                            android:ellipsize="end"
+                            android:padding="10dp"
+                            android:textColor="@android:color/black"
+                            android:textSize="14sp" />
 
-                <TextView
-                    android:layout_width="200dp"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="start"
-                    android:layout_marginStart="10dp"
-                    android:layout_marginBottom="5dp"
-                    android:layout_weight="1"
-                    android:ellipsize="end"
-                    android:text="@string/network_fee"
-                    android:textColor="@color/grey"
-                    android:textSize="16sp" />
+                        <View
+                            android:id="@+id/divider7"
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="10dp"
+                            android:layout_marginBottom="10dp"
+                            android:background="?android:attr/listDivider" />
 
-                <TextView
-                    android:id="@+id/networkFee"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="start"
-                    android:layout_marginStart="10dp"
-                    android:layout_marginEnd="10dp"
-                    android:layout_weight="1"
-                    android:background="@color/liteGrey"
-                    android:ellipsize="end"
-                    android:padding="10dp"
-                    android:textColor="@android:color/black"
-                    android:textSize="14sp" />
+                        <TextView
+                            android:id="@+id/paymentAddrLabel"
+                            android:layout_width="200dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginBottom="5dp"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:text="@string/payment_address"
+                            android:textColor="@color/grey"
+                            android:textSize="16sp" />
 
-                <View
-                    android:id="@+id/divider9"
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="10dp"
-                    android:layout_marginBottom="10dp"
-                    android:background="?android:attr/listDivider" />
+                        <TextView
+                            android:id="@+id/paymentAddress"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginEnd="10dp"
+                            android:layout_weight="1"
+                            android:background="@color/liteGrey"
+                            android:ellipsize="end"
+                            android:padding="10dp"
+                            android:textColor="@android:color/black"
+                            android:textSize="14sp" />
 
-                <TextView
-                    android:id="@+id/memoLabel"
-                    android:layout_width="200dp"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="start"
-                    android:layout_marginStart="10dp"
-                    android:layout_marginBottom="5dp"
-                    android:layout_weight="1"
-                    android:ellipsize="end"
-                    android:text="@string/memo"
-                    android:textColor="@color/grey"
-                    android:textSize="16sp" />
+                        <View
+                            android:id="@+id/divider8"
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="10dp"
+                            android:layout_marginBottom="10dp"
+                            android:background="?android:attr/listDivider" />
 
-                <TextView
-                    android:id="@+id/memoConfirmation"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="start"
-                    android:layout_marginStart="10dp"
-                    android:layout_marginEnd="10dp"
-                    android:layout_marginBottom="20dp"
-                    android:layout_weight="1"
-                    android:background="@color/liteGrey"
-                    android:ellipsize="end"
-                    android:padding="10dp"
-                    android:textColor="@android:color/black"
-                    android:textSize="14sp" />
-            </LinearLayout>
+                        <TextView
+                            android:layout_width="200dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginBottom="5dp"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:text="@string/network_fee"
+                            android:textColor="@color/grey"
+                            android:textSize="16sp" />
 
-        </androidx.cardview.widget.CardView>
+                        <TextView
+                            android:id="@+id/networkFee"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginEnd="10dp"
+                            android:layout_weight="1"
+                            android:background="@color/liteGrey"
+                            android:ellipsize="end"
+                            android:padding="10dp"
+                            android:textColor="@android:color/black"
+                            android:textSize="14sp" />
+
+                        <View
+                            android:id="@+id/divider9"
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="10dp"
+                            android:layout_marginBottom="10dp"
+                            android:background="?android:attr/listDivider" />
+
+                        <TextView
+                            android:id="@+id/memoLabel"
+                            android:layout_width="200dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginBottom="5dp"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:text="@string/memo"
+                            android:textColor="@color/grey"
+                            android:textSize="16sp" />
+
+                        <TextView
+                            android:id="@+id/memoConfirmation"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginEnd="10dp"
+                            android:layout_marginBottom="20dp"
+                            android:layout_weight="1"
+                            android:background="@color/liteGrey"
+                            android:ellipsize="end"
+                            android:padding="10dp"
+                            android:textColor="@android:color/black"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+            </RelativeLayout>
+
+        </androidx.core.widget.NestedScrollView>
 
         <TextView
             android:id="@+id/noScreenLockNotice"

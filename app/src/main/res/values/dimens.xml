@@ -5,4 +5,5 @@
     <dimen name="standard_175">175dp</dimen>
     <dimen name="standard_230">230dp</dimen>
     <dimen name="standard_285">285dp</dimen>
+    <dimen name="pin_label_margin_top">100dp</dimen>
 </resources>

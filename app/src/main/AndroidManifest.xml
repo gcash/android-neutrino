@@ -63,23 +63,33 @@
                 <data android:scheme="bchtest" />
             </intent-filter>
         </activity>
+        <!-- Large screens ignore the portrait lock, so the screens below that hold a payment or
+             ask for the screen lock keep themselves when the screen rotates or is resized, rather
+             than being recreated. A recreated send screen applied its payment link again over
+             what was typed, so that an amount switched to the fiat currency was read as BCH, and
+             lost a payment request it was downloading. The other screens lost the unit of their
+             amount, the answer to the screen lock prompt, or the dialog that was open, and the
+             backup asked for the screen lock again and started over. -->
         <activity
             android:name=".SendActivity"
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize">
         </activity>
         <activity
             android:name=".ReceiveActivity"
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize">
         </activity>
         <activity
             android:name=".ConfirmationActivity"
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize">
         </activity>
         <activity
             android:name=".SettingsActivity"
@@ -87,17 +97,20 @@
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait">
         </activity>
+        <!-- Kept through rotation and resizing too, as the send screens above are. -->
         <activity
             android:name=".BackupActivity"
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar.White"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize">
         </activity>
         <activity
             android:name=".RestoreActivity"
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar.White"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize">
         </activity>
         <activity
             android:name=".PinActivity"
