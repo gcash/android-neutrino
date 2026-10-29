@@ -7,12 +7,24 @@ import android.view.WindowManager;
 
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
+import androidx.lifecycle.ViewModel;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager.widget.ViewPager;
 
 public class BackupActivity extends FragmentActivity {
     private CustomViewPager _mViewPager;
     private BackupAdapter _adapter;
     private View _btn1,_btn2,_btn3;
+
+    /**
+     * Unlock remembers, while the app runs, that the screen lock is being asked for or was
+     * confirmed, so that a screen Android recreates, as after a configuration change, neither
+     * asks again nor starts over. A screen Android restores after it ended the app asks again.
+     */
+    public static class Unlock extends ViewModel {
+        boolean asking;
+        boolean confirmed;
+    }
 
     /** Called when the activity is first created. */
     @Override
@@ -23,24 +35,36 @@ public class BackupActivity extends FragmentActivity {
         // Keep the recovery phrase and PIN out of screenshots and the recent apps.
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
         // Show the recovery phrase only to someone who can unlock the phone.
-        ScreenLock.prompt(this, new ScreenLock.Callback() {
+        Unlock unlock = new ViewModelProvider(this).get(Unlock.class);
+        ScreenLock.Prompt screenLock = ScreenLock.prompt(this, new ScreenLock.Callback() {
             @Override
             public void onConfirmed() {
+                unlock.asking = false;
+                unlock.confirmed = true;
                 setUpView();
                 setTab();
             }
 
             @Override
             public void onCancelled() {
+                unlock.asking = false;
                 finish();
             }
-        }).confirm(getString(R.string.screen_lock_show_recovery_phrase));
+        });
+        if (unlock.confirmed) {
+            setUpView();
+            setTab();
+        } else if (!unlock.asking) {
+            unlock.asking = true;
+            screenLock.confirm(getString(R.string.screen_lock_show_recovery_phrase));
+        }
     }
+    // setUpView shows the pages, from the first, or from the one a recreated screen was on,
+    // which the pager restores.
     private void setUpView(){
         _mViewPager = findViewById(R.id.viewPager);
         _adapter = new BackupAdapter(getApplicationContext(),getSupportFragmentManager());
         _mViewPager.setAdapter(_adapter);
-        _mViewPager.setCurrentItem(0);
         _mViewPager.setAllowedSwipeDirection(CustomViewPager.SwipeDirection.right);
         initButton();
     }
@@ -58,7 +82,7 @@ public class BackupActivity extends FragmentActivity {
             }
 
         });
-
+        btnAction(_mViewPager.getCurrentItem());
     }
     private void btnAction(int action){
         switch(action){
