@@ -9,10 +9,10 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.viewpager.widget.ViewPager;
+import androidx.viewpager2.widget.ViewPager2;
 
 public class BackupActivity extends FragmentActivity {
-    private CustomViewPager _mViewPager;
+    private ViewPager2 _mViewPager;
     private BackupAdapter _adapter;
     private View _btn1,_btn2,_btn3;
 
@@ -60,27 +60,20 @@ public class BackupActivity extends FragmentActivity {
         }
     }
     // setUpView shows the pages, from the first, or from the one a recreated screen was on,
-    // which the pager restores.
+    // which the pager restores. ForwardSwipeFrame, around the pager, lets the user swipe only
+    // forward.
     private void setUpView(){
         _mViewPager = findViewById(R.id.viewPager);
-        _adapter = new BackupAdapter(getApplicationContext(),getSupportFragmentManager());
+        _adapter = new BackupAdapter(this);
         _mViewPager.setAdapter(_adapter);
-        _mViewPager.setAllowedSwipeDirection(CustomViewPager.SwipeDirection.right);
         initButton();
     }
     private void setTab(){
-        _mViewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener(){
-
-            @Override
-            public void onPageScrollStateChanged(int position) {}
-            @Override
-            public void onPageScrolled(int arg0, float arg1, int arg2) {}
+        _mViewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
-                // TODO Auto-generated method stub
                 btnAction(position);
             }
-
         });
         btnAction(_mViewPager.getCurrentItem());
     }

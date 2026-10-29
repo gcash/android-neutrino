@@ -6,11 +6,11 @@ import android.view.View;
 
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
-import androidx.viewpager.widget.ViewPager;
+import androidx.viewpager2.widget.ViewPager2;
 
 public class TorActivity extends FragmentActivity {
 
-    private CustomViewPager _mViewPager;
+    private ViewPager2 _mViewPager;
     private TorAdapter _adapter;
     private View _btn1, _btn2, _btn3, _btn4, _btn5;
 
@@ -27,30 +27,19 @@ public class TorActivity extends FragmentActivity {
     }
 
     private void setUpView() {
-        _mViewPager = (CustomViewPager) findViewById(R.id.torViewPager);
-        _adapter = new TorAdapter(getSupportFragmentManager());
+        _mViewPager = findViewById(R.id.torViewPager);
+        _adapter = new TorAdapter(this);
         _mViewPager.setAdapter(_adapter);
         _mViewPager.setCurrentItem(0);
         initButton();
     }
 
     private void setTab() {
-        _mViewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-
-            @Override
-            public void onPageScrollStateChanged(int position) {
-            }
-
-            @Override
-            public void onPageScrolled(int arg0, float arg1, int arg2) {
-            }
-
+        _mViewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
-                // TODO Auto-generated method stub
                 btnAction(position);
             }
-
         });
 
     }

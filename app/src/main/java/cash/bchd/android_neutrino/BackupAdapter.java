@@ -2,36 +2,33 @@ package cash.bchd.android_neutrino;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.fragment.app.FragmentActivity;
+import androidx.viewpager2.adapter.FragmentStateAdapter;
 
-public class BackupAdapter extends FragmentPagerAdapter {
+public class BackupAdapter extends FragmentStateAdapter {
     private Context _context;
     public static int totalPage=3;
-    public BackupAdapter(Context context, FragmentManager fm) {
-        super(fm);
-        _context=context;
+    public BackupAdapter(FragmentActivity activity) {
+        super(activity);
+        _context=activity.getApplicationContext();
 
     }
+    @NonNull
     @Override
-    public Fragment getItem(int position) {
-        Fragment f = new Fragment();
+    public Fragment createFragment(int position) {
         switch(position){
             case 0:
-                f=BackupOne.newInstance();
-                break;
+                return BackupOne.newInstance();
             case 1:
-                f=BackupTwo.newInstance();
-                break;
-            case 2:
-                f=BackupThree.newInstance(_context);
-                break;
+                return BackupTwo.newInstance();
+            default:
+                return BackupThree.newInstance(_context);
         }
-        return f;
     }
     @Override
-    public int getCount() {
+    public int getItemCount() {
         return totalPage;
     }
 
