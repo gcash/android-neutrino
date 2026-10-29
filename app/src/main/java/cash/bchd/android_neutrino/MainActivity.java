@@ -30,7 +30,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
@@ -447,25 +446,7 @@ public class MainActivity extends CloseActivity {
                     if (getApplicationContext() != null) {
                         runOnUiThread(() -> {
                             Vibrations.buzz(getApplicationContext());
-                            LinearLayout qrLayout = customView.findViewById(R.id.qrCodeLayout);
-                            int h = qrLayout.getHeight();
-                            qrLayout.setHorizontalGravity(Gravity.CENTER_HORIZONTAL);
-                            qrLayout.setVerticalGravity(Gravity.CENTER_VERTICAL);
-                            TextView addrHelperText = customView.findViewById(R.id.addrHelpText);
-                            qrImage.setVisibility(View.GONE);
-                            addrText.setVisibility(View.GONE);
-                            addrHelperText.setVisibility(View.GONE);
-                            final GifView showGifView = new GifView(getApplicationContext());
-                            showGifView.setGifImageDrawableId(R.drawable.coinflip);
-                            showGifView.drawGif();
-                            showGifView.setForegroundGravity(Gravity.CENTER);
-                            ViewGroup.LayoutParams params = qrLayout.getLayoutParams();
-                            Double dh = (double) h;
-                            Double truncatedH = dh * 0.8;
-                            params.height = truncatedH.intValue();
-                            params.width = h;
-                            qrLayout.requestLayout();
-                            qrLayout.addView(showGifView);
+                            CoinFlip.show(customView.findViewById(R.id.qrCodeLayout));
                         });
                     }
                 }

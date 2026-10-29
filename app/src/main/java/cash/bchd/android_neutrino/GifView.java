@@ -8,6 +8,9 @@ import android.view.View;
 
 import java.io.InputStream;
 
+// Movie, which Android 9 deprecated for AnimatedImageDrawable, is the only way to play a GIF
+// before it, so CoinFlip uses this view on Android 7 and 8 only.
+@SuppressWarnings("deprecation")
 public class GifView extends View {
 
     private InputStream inputStream;
@@ -29,6 +32,14 @@ public class GifView extends View {
         setFocusable(true);
 
         ctx = context;
+    }
+
+    // It spans the width it gets, with the GIF's height at that width.
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int width = MeasureSpec.getSize(widthMeasureSpec);
+        int height = movie == null ? 0 : width * movie.height() / movie.width();
+        setMeasuredDimension(width, resolveSize(height, heightMeasureSpec));
     }
 
     @Override
@@ -56,21 +67,11 @@ public class GifView extends View {
             // Set current gif frame time.
             movie.setTime(relTime);
 
-            // Get custom view width and height.
-            int width = this.getWidth();
-            int height = this.getHeight();
-
-            // Get gif image width and height.
-            int movieWidth = movie.width();
-            int movieHeight = movie.height();
-
-            // Scale canvas size to fit the custom view.
-            float widthMultiplier = (float) 1.08;
-            float heightMultiplier = (float) 1.08;
-            canvas.scale((width / movieWidth) * widthMultiplier, (height / movieHeight) * heightMultiplier);
-
-            // Draw the gif image frame to custom view canvas.
-            movie.draw(canvas, 1, 1);
+            // Scale the frame to fit the view and center it, as an ImageView's fitCenter does.
+            float scale = Math.min((float) getWidth() / movie.width(), (float) getHeight() / movie.height());
+            canvas.translate((getWidth() - movie.width() * scale) / 2, (getHeight() - movie.height() * scale) / 2);
+            canvas.scale(scale, scale);
+            movie.draw(canvas, 0, 0);
 
             // This method will invoke onDraw method.
             invalidate();

@@ -15,7 +15,6 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -337,33 +336,7 @@ public class ReceiveActivity extends AppCompatActivity {
                             totalReceived += amount;
                             if (compareAmount == null || totalReceived >= compareAmount.getSatoshis()) {
                                 Vibrations.buzz(getApplicationContext());
-                                LinearLayout qrLayout = customView.findViewById(R.id.requestQRLayout);
-                                int h = qrLayout.getHeight();
-                                qrLayout.setHorizontalGravity(Gravity.CENTER_HORIZONTAL);
-                                qrLayout.setVerticalGravity(Gravity.CENTER_VERTICAL);
-
-                                qrImage.setVisibility(View.GONE);
-                                addrText.setVisibility(View.GONE);
-                                helperText.setVisibility(View.GONE);
-                                TextView partialPayment = customView.findViewById(R.id.parialPayment);
-                                partialPayment.setVisibility(View.GONE);
-                                final GifView showGifView = new GifView(getApplicationContext());
-
-                                showGifView.setGifImageDrawableId(R.drawable.coinflip);
-                                showGifView.drawGif();
-                                showGifView.setForegroundGravity(Gravity.CENTER);
-
-
-                                ViewGroup.LayoutParams params = qrLayout.getLayoutParams();
-                                Double dh = (double) h;
-                                Double truncatedH = dh * 0.8;
-                                System.out.println(truncatedH);
-                                System.out.println(h);
-                                params.height = 1092;
-                                params.width = 1366;
-
-                                qrLayout.requestLayout();
-                                qrLayout.addView(showGifView);
+                                CoinFlip.show(customView.findViewById(R.id.requestQRLayout));
                             } else {
                                 TextView partialPayment = customView.findViewById(R.id.parialPayment);
                                 partialPayment.setVisibility(View.VISIBLE);
