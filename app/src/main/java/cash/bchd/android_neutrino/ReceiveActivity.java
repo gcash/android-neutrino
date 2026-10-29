@@ -8,7 +8,6 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
-import android.os.Vibrator;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.DisplayMetrics;
@@ -337,8 +336,7 @@ public class ReceiveActivity extends AppCompatActivity {
                         runOnUiThread(() -> {
                             totalReceived += amount;
                             if (compareAmount == null || totalReceived >= compareAmount.getSatoshis()) {
-                                Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-                                vibrator.vibrate(500);
+                                Vibrations.buzz(getApplicationContext());
                                 LinearLayout qrLayout = customView.findViewById(R.id.requestQRLayout);
                                 int h = qrLayout.getHeight();
                                 qrLayout.setHorizontalGravity(Gravity.CENTER_HORIZONTAL);

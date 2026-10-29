@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Vibrator;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -87,8 +86,7 @@ public class BackupThree extends Fragment {
                         switch (which){
                             case DialogInterface.BUTTON_POSITIVE:
                                 settings.setMnemonic("");
-                                Vibrator vibrator = (Vibrator)getContext().getSystemService(Context.VIBRATOR_SERVICE);
-                                vibrator.vibrate(500);
+                                Vibrations.buzz(requireContext());
                                 requireActivity().finish();
                                 break;
 

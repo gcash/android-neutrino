@@ -2,10 +2,8 @@ package cash.bchd.android_neutrino;
 
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Vibrator;
 import android.text.TextUtils;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -152,8 +150,7 @@ public class RestoreActivity extends AppCompatActivity {
         File walletDir = new File(getDataDir(), network.id);
         Wallet.runAfterStop(() -> deleteRecursive(walletDir));
 
-        Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-        vibrator.vibrate(500);
+        Vibrations.buzz(getApplicationContext());
 
         Intent intent = new Intent(RestoreActivity.this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

@@ -18,7 +18,6 @@ import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Vibrator;
 import android.text.TextUtils;
 import android.transition.ChangeTransform;
 import android.transition.TransitionManager;
@@ -447,10 +446,7 @@ public class MainActivity extends CloseActivity {
                 public void onPaymentReceived(long amount) {
                     if (getApplicationContext() != null) {
                         runOnUiThread(() -> {
-                            Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-                            if (vibrator != null) {
-                                vibrator.vibrate(500);
-                            }
+                            Vibrations.buzz(getApplicationContext());
                             LinearLayout qrLayout = customView.findViewById(R.id.qrCodeLayout);
                             int h = qrLayout.getHeight();
                             qrLayout.setHorizontalGravity(Gravity.CENTER_HORIZONTAL);

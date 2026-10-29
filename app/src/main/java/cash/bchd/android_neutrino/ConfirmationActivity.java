@@ -1,10 +1,8 @@
 package cash.bchd.android_neutrino;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Vibrator;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -313,10 +311,7 @@ public class ConfirmationActivity extends AppCompatActivity {
             return;
         }
         payment.shownSent = true;
-        Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-        if (vibrator != null) {
-            vibrator.vibrate(500);
-        }
+        Vibrations.buzz(getApplicationContext());
     }
 
     // signTransaction signs and sends the payment, and tells the screen's Payment how that went,

@@ -1,11 +1,9 @@
 package cash.bchd.android_neutrino;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Vibrator;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -44,10 +42,7 @@ public class ScannerActivity extends AppCompatActivity {
                 return;
             }
             scanned = true;
-            Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-            if (vibrator != null) {
-                vibrator.vibrate(500);
-            }
+            Vibrations.buzz(getApplicationContext());
             Intent data = new Intent();
             data.putExtra("qrdata", result.getText());
             setResult(RESULT_OK, data);
