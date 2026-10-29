@@ -16,6 +16,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
@@ -38,12 +40,25 @@ import walletrpc.Api;
 
 public class SendActivity extends AppCompatActivity {
 
-    public static final int RC_BARCODE_CAPTURE = 9001;
-
     // What a recreated screen needs besides the fields, which Android restores: the unit the
     // amount is in, and the label of the payment link that filled them in.
     private static final String STATE_SHOWING_FIAT = "showingFiat";
     private static final String STATE_LABEL = "label";
+
+    // The scanner, whose QR code fills in the payment.
+    private final ActivityResultLauncher<Void> scanner =
+            registerForActivityResult(new ScannerActivity.Scan(), qrdata -> {
+                if (qrdata != null) {
+                    fillIn(qrdata);
+                }
+            });
+    // The confirmation screen, which closes this screen too once the payment is sent.
+    private final ActivityResultLauncher<Intent> confirmationScreen =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    finish();
+                }
+            });
 
     Wallet wallet;
     Network network;
@@ -150,10 +165,7 @@ public class SendActivity extends AppCompatActivity {
 
         address = findViewById(R.id.addressInput);
         TextInputLayout addressLayout = findViewById(R.id.addressLayout);
-        addressLayout.setEndIconOnClickListener(v -> {
-            Intent intent12 = new Intent(getApplicationContext(), ScannerActivity.class);
-            startActivityForResult(intent12, RC_BARCODE_CAPTURE);
-        });
+        addressLayout.setEndIconOnClickListener(v -> scanner.launch(null));
 
         memo = findViewById(R.id.memoInput);
 
@@ -260,7 +272,7 @@ public class SendActivity extends AppCompatActivity {
                 if (label != null && !label.equals("")) {
                     intent1.putExtra("label", label);
                 }
-                startActivityForResult(intent1, ConfirmationActivity.RC_PAY);
+                confirmationScreen.launch(intent1);
             } catch (Exception e) {
                 // Say why bchwallet refused the transaction, such as a dust amount, when it did.
                 String reason = Wallet.reasonFor(e);
@@ -300,21 +312,20 @@ public class SendActivity extends AppCompatActivity {
 
         String qrData = intent.getExtras().getString("qrdata");
         if (qrData != null) {
-            this.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, intent);
+            fillIn(qrData);
             return;
         }
 
         byte[] paymentRequest = intent.getByteArrayExtra(PaymentRequestFile.EXTRA);
         if (paymentRequest != null) {
-            PaymentRequests.payFile(this, sendLayout, wallet, paymentRequest, fiatCurrency, satPerByte);
+            PaymentRequests.payFile(this, sendLayout, wallet, paymentRequest, fiatCurrency, satPerByte,
+                    confirmationScreen);
             return;
         }
 
         Uri data = getIntent().getData();
         if (data != null) {
-            Intent newIntent = new Intent();
-            newIntent.putExtra("qrdata", data.toString());
-            this.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
+            fillIn(data.toString());
             return;
         }
     }
@@ -403,68 +414,52 @@ public class SendActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == RC_BARCODE_CAPTURE) {
-            if (resultCode == RESULT_OK) {
-                if (data != null) {
-                    String qrdata = data.getStringExtra("qrdata");
-                    Network linkNetwork = Network.ofUri(qrdata);
-                    if (linkNetwork != null && linkNetwork != network) {
-                        Snackbar snackbar = Snackbar.make(sendLayout, getString(R.string.payment_link_other_network,
-                                Networks.name(this, linkNetwork), Networks.name(this, network)), Snackbar.LENGTH_LONG);
-                        snackbar.setTextMaxLines(5);
-                        snackbar.show();
-                        return;
-                    }
+    // fillIn fills in the payment from a payment link or address, as a QR code or NFC tag has it,
+    // or pays the link's payment request.
+    private void fillIn(String qrdata) {
+        Network linkNetwork = Network.ofUri(qrdata);
+        if (linkNetwork != null && linkNetwork != network) {
+            Snackbar snackbar = Snackbar.make(sendLayout, getString(R.string.payment_link_other_network,
+                    Networks.name(this, linkNetwork), Networks.name(this, network)), Snackbar.LENGTH_LONG);
+            snackbar.setTextMaxLines(5);
+            snackbar.show();
+            return;
+        }
 
-                    BitcoinPaymentURI uri = BitcoinPaymentURI.parse(qrdata);
-                    if (uri != null) {
-                        if (uri.getR() != null) {
-                            processPaymentRequest(qrdata);
-                            return;
-                        }
-
-                        address.setText(uri.getAddress());
-                        if (uri.getAmount() != null) {
-                            if (showingFiat) {
-                                toggleBchFiat();
-                            }
-                            Amount uriAmt = new Amount(uri.getAmount());
-                            inputAmount.setText(uriAmt.toString());
-                        }
-                        if (uri.getMessage() != null) {
-                            memo.setText(uri.getMessage());
-                        }
-                        if (uri.getLabel() != null) {
-                            label = uri.getLabel();
-                        }
-                    } else {
-                        address.setText(qrdata);
-                    }
-                    try {
-                        boolean valid = address.getText() != null && wallet.validateAddress(address.getText().toString());
-                        TextInputLayout layout = findViewById(R.id.addressLayout);
-                        if (!valid) {
-                            layout.setError(getString(R.string.invalid_bitcoin_cash_address));
-                        } else {
-                            layout.setError(null);
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            } else if (resultCode != RESULT_CANCELED) {
-                Snackbar snackbar = Snackbar.make(sendLayout, R.string.barcode_read_error, Snackbar.LENGTH_LONG);
-                snackbar.show();
+        BitcoinPaymentURI uri = BitcoinPaymentURI.parse(qrdata);
+        if (uri != null) {
+            if (uri.getR() != null) {
+                processPaymentRequest(qrdata);
+                return;
             }
-        } else if (requestCode == ConfirmationActivity.RC_PAY) {
-            // The payment was sent, and the confirmation screen closed.
-            if (resultCode == RESULT_OK) {
-                finish();
+
+            address.setText(uri.getAddress());
+            if (uri.getAmount() != null) {
+                if (showingFiat) {
+                    toggleBchFiat();
+                }
+                Amount uriAmt = new Amount(uri.getAmount());
+                inputAmount.setText(uriAmt.toString());
+            }
+            if (uri.getMessage() != null) {
+                memo.setText(uri.getMessage());
+            }
+            if (uri.getLabel() != null) {
+                label = uri.getLabel();
             }
         } else {
-            super.onActivityResult(requestCode, resultCode, data);
+            address.setText(qrdata);
+        }
+        try {
+            boolean valid = address.getText() != null && wallet.validateAddress(address.getText().toString());
+            TextInputLayout layout = findViewById(R.id.addressLayout);
+            if (!valid) {
+                layout.setError(getString(R.string.invalid_bitcoin_cash_address));
+            } else {
+                layout.setError(null);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -479,17 +474,12 @@ public class SendActivity extends AppCompatActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction())) {
-            Uri uri = intent.getData();
-            String uriString = intent.getDataString();
-
-            Intent newIntent = new Intent();
-            newIntent.putExtra("qrdata", uriString);
-            this.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
+            fillIn(intent.getDataString());
         }
     }
 
     private void processPaymentRequest(String qrdata) {
-        PaymentRequests.pay(this, sendLayout, wallet, qrdata, fiatCurrency, satPerByte);
+        PaymentRequests.pay(this, sendLayout, wallet, qrdata, fiatCurrency, satPerByte, confirmationScreen);
     }
 
     static boolean considerAmountTextZero(Editable inputAmountText) {

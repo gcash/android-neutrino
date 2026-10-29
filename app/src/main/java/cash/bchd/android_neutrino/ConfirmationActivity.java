@@ -1,6 +1,5 @@
 package cash.bchd.android_neutrino;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -9,6 +8,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
@@ -35,10 +35,6 @@ import walletrpc.Api;
 
 public class ConfirmationActivity extends AppCompatActivity {
 
-    private static final int ENTER_PIN = 1234;
-    // The request code to start the screen with for its result, which is RESULT_OK once it has
-    // sent the payment.
-    static final int RC_PAY = 9004;
 
     byte[] serializedTx;
     List<Long> inputVals;
@@ -46,6 +42,21 @@ public class ConfirmationActivity extends AppCompatActivity {
     String memo;
     SlideToConfirmView swipeButton;
     ScreenLock.Prompt screenLock;
+    // The PIN of earlier versions, which unlocks the wallet to sign the payment.
+    private final ActivityResultLauncher<Void> enterPin =
+            registerForActivityResult(new PinActivity.EnterPin(), pin -> {
+                if (pin == null) {
+                    swipeButton.reset();
+                    return;
+                }
+                String pw = "";
+                try {
+                    pw = Wallet.SHA256(pin);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                upgradeAndSign(pw);
+            });
     Payment payment;
 
     /**
@@ -217,8 +228,7 @@ public class ConfirmationActivity extends AppCompatActivity {
                     swipeButton.reset();
                     return;
                 }
-                Intent intent = new Intent(ConfirmationActivity.this, PinActivity.class);
-                startActivityForResult(intent, ENTER_PIN);
+                enterPin.launch(null);
                 return;
             case FINGERPRINT:
                 LegacyFingerprint.read(this, settings, new LegacyFingerprint.Callback() {
@@ -395,25 +405,4 @@ public class ConfirmationActivity extends AppCompatActivity {
         }, ContextCompat.getMainExecutor(ConfirmationActivity.this));
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        switch(requestCode) {
-            case (ENTER_PIN) : {
-                if (resultCode != Activity.RESULT_OK) {
-                    swipeButton.reset();
-                } else {
-                    String pin = data.getStringExtra("pin");
-                    String pw = "";
-                    try {
-                        pw = Wallet.SHA256(pin);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    upgradeAndSign(pw);
-                }
-                break;
-            }
-        }
-    }
 }

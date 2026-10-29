@@ -34,6 +34,8 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
@@ -74,7 +76,6 @@ import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
 import walletrpc.Api;
 
-import static cash.bchd.android_neutrino.SendActivity.RC_BARCODE_CAPTURE;
 
 
 public class MainActivity extends CloseActivity {
@@ -114,11 +115,34 @@ public class MainActivity extends CloseActivity {
 
     private static final long DONATION_REMINDER_INTERVAL = TimeUnit.DAYS.toMillis(45);
     private static final long SYNC_STATUS_POLL_MILLIS = 2000;
-    private static final int RC_UPGRADE_PIN = 9003;
     private static final int RC_LOCAL_NETWORK = 9005;
     // The popup a recreated screen shows again: the address's QR code, or a transaction's details.
     private static final String STATE_QR_POPUP = "qrPopup";
     private static final String STATE_TX_DETAILS = "txDetails";
+
+    // The scanner, whose QR code opens as a payment link.
+    private final ActivityResultLauncher<Void> scanner =
+            registerForActivityResult(new ScannerActivity.Scan(), qrdata -> {
+                if (qrdata != null) {
+                    openPayment(qrdata);
+                }
+            });
+    // The PIN of earlier versions, which the wallet's passphrase moves from to the screen lock.
+    private final ActivityResultLauncher<Void> upgradePin =
+            registerForActivityResult(new PinActivity.EnterPin(), pin -> {
+                if (pin == null) {
+                    return;
+                }
+                try {
+                    upgradeFrom(Wallet.SHA256(pin));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+    // The confirmation screen of a payment request, whose result only the send screen needs.
+    private final ActivityResultLauncher<Intent> confirmationScreen =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -196,9 +220,7 @@ public class MainActivity extends CloseActivity {
         if (launchLoveActivity) {
             // Once, also when the activity is recreated with this intent.
             intent.removeExtra("launchLoveActivity");
-            Intent newIntent = new Intent();
-            newIntent.putExtra("qrdata", SettingsFragment.DONATE_URI);
-            this.onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
+            openPayment(SettingsFragment.DONATE_URI);
         }
         if (savedInstanceState != null) {
             boolean qr = savedInstanceState.getBoolean(STATE_QR_POPUP);
@@ -395,8 +417,7 @@ public class MainActivity extends CloseActivity {
 
     private void displayQRScanner() {
         toggleFABMenu();
-        Intent intent = new Intent(this, ScannerActivity.class);
-        startActivityForResult(intent, RC_BARCODE_CAPTURE);
+        scanner.launch(null);
     }
 
     // displayQRPopup shows the wallet's address and its QR code in a popup, from the menu, which
@@ -509,37 +530,19 @@ public class MainActivity extends CloseActivity {
         }
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == RC_BARCODE_CAPTURE) {
-            if (resultCode == RESULT_OK) {
-                if (data != null) {
-                    String qrdata = data.getStringExtra("qrdata");
-                    BitcoinPaymentURI uri = BitcoinPaymentURI.parse(qrdata);
-                    if (uri != null && uri.getR() != null) {
-                        PaymentRequests.pay(this, mCLayout, wallet, qrdata, settings.getFiatCurrency(), settings.getFeePerByte());
-                    } else {
-                        Intent intent = new Intent(this, SendActivity.class);
-                        intent.putExtra("fiatCurrency", this.settings.getFiatCurrency());
-                        intent.putExtra("feePerByte", this.settings.getFeePerByte());
-                        intent.putExtra("qrdata", qrdata);
-                        startActivity(intent);
-                    }
-                }
-            } else if (resultCode != RESULT_CANCELED) {
-                Snackbar snackbar = Snackbar.make(mCLayout, R.string.barcode_read_error, Snackbar.LENGTH_LONG);
-                snackbar.show();
-            }
-        } else if (requestCode == RC_UPGRADE_PIN) {
-            if (resultCode == RESULT_OK && data != null) {
-                try {
-                    upgradeFrom(Wallet.SHA256(data.getStringExtra("pin")));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
+    // openPayment opens a payment link: the confirmation screen of its payment request, or the
+    // send screen, filled in from the link or address.
+    private void openPayment(String qrdata) {
+        BitcoinPaymentURI uri = BitcoinPaymentURI.parse(qrdata);
+        if (uri != null && uri.getR() != null) {
+            PaymentRequests.pay(this, mCLayout, wallet, qrdata, settings.getFiatCurrency(), settings.getFeePerByte(),
+                    confirmationScreen);
         } else {
-            super.onActivityResult(requestCode, resultCode, data);
+            Intent intent = new Intent(this, SendActivity.class);
+            intent.putExtra("fiatCurrency", this.settings.getFiatCurrency());
+            intent.putExtra("feePerByte", this.settings.getFeePerByte());
+            intent.putExtra("qrdata", qrdata);
+            startActivity(intent);
         }
     }
 
@@ -569,8 +572,7 @@ public class MainActivity extends CloseActivity {
                             Snackbar.make(mCLayout, R.string.pin_locked_out, Snackbar.LENGTH_LONG).show();
                             return;
                         }
-                        Intent intent = new Intent(this, PinActivity.class);
-                        startActivityForResult(intent, RC_UPGRADE_PIN);
+                        upgradePin.launch(null);
                     });
                 }
                 break;
@@ -667,15 +669,13 @@ public class MainActivity extends CloseActivity {
         String uri = intent.getStringExtra("uri");
         if (uri != null && !uri.equals("")) {
             intent.removeExtra("uri");
-            Intent newIntent = new Intent();
-            newIntent.putExtra("qrdata", uri);
-            onActivityResult(RC_BARCODE_CAPTURE, RESULT_OK, newIntent);
+            openPayment(uri);
         }
         byte[] paymentRequest = intent.getByteArrayExtra(PaymentRequestFile.EXTRA);
         if (paymentRequest != null) {
             intent.removeExtra(PaymentRequestFile.EXTRA);
             PaymentRequests.payFile(this, mCLayout, wallet, paymentRequest, settings.getFiatCurrency(),
-                    settings.getFeePerByte());
+                    settings.getFeePerByte(), confirmationScreen);
         }
     }
 

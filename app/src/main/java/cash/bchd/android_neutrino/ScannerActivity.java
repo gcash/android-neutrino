@@ -1,11 +1,14 @@
 package cash.bchd.android_neutrino;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 
+import androidx.activity.result.contract.ActivityResultContract;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -18,7 +21,8 @@ import java.util.Collections;
 
 /**
  * ScannerActivity scans a QR code with the camera and returns its text as the "qrdata" extra
- * with RESULT_OK. It decodes with ZXing on the device, so it needs no Google Play services.
+ * with RESULT_OK, for Scan. It decodes with ZXing on the device, so it needs no Google Play
+ * services.
  */
 public class ScannerActivity extends AppCompatActivity {
 
@@ -84,5 +88,19 @@ public class ScannerActivity extends AppCompatActivity {
 
     private boolean hasCameraPermission() {
         return ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /** Scan opens the scanner and returns the QR code's text, or null when there is none. */
+    static class Scan extends ActivityResultContract<Void, String> {
+        @NonNull
+        @Override
+        public Intent createIntent(@NonNull Context context, Void input) {
+            return new Intent(context, ScannerActivity.class);
+        }
+
+        @Override
+        public String parseResult(int resultCode, @Nullable Intent intent) {
+            return resultCode == RESULT_OK && intent != null ? intent.getStringExtra("qrdata") : null;
+        }
     }
 }

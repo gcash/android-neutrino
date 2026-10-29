@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.view.View;
 
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -47,12 +48,13 @@ final class PaymentRequests {
 
     /**
      * pay prepares the payment of the URI's payment request in the background, showing that it
-     * does on the layout, and then starts the confirmation screen from the activity, or shows on
-     * the layout why it can't.
+     * does on the layout, and then opens the confirmation screen with the activity's launcher, or
+     * shows on the layout why it can't.
      */
-    static void pay(Activity activity, View layout, Wallet wallet, String uri, String fiatCurrency, int feePerByte) {
-        prepare(activity, layout, () -> confirmation(activity, wallet, wallet.downloadPaymentRequest(uri),
-                fiatCurrency, feePerByte));
+    static void pay(Activity activity, View layout, Wallet wallet, String uri, String fiatCurrency, int feePerByte,
+                    ActivityResultLauncher<Intent> confirmationScreen) {
+        prepare(activity, layout, confirmationScreen, () -> confirmation(activity, wallet,
+                wallet.downloadPaymentRequest(uri), fiatCurrency, feePerByte));
     }
 
     /**
@@ -60,12 +62,13 @@ final class PaymentRequests {
      * checks as it checks a downloaded one.
      */
     static void payFile(Activity activity, View layout, Wallet wallet, byte[] paymentRequest, String fiatCurrency,
-                        int feePerByte) {
-        prepare(activity, layout, () -> confirmation(activity, wallet, wallet.parsePaymentRequest(paymentRequest),
-                fiatCurrency, feePerByte));
+                        int feePerByte, ActivityResultLauncher<Intent> confirmationScreen) {
+        prepare(activity, layout, confirmationScreen, () -> confirmation(activity, wallet,
+                wallet.parsePaymentRequest(paymentRequest), fiatCurrency, feePerByte));
     }
 
-    private static void prepare(Activity activity, View layout, Callable<Intent> prepareConfirmation) {
+    private static void prepare(Activity activity, View layout, ActivityResultLauncher<Intent> confirmationScreen,
+                                Callable<Intent> prepareConfirmation) {
         Snackbar loading = Snackbar.make(layout, R.string.loading_payment_request, Snackbar.LENGTH_INDEFINITE);
         loading.show();
         ListenableFuture<Intent> confirmation = background.submit(prepareConfirmation);
@@ -74,8 +77,7 @@ final class PaymentRequests {
             public void onSuccess(Intent intent) {
                 loading.dismiss();
                 if (!activity.isFinishing() && !activity.isDestroyed()) {
-                    // For its result, which closes the send screen once the payment is sent.
-                    activity.startActivityForResult(intent, ConfirmationActivity.RC_PAY);
+                    confirmationScreen.launch(intent);
                 }
             }
 
