@@ -37,6 +37,7 @@ import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
@@ -90,6 +91,13 @@ public class MainActivity extends CloseActivity {
     FloatingActionButton fabScan;
     FloatingActionButton fabQR;
     boolean isFabOpen;
+    // Enabled while the menu is open, so that going back closes it instead of the app.
+    final OnBackPressedCallback closeMenuOnBack = new OnBackPressedCallback(false) {
+        @Override
+        public void handleOnBackPressed() {
+            toggleFABMenu();
+        }
+    };
     long lastDown;
     CoordinatorLayout mCLayout;
     ImageView qrImage;
@@ -159,6 +167,7 @@ public class MainActivity extends CloseActivity {
         mAdapter = new TransactionAdapter(txs, this, mCLayout, settings.getLastBlockHeight(), network);
         recyclerView.setAdapter(mAdapter);
         fab.setOnClickListener(view -> toggleFABMenu());
+        getOnBackPressedDispatcher().addCallback(this, closeMenuOnBack);
         listenForMenuSlides();
         fabQR.setOnClickListener(v -> {
             fab.bringToFront();
@@ -458,6 +467,7 @@ public class MainActivity extends CloseActivity {
 
     private void showFABMenu() {
         isFabOpen = true;
+        closeMenuOnBack.setEnabled(true);
         fabSettings.animate().translationY(-getResources().getDimension(R.dimen.standard_65));
         fabReceive.animate().translationY(-getResources().getDimension(R.dimen.standard_120));
         fabSend.animate().translationY(-getResources().getDimension(R.dimen.standard_175));
@@ -467,6 +477,7 @@ public class MainActivity extends CloseActivity {
 
     private void closeFABMenu() {
         isFabOpen = false;
+        closeMenuOnBack.setEnabled(false);
         fabSettings.animate().translationY(0);
         fabReceive.animate().translationY(0);
         fabSend.animate().translationY(0);
