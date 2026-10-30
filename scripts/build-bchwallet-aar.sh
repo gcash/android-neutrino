@@ -48,7 +48,7 @@ echo "Building bchwallet $(git -C "$SRC" describe --tags --always --dirty 2>/dev
 mkdir -p "$(dirname "$OUT")"
 (cd "$SRC" && PATH="$WORK/bin:$PATH" gomobile bind \
     -target=android/arm64,android/arm,android/amd64 \
-    -androidapi 24 \
+    -androidapi 28 \
     -trimpath \
     -ldflags="-s -w" \
     -o "$WORK/bchwallet.aar" \

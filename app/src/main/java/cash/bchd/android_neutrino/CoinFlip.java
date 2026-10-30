@@ -4,7 +4,6 @@ import android.content.Context;
 import android.graphics.ImageDecoder;
 import android.graphics.drawable.AnimatedImageDrawable;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -47,27 +46,21 @@ final class CoinFlip {
     // view returns a view that spans its width, with the coin's height at that width, and plays
     // the GIF once, ending on its last frame.
     private static View view(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            try {
-                Drawable coin = ImageDecoder.decodeDrawable(
-                        ImageDecoder.createSource(context.getResources(), R.drawable.coinflip));
-                ImageView view = new ImageView(context);
-                view.setAdjustViewBounds(true);
-                view.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                view.setImageDrawable(coin);
-                if (coin instanceof AnimatedImageDrawable) {
-                    AnimatedImageDrawable flip = (AnimatedImageDrawable) coin;
-                    flip.setRepeatCount(0);
-                    flip.start();
-                }
-                return view;
-            } catch (IOException e) {
-                e.printStackTrace();
+        ImageView view = new ImageView(context);
+        view.setAdjustViewBounds(true);
+        view.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        try {
+            Drawable coin = ImageDecoder.decodeDrawable(
+                    ImageDecoder.createSource(context.getResources(), R.drawable.coinflip));
+            view.setImageDrawable(coin);
+            if (coin instanceof AnimatedImageDrawable) {
+                AnimatedImageDrawable flip = (AnimatedImageDrawable) coin;
+                flip.setRepeatCount(0);
+                flip.start();
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        GifView view = new GifView(context);
-        view.setGifImageDrawableId(R.drawable.coinflip);
-        view.drawGif();
         return view;
     }
 }

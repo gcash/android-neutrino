@@ -6,7 +6,7 @@ Android mobile wallet using the bchwallet/neutrino backend
 
 ## Installing
 
-Neutrino isn't on Google Play. It needs Android 7.0 or newer; download the APK for your phone from
+Neutrino isn't on Google Play. It needs Android 9 or newer; download the APK for your phone from
 the [releases](https://github.com/gcash/android-neutrino/releases):
 
 - `arm64-v8a` for almost every phone from the last several years

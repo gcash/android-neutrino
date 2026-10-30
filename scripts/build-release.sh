@@ -75,7 +75,7 @@ for ABI in arm64-v8a armeabi-v7a x86_64 universal; do
     "$TOOLS/zipalign" -c -P 16 4 "$UNSIGNED"
     KS_PASS=$PASSWORD apksigner sign --ks "$KEYSTORE" \
         --ks-key-alias "$ALIAS" --ks-pass env:KS_PASS --out "$SIGNED" "$UNSIGNED"
-    apksigner verify --min-sdk-version 24 "$SIGNED"
+    apksigner verify "$SIGNED"
 done
 
 (cd "$OUT" && sha256sum -- *.apk > SHA256SUMS)

@@ -821,11 +821,9 @@ public class MainActivity extends CloseActivity {
         if (notificationManager == null) {
             return;
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel("default", "default", NotificationManager.IMPORTANCE_DEFAULT);
-            channel.setDescription("default channel");
-            notificationManager.createNotificationChannel(channel);
-        }
+        NotificationChannel channel = new NotificationChannel("default", "default", NotificationManager.IMPORTANCE_DEFAULT);
+        channel.setDescription("default channel");
+        notificationManager.createNotificationChannel(channel);
         notificationManager.notify(id, notification);
     }
 
