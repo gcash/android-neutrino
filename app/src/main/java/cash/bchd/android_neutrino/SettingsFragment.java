@@ -4,6 +4,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.preference.EditTextPreference;
@@ -372,25 +373,36 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                     // Canceled.
                 }
             });
-            alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int whichButton) {
-                    settings.setScanHeight(0);
-                    getActivity().runOnUiThread(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            Preference scanPref = (Preference) findPreference("scanHeight");
-                            String scanInfo = "Height: 0";
-                            scanPref.setSummary(scanInfo);
-                        }
-                    });
-                    wallet.rescan();
-                }
-            });
+            alert.setPositiveButton("OK", (dialog, whichButton) -> rescan());
             alert.setCancelable(true);
             alert.show();
         } else {
             super.onDisplayPreferenceDialog(preference);
+        }
+    }
+
+    // rescan has the wallet scan the blocks from its birthday again and shows that it scans
+    // them from the start. It asks the wallet that runs now, as the one the screen opened with
+    // may have stopped since, and says why when the wallet can't rescan.
+    private void rescan() {
+        Wallet current = Wallet.getInstance();
+        if (current == null || !current.isRunning()) {
+            Toast.makeText(requireContext(), R.string.wallet_is_not_loaded_yet, Toast.LENGTH_LONG).show();
+            return;
+        }
+        try {
+            current.rescan();
+        } catch (Exception e) {
+            String reason = Wallet.reasonFor(e);
+            Toast.makeText(requireContext(), getString(R.string.rescan_failed,
+                    reason != null ? reason : e.toString()), Toast.LENGTH_LONG).show();
+            return;
+        }
+        settings.setScanHeight(0);
+        Preference blockchainPref = findPreference("blockchain");
+        if (blockchainPref != null) {
+            blockchainPref.setSummary("Height: " + settings.getLastBlockHeight() + "\nHash: "
+                    + settings.getLastBlockHash() + "\nScanned Through: 0");
         }
     }
 }
