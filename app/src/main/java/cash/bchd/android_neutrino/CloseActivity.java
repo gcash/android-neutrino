@@ -1,15 +1,31 @@
 package cash.bchd.android_neutrino;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 import cash.bchd.android_neutrino.wallet.Wallet;
 
 public class CloseActivity extends AppCompatActivity {
     protected static Wallet wallet;
-    protected static Timer closeTimer;
+
+    // The wallet runs on for 10 minutes after the app goes to the background, and then stops.
+    // The stop runs on the main thread, as the screens' onStart does, so a screen that starts
+    // again either cancels it or finds the wallet stopped and starts it again. A timer thread
+    // could stop the wallet after onStart had found it running, as when Android froze the app
+    // in the background and thawed it after the 10 minutes, which left no wallet running.
+    private static final long CLOSE_DELAY_MILLIS = TimeUnit.MINUTES.toMillis(10);
+    private static final Handler closeHandler = new Handler(Looper.getMainLooper());
+    private static final Runnable closeWallet = () -> {
+        if (wallet != null) {
+            wallet.stop();
+            wallet = null;
+        }
+    };
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -22,28 +38,13 @@ public class CloseActivity extends AppCompatActivity {
     }
 
     @Override
-    // Allow running as a background process for 10 minutes after this activity is stopped
-    // before stopping the daemon.
     protected void onStop() {
         super.onStop();
-        closeTimer = new Timer();
-        closeTimer.schedule(
-            new TimerTask() {
-                @Override
-                public void run() {
-                    if (wallet != null) {
-                        wallet.stop();
-                        wallet = null;
-                    }
-                }
-                        },
-            600000);
+        closeHandler.removeCallbacks(closeWallet);
+        closeHandler.postDelayed(closeWallet, CLOSE_DELAY_MILLIS);
     }
 
     public static void cancelCloseTimer() {
-        if (closeTimer != null) {
-            closeTimer.cancel();
-            closeTimer = null;
-        }
+        closeHandler.removeCallbacks(closeWallet);
     }
 }
