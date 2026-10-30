@@ -1,18 +1,24 @@
 package cash.bchd.android_neutrino;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.preference.EditTextPreference;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceScreen;
 import androidx.preference.SwitchPreferenceCompat;
+
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -383,26 +389,31 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
     // rescan has the wallet scan the blocks from its birthday again and shows that it scans
     // them from the start. It asks the wallet that runs now, as the one the screen opened with
-    // may have stopped since, and says why when the wallet can't rescan.
+    // may have stopped since, off the main thread, and says why when the wallet can't rescan.
     private void rescan() {
         Wallet current = Wallet.getInstance();
         if (current == null || !current.isRunning()) {
             Toast.makeText(requireContext(), R.string.wallet_is_not_loaded_yet, Toast.LENGTH_LONG).show();
             return;
         }
-        try {
-            current.rescan();
-        } catch (Exception e) {
-            String reason = Wallet.reasonFor(e);
-            Toast.makeText(requireContext(), getString(R.string.rescan_failed,
-                    reason != null ? reason : e.toString()), Toast.LENGTH_LONG).show();
-            return;
-        }
-        settings.setScanHeight(0);
-        Preference blockchainPref = findPreference("blockchain");
-        if (blockchainPref != null) {
-            blockchainPref.setSummary("Height: " + settings.getLastBlockHeight() + "\nHash: "
-                    + settings.getLastBlockHash() + "\nScanned Through: 0");
-        }
+        Context context = requireContext().getApplicationContext();
+        Futures.addCallback(current.rescanAsync(), new FutureCallback<Api.RescanResponse>() {
+            @Override
+            public void onSuccess(Api.RescanResponse response) {
+                settings.setScanHeight(0);
+                Preference blockchainPref = isAdded() ? findPreference("blockchain") : null;
+                if (blockchainPref != null) {
+                    blockchainPref.setSummary("Height: " + settings.getLastBlockHeight() + "\nHash: "
+                            + settings.getLastBlockHash() + "\nScanned Through: 0");
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Throwable t) {
+                String reason = Wallet.reasonFor(t);
+                Toast.makeText(context, context.getString(R.string.rescan_failed,
+                        reason != null ? reason : t.toString()), Toast.LENGTH_LONG).show();
+            }
+        }, ContextCompat.getMainExecutor(context));
     }
 }

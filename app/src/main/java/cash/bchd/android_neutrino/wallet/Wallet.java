@@ -493,10 +493,13 @@ public class Wallet implements Serializable {
         return reply.getSpendable();
     }
 
-    public void rescan() {
-        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
-        Api.RescanRequest request = Api.RescanRequest.newBuilder().build();
-        stub.rescan(request);
+    /**
+     * rescanAsync asks the wallet to scan the blocks from its birthday again, and returns once it
+     * has started.
+     */
+    public ListenableFuture<Api.RescanResponse> rescanAsync() {
+        WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
+        return stub.rescan(Api.RescanRequest.newBuilder().build());
     }
 
     public boolean validateAddress(String addr) throws Exception {
