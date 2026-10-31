@@ -123,6 +123,8 @@
     <string name="switch_to_test_network_message">The app restarts on %1$s with a wallet of its own, for test coins, which have no value. Your %2$s wallet stays as it is, and you can switch back here.</string>
     <string name="switch_to_mainnet_message">The app restarts with your mainnet wallet. Your %1$s wallet stays as it is, and you can switch back here.</string>
     <string name="payment_link_other_network">This payment link is for %1$s, and the wallet is on %2$s. Switch networks in Settings to pay it.</string>
+    <string name="payment_link_tokens">This payment link asks for CashTokens, which the wallet can\'t send yet.</string>
+    <string name="payment_link_required_parameter">This payment link requires %1$s, which the wallet doesn\'t understand, so it can\'t pay it.</string>
     <string name="wallet_birthday_note_test_network">The wallet looks for its coins in the blocks from this date on. Earlier dates take longer to scan.</string>
     <string name="menu">Menu</string>
     <string name="receive">Receive</string>

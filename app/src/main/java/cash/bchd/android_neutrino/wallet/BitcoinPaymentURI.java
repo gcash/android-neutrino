@@ -25,6 +25,9 @@ public class BitcoinPaymentURI {
     private static final String PARAMETER_LABEL = "label";
     private static final String PARAMETER_MESSAGE = "message";
     private static final String PARAMTER_R = "r";
+    // The category of the CashTokens a link asks for, as Cashonize and Selene write a token
+    // request, with the fungible amount in f.
+    private static final String PARAMETER_TOKEN_CATEGORY = "c";
 
     private final String address;
     private final HashMap<String, Parameter> parameters;
@@ -122,6 +125,33 @@ public class BitcoinPaymentURI {
         }
 
         return parameters.get(PARAMTER_R).getValue();
+    }
+
+    /**
+     * Returns whether the URI asks for CashTokens, as a token request names their category.
+     *
+     * @return whether the URI asks for CashTokens.
+     */
+
+    public boolean requestsTokens() {
+        return parameters.containsKey(PARAMETER_TOKEN_CATEGORY);
+    }
+
+    /**
+     * Gets a parameter that the URI requires, as BIP 21 marks with req-. The wallet understands
+     * none of them, and BIP 21 has a URI with one it doesn't understand refused.
+     *
+     * @return the first such parameter's name in alphabetical order, or null if there's none.
+     */
+
+    public String getRequiredParameter() {
+        String required = null;
+        for (Map.Entry<String, Parameter> entry : parameters.entrySet()) {
+            if (entry.getValue().isRequired() && (required == null || entry.getKey().compareTo(required) < 0)) {
+                required = entry.getKey();
+            }
+        }
+        return required;
     }
 
     /**

@@ -428,6 +428,9 @@ public class SendActivity extends AppCompatActivity {
 
         BitcoinPaymentURI uri = BitcoinPaymentURI.parse(qrdata);
         if (uri != null) {
+            if (PaymentLinks.refuse(sendLayout, uri)) {
+                return;
+            }
             if (uri.getR() != null) {
                 processPaymentRequest(qrdata);
                 return;

@@ -531,9 +531,12 @@ public class MainActivity extends CloseActivity {
     }
 
     // openPayment opens a payment link: the confirmation screen of its payment request, or the
-    // send screen, filled in from the link or address.
+    // send screen, filled in from the link or address, unless the wallet can't pay it as it asks.
     private void openPayment(String qrdata) {
         BitcoinPaymentURI uri = BitcoinPaymentURI.parse(qrdata);
+        if (uri != null && PaymentLinks.refuse(mCLayout, uri)) {
+            return;
+        }
         if (uri != null && uri.getR() != null) {
             PaymentRequests.pay(this, mCLayout, wallet, qrdata, settings.getFiatCurrency(), settings.getFeePerByte(),
                     confirmationScreen);
