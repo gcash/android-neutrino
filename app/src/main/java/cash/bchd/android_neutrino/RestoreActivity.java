@@ -9,10 +9,14 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 
 import java.io.File;
 import java.text.DateFormat;
@@ -20,8 +24,10 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Bip39;
 import cash.bchd.android_neutrino.wallet.Network;
+import cash.bchd.android_neutrino.wallet.TokensHeld;
 import cash.bchd.android_neutrino.wallet.Wallet;
 
 public class RestoreActivity extends AppCompatActivity {
@@ -91,14 +97,48 @@ public class RestoreActivity extends AppCompatActivity {
                     phraseLayout.setError(null);
             }
 
-            new AlertDialog.Builder(RestoreActivity.this)
-                    .setTitle("Are you sure?")
-                    .setMessage("Once you continue the existing wallet will be overridden with the new wallet and any coins in the existing wallet will be lost. Please backup the existing wallet if you need to do so before continuing.")
-                    .setPositiveButton("Yes, restore", (dialog, which) ->
-                            screenLock.confirm(getString(R.string.screen_lock_restore)))
-                    .setNegativeButton("Cancel", null)
-                    .show();
+            // The current wallet is asked whether it holds CashTokens, which the app doesn't show,
+            // so that the warning can say they're lost too.
+            Wallet current = Wallet.getInstance();
+            if (current == null || !current.isRunning()) {
+                confirmRestore(screenLock, null);
+                return;
+            }
+            confirmBtn.setEnabled(false);
+            Futures.addCallback(current.tokensHeldAsync(), new FutureCallback<TokensHeld>() {
+                @Override
+                public void onSuccess(TokensHeld held) {
+                    confirmBtn.setEnabled(true);
+                    confirmRestore(screenLock, held);
+                }
+
+                @Override
+                public void onFailure(@NonNull Throwable t) {
+                    t.printStackTrace();
+                    confirmBtn.setEnabled(true);
+                    confirmRestore(screenLock, null);
+                }
+            }, ContextCompat.getMainExecutor(this));
         });
+    }
+
+    // confirmRestore asks whether to delete the current wallet for the restored one, warning too
+    // of the CashTokens it holds, if it's known to hold any.
+    private void confirmRestore(ScreenLock.Prompt screenLock, TokensHeld held) {
+        if (isFinishing()) {
+            return;
+        }
+        String message = "Once you continue the existing wallet will be overridden with the new wallet and any coins in the existing wallet will be lost. Please backup the existing wallet if you need to do so before continuing.";
+        if (held != null && held.any()) {
+            message += "\n\n" + getString(R.string.restore_loses_tokens, new Amount(held.satoshis).toString());
+        }
+        new AlertDialog.Builder(RestoreActivity.this)
+                .setTitle("Are you sure?")
+                .setMessage(message)
+                .setPositiveButton("Yes, restore", (dialog, which) ->
+                        screenLock.confirm(getString(R.string.screen_lock_restore)))
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     @Override

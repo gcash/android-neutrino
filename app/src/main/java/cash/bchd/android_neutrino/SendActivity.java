@@ -20,12 +20,16 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 
 import java.util.ArrayList;
 import java.util.Currency;
@@ -35,6 +39,7 @@ import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.BitcoinPaymentURI;
 import cash.bchd.android_neutrino.wallet.ExchangeRates;
 import cash.bchd.android_neutrino.wallet.Network;
+import cash.bchd.android_neutrino.wallet.TokensHeld;
 import cash.bchd.android_neutrino.wallet.Wallet;
 import walletrpc.Api;
 
@@ -296,6 +301,7 @@ public class SendActivity extends AppCompatActivity {
                 inputAmount.setEnabled(false);
                 updateAlternateAmount();
                 sendAll = true;
+                warnOfTokens();
             } else {
                 inputAmount.setText("");
                 updateAlternateAmount();
@@ -479,6 +485,30 @@ public class SendActivity extends AppCompatActivity {
         if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction())) {
             fillIn(intent.getDataString());
         }
+    }
+
+    // warnOfTokens tells that Send All leaves the wallet's CashTokens here, with the BCH they
+    // carry, when it holds any, as the app can't send them yet and doesn't show them, so that the
+    // wallet isn't taken for empty.
+    private void warnOfTokens() {
+        Futures.addCallback(wallet.tokensHeldAsync(), new FutureCallback<TokensHeld>() {
+            @Override
+            public void onSuccess(TokensHeld held) {
+                if (!held.any() || !sendAll || isFinishing()) {
+                    return;
+                }
+                new AlertDialog.Builder(SendActivity.this)
+                        .setTitle(R.string.tokens_held_title)
+                        .setMessage(getString(R.string.send_all_leaves_tokens, new Amount(held.satoshis).toString()))
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show();
+            }
+
+            @Override
+            public void onFailure(@NonNull Throwable t) {
+                t.printStackTrace();
+            }
+        }, ContextCompat.getMainExecutor(this));
     }
 
     private void processPaymentRequest(String qrdata) {

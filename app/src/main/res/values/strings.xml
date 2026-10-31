@@ -125,6 +125,9 @@
     <string name="payment_link_other_network">This payment link is for %1$s, and the wallet is on %2$s. Switch networks in Settings to pay it.</string>
     <string name="payment_link_tokens">This payment link asks for CashTokens, which the wallet can\'t send yet.</string>
     <string name="payment_link_required_parameter">This payment link requires %1$s, which the wallet doesn\'t understand, so it can\'t pay it.</string>
+    <string name="tokens_held_title">This wallet holds CashTokens</string>
+    <string name="send_all_leaves_tokens">Send All sends the BCH you can spend. The wallet\'s CashTokens stay here, with the %1$s BCH they carry, as this app can\'t send or show tokens yet. Keep this wallet\'s recovery phrase to keep them.</string>
+    <string name="restore_loses_tokens">This wallet also holds CashTokens, which this app doesn\'t show yet, with %1$s BCH. They\'re lost too unless you have this wallet\'s recovery phrase.</string>
     <string name="wallet_birthday_note_test_network">The wallet looks for its coins in the blocks from this date on. Earlier dates take longer to scan.</string>
     <string name="menu">Menu</string>
     <string name="receive">Receive</string>

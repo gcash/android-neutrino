@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -491,6 +492,22 @@ public class Wallet implements Serializable {
         Api.BalanceRequest request = Api.BalanceRequest.newBuilder().setAccountNumber(0).setRequiredConfirmations(0).build();
         Api.BalanceResponse reply = stub.balance(request);
         return reply.getSpendable();
+    }
+
+    /**
+     * tokensHeldAsync returns what the wallet holds with CashTokens, which the app doesn't show or
+     * send yet, or fails if the wallet doesn't answer within ten seconds.
+     */
+    public ListenableFuture<TokensHeld> tokensHeldAsync() {
+        WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel)
+                .withCallCredentials(this.creds).withDeadlineAfter(10, TimeUnit.SECONDS);
+        ListenableFuture<Api.TokenBalancesResponse> tokens = stub.tokenBalances(
+                Api.TokenBalancesRequest.newBuilder().setAccountNumber(0).setRequiredConfirmations(0).build());
+        ListenableFuture<Api.BalanceResponse> balance = stub.balance(
+                Api.BalanceRequest.newBuilder().setAccountNumber(0).setRequiredConfirmations(0).build());
+        return Futures.whenAllSucceed(tokens, balance).call(
+                () -> TokensHeld.of(Futures.getDone(tokens), Futures.getDone(balance)),
+                MoreExecutors.directExecutor());
     }
 
     /**
