@@ -34,6 +34,9 @@ import com.google.common.util.concurrent.Futures;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.BitcoinPaymentURI;
@@ -41,6 +44,7 @@ import cash.bchd.android_neutrino.wallet.ExchangeRates;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TokensHeld;
 import cash.bchd.android_neutrino.wallet.Wallet;
+import io.grpc.Status;
 import walletrpc.Api;
 
 public class SendActivity extends AppCompatActivity {
@@ -65,7 +69,10 @@ public class SendActivity extends AppCompatActivity {
                 }
             });
 
-    Wallet wallet;
+    // Checks the address off the main thread, one check at a time, as the wallet answers over
+    // gRPC, and shows only the result for the address as it stands.
+    private final ExecutorService addressChecks = Executors.newSingleThreadExecutor();
+    private final AtomicInteger addressEdits = new AtomicInteger();
     Network network;
     TextView balanceTxtView;
     Amount balance;
@@ -87,8 +94,6 @@ public class SendActivity extends AppCompatActivity {
         setContentView(R.layout.activity_send);
         SystemBars.apply(this);
 
-        CloseActivity.cancelCloseTimer();
-
         sendLayout = findViewById(R.id.sendLayout);
 
         Intent intent = getIntent();
@@ -96,7 +101,6 @@ public class SendActivity extends AppCompatActivity {
         fiatCurrency = intent.getExtras().getString("fiatCurrency");
         satPerByte = intent.getExtras().getInt("feePerByte");
 
-        wallet = Wallet.getInstance();
         network = Settings.get(this).getNetwork();
         Networks.showBadge(this, network);
 
@@ -111,7 +115,7 @@ public class SendActivity extends AppCompatActivity {
 
         balanceTxtView = findViewById(R.id.sendBalance);
         try {
-            balance = new Amount(wallet.balance());
+            balance = new Amount(Wallet.getInstance().balance());
             if (network.hasFiat) {
                 balanceTxtView.setText(getString(R.string.balance_fiat_amount, ExchangeRates.getInstance().getFormattedAmountInFiat(balance, Currency.getInstance(fiatCurrency))));
             } else {
@@ -191,21 +195,20 @@ public class SendActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                try {
-                    boolean valid = address.getText() != null && wallet.validateAddress(address.getText().toString());
-                    if (valid) {
-                        TextInputLayout amountLayout = findViewById(R.id.amountLayout);
-                        amountLayout.setError(null);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                checkAddress(false);
             }
         });
 
         Button send = findViewById(R.id.sendBtn);
         send.setOnClickListener(v -> {
-            TextInputLayout layout = findViewById(R.id.addressLayout);
+            TextInputLayout layout = addressLayout;
+            // The wallet that runs now, as the one that ran when the screen opened may have
+            // stopped since, and started again.
+            Wallet wallet = Wallet.getInstance();
+            if (wallet == null || !wallet.isRunning()) {
+                Snackbar.make(sendLayout, R.string.wallet_is_not_loaded_yet, Snackbar.LENGTH_LONG).show();
+                return;
+            }
             try {
                 boolean inputError = false;
                 boolean valid = address.getText() != null && wallet.validateAddress(address.getText().toString());
@@ -279,11 +282,17 @@ public class SendActivity extends AppCompatActivity {
                 }
                 confirmationScreen.launch(intent1);
             } catch (Exception e) {
-                // Say why bchwallet refused the transaction, such as a dust amount, when it did.
-                String reason = Wallet.reasonFor(e);
-                String message = reason != null
-                        ? getString(R.string.error_creating_transaction_reason, reason)
-                        : getString(R.string.error_creating_transaction);
+                // Say that the wallet can't be reached, as when it stopped or is starting again,
+                // or why bchwallet refused the transaction, such as a dust amount, when it did.
+                String message;
+                if (Status.fromThrowable(e).getCode() == Status.Code.UNAVAILABLE) {
+                    message = getString(R.string.wallet_is_not_loaded_yet);
+                } else {
+                    String reason = Wallet.reasonFor(e);
+                    message = reason != null
+                            ? getString(R.string.error_creating_transaction_reason, reason)
+                            : getString(R.string.error_creating_transaction);
+                }
                 Snackbar snackbar = Snackbar.make(sendLayout, message, Snackbar.LENGTH_LONG);
                 snackbar.setTextMaxLines(5);
                 snackbar.show();
@@ -324,6 +333,11 @@ public class SendActivity extends AppCompatActivity {
 
         byte[] paymentRequest = intent.getByteArrayExtra(PaymentRequestFile.EXTRA);
         if (paymentRequest != null) {
+            Wallet wallet = Wallet.getInstance();
+            if (wallet == null) {
+                Snackbar.make(sendLayout, R.string.wallet_is_not_loaded_yet, Snackbar.LENGTH_LONG).show();
+                return;
+            }
             PaymentRequests.payFile(this, sendLayout, wallet, paymentRequest, fiatCurrency, satPerByte,
                     confirmationScreen);
             return;
@@ -459,17 +473,7 @@ public class SendActivity extends AppCompatActivity {
         } else {
             address.setText(qrdata);
         }
-        try {
-            boolean valid = address.getText() != null && wallet.validateAddress(address.getText().toString());
-            TextInputLayout layout = findViewById(R.id.addressLayout);
-            if (!valid) {
-                layout.setError(getString(R.string.invalid_bitcoin_cash_address));
-            } else {
-                layout.setError(null);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        checkAddress(true);
     }
 
     @Override
@@ -491,6 +495,10 @@ public class SendActivity extends AppCompatActivity {
     // carry, when it holds any, as the app can't send them yet and doesn't show them, so that the
     // wallet isn't taken for empty.
     private void warnOfTokens() {
+        Wallet wallet = Wallet.getInstance();
+        if (wallet == null) {
+            return;
+        }
         Futures.addCallback(wallet.tokensHeldAsync(), new FutureCallback<TokensHeld>() {
             @Override
             public void onSuccess(TokensHeld held) {
@@ -512,7 +520,56 @@ public class SendActivity extends AppCompatActivity {
     }
 
     private void processPaymentRequest(String qrdata) {
+        Wallet wallet = Wallet.getInstance();
+        if (wallet == null) {
+            Snackbar.make(sendLayout, R.string.wallet_is_not_loaded_yet, Snackbar.LENGTH_LONG).show();
+            return;
+        }
         PaymentRequests.pay(this, sendLayout, wallet, qrdata, fiatCurrency, satPerByte, confirmationScreen);
+    }
+
+    /**
+     * checkAddress has the wallet check the address in the field, off the main thread, and
+     * clears the field's error when it's valid, or, with showInvalid, shows it when it isn't, as
+     * for an address filled in whole rather than typed. A check that a later edit overtook is
+     * skipped, or its result dropped.
+     */
+    private void checkAddress(boolean showInvalid) {
+        int edit = addressEdits.incrementAndGet();
+        String text = address.getText() == null ? "" : address.getText().toString();
+        addressChecks.execute(() -> {
+            if (edit != addressEdits.get()) {
+                return;
+            }
+            boolean valid;
+            try {
+                Wallet wallet = Wallet.getInstance();
+                if (wallet == null) {
+                    return;
+                }
+                valid = wallet.validateAddress(text);
+            } catch (Exception e) {
+                // The wallet is starting or stopping, and the send button checks again.
+                return;
+            }
+            runOnUiThread(() -> {
+                if (edit != addressEdits.get() || isFinishing()) {
+                    return;
+                }
+                TextInputLayout layout = findViewById(R.id.addressLayout);
+                if (valid) {
+                    layout.setError(null);
+                } else if (showInvalid) {
+                    layout.setError(getString(R.string.invalid_bitcoin_cash_address));
+                }
+            });
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        addressChecks.shutdownNow();
+        super.onDestroy();
     }
 
     static boolean considerAmountTextZero(Editable inputAmountText) {

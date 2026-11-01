@@ -52,7 +52,6 @@ public class ReceiveActivity extends AppCompatActivity {
     String lastAddress;
     TextInputEditText receiveAmountInput;
     TextView conversionRate;
-    Wallet wallet;
     Network network;
     LinearLayout receiveLayout;
     TextInputEditText label;
@@ -65,8 +64,6 @@ public class ReceiveActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_request);
         SystemBars.apply(this);
-
-        CloseActivity.cancelCloseTimer();
 
         Toolbar myToolbar = findViewById(R.id.receiveToolbar);
         setSupportActionBar(myToolbar);
@@ -86,7 +83,6 @@ public class ReceiveActivity extends AppCompatActivity {
         receiveAmountInput = findViewById(R.id.receiveAmountInput);
         conversionRate = findViewById(R.id.receiveConversionRate);
 
-        wallet = Wallet.getInstance();
         network = Settings.get(this).getNetwork();
         Networks.showBadge(this, network);
 
@@ -254,8 +250,12 @@ public class ReceiveActivity extends AppCompatActivity {
     }
 
     private void displayQRPopup() {
+        // The wallet that runs now, as the one that ran when the screen opened may have stopped
+        // since, and started again.
+        Wallet wallet = Wallet.getInstance();
+        boolean running = wallet != null && wallet.isRunning();
         String lastAddr = "";
-        if (!wallet.isRunning()) {
+        if (!running) {
             lastAddr = lastAddress;
             if (lastAddr.equals("")) {
                 Snackbar snackbar = Snackbar.make(receiveLayout, R.string.wallet_is_not_loaded_yet, Snackbar.LENGTH_LONG);
@@ -273,7 +273,7 @@ public class ReceiveActivity extends AppCompatActivity {
         popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         try {
             String addr;
-            if (wallet.isRunning()) {
+            if (running) {
                 addr = wallet.currentAddress();
             } else {
                 addr = lastAddr;
@@ -328,6 +328,10 @@ public class ReceiveActivity extends AppCompatActivity {
             helperText.setText(requestAmount != null ? getString(R.string.send_bch_to, requestAmount.toString())
                     : getString(R.string.send_any_bch_to));
 
+            // A wallet that has yet to start can't tell of the payment.
+            if (wallet == null) {
+                return;
+            }
             wallet.listenAddress(addr, new AddressListener() {
                 @Override
                 public void onPaymentReceived(long amount) {

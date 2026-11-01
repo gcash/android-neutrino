@@ -269,8 +269,7 @@ public class Wallet implements Serializable {
      * again when they end, as when their connection closes.
      */
     public void listenTransactions(WalletEventListener listener) {
-        WalletEventListener previous = mainListener;
-        mainListener = listener;
+        setMainListener(listener);
         try {
             Api.NetworkResponse network = network();
             lastBlockHeight = network.getBestHeight();
@@ -280,10 +279,6 @@ public class Wallet implements Serializable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if (previous != null) {
-            blockchainListeners.remove(previous);
-        }
-        blockchainListeners.add(listener);
 
         synchronized (this) {
             if (streams != null || stopped) {
@@ -314,6 +309,24 @@ public class Wallet implements Serializable {
             }, STREAM_FIRST_DELAY_MILLIS, STREAM_MAX_DELAY_MILLIS, message -> Log.w(TAG, message));
             streams.start();
         }
+    }
+
+    /**
+     * setMainListener has the notification streams tell the listener, the one of the screen that
+     * shows the wallet, in place of the listener before it, and returns whether it replaced one.
+     * A screen that comes back in front of another one that had taken them takes them back.
+     */
+    public synchronized boolean setMainListener(WalletEventListener listener) {
+        WalletEventListener previous = mainListener;
+        if (previous == listener) {
+            return false;
+        }
+        mainListener = listener;
+        if (previous != null) {
+            blockchainListeners.remove(previous);
+        }
+        blockchainListeners.add(listener);
+        return true;
     }
 
     private void onTransactionNotification(Api.TransactionNotificationsResponse value) {

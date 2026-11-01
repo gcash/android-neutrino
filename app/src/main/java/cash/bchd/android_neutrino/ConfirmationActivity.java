@@ -108,7 +108,6 @@ public class ConfirmationActivity extends AppCompatActivity {
         SystemBars.apply(this);
         getOnBackPressedDispatcher().addCallback(this, afterPayment);
 
-        CloseActivity.cancelCloseTimer();
         Networks.showBadge(this, Settings.get(this).getNetwork());
 
         Intent intent = getIntent();

@@ -78,6 +78,11 @@ dependencies {
     implementation files('../bchwallet/bchwallet.aar')
 
     implementation 'androidx.appcompat:appcompat:1.8.0'
+    // ProcessLifecycleOwner, which tells when the whole app goes to the background and comes back.
+    // appcompat already brings this version, through emoji2, so it adds no library; a newer one
+    // would move all of the app's lifecycle libraries with it.
+    //noinspection GradleDependency
+    implementation 'androidx.lifecycle:lifecycle-process:2.6.2'
     implementation 'androidx.biometric:biometric:1.1.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.2.2'
     implementation 'com.google.android.material:material:1.14.0'

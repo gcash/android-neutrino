@@ -53,8 +53,6 @@ import com.google.android.material.snackbar.Snackbar;
 
 import java.lang.ref.WeakReference;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Currency;
 import java.util.List;
@@ -65,9 +63,7 @@ import java.util.concurrent.TimeUnit;
 import cash.bchd.android_neutrino.wallet.AddressListener;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.BitcoinPaymentURI;
-import cash.bchd.android_neutrino.wallet.Config;
 import cash.bchd.android_neutrino.wallet.ExchangeRates;
-import cash.bchd.android_neutrino.wallet.Migration;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.SyncStatus;
 import cash.bchd.android_neutrino.wallet.TransactionData;
@@ -104,8 +100,10 @@ public class MainActivity extends CloseActivity {
     RecyclerView.LayoutManager layoutManager;
     TransactionAdapter mAdapter;
     SwipeRefreshLayout mSwipeRefreshLayout;
-    // Whether this activity listens to the wallet's events.
-    boolean walletAttached;
+    // The wallet this activity listens to the events of, which it started or found running, and
+    // the listener it listens with.
+    private Wallet wallet;
+    private WalletEventListener eventListener;
     // Shows the wallet's sync status while this activity is in front.
     private ScheduledExecutorService syncStatusPoller;
     // Set while the user is asked to let the app reach the local network, which the wallet's
@@ -148,7 +146,6 @@ public class MainActivity extends CloseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         SystemBars.apply(this);
-        cancelCloseTimer();
         layoutManager = new LinearLayoutManager(this);
         this.settings = Settings.load(this);
         Network network = settings.getNetwork();
@@ -298,51 +295,41 @@ public class MainActivity extends CloseActivity {
         if (askingForLocalNetwork) {
             return;
         }
-        if (Wallet.getInstance() == null) {
-            String[] peers = settings.getPeerList();
-            String[] none = new String[0];
-            boolean peersOnly = settings.getPeersOnly() && peers.length > 0;
-            String bchdIP = settings.getBchdIP();
-            if (!mayStartWallet(peers, bchdIP)) {
+        Wallet current = Wallet.getInstance();
+        if (current == null) {
+            if (!mayStartWallet()) {
                 return;
             }
-            long birthday = settings.getWalletBirthday();
-            if (birthday == 0) {
-                birthday = System.currentTimeMillis() / 1000;
-                settings.setWalletBirthday(birthday);
-            }
-
-            Migration migration = new Migration(settings.getRepoVersion());
-            int newRepoVersion = migration.MigrateUp(this);
-            settings.setRepoVersion(newRepoVersion);
-
-            Config cfg = new Config(getDataDir().getPath(), settings.getNetwork(), !settings.getWalletInitialized(),
-                    bchdIP.equals(""), settings.getBlocksOnly(), peersOnly ? peers : none, peersOnly ? none : peers,
-                    settings.getBchdIP(), settings.getBchdUsername(),
-                    settings.getBchdPassword(), settings.getBchdCert(), birthday);
-            wallet = new Wallet(this, cfg);
-            wallet.start();
-            new StartWalletTask(this).execute(wallet);
-        } else if (!walletAttached) {
-            // The activity was recreated while the wallet kept running.
-            wallet = Wallet.getInstance();
-            new StartWalletTask(this).execute(wallet);
+            current = WalletStarter.start(this, settings);
         }
-        walletAttached = true;
+        if (current != wallet) {
+            // A wallet this activity doesn't listen to yet: the one it started, one started
+            // while the activity was in the background, or the one that kept running while
+            // the activity was recreated.
+            wallet = current;
+            new StartWalletTask(this).execute(current);
+        } else if (eventListener != null && current.setMainListener(eventListener)) {
+            // Another main screen, opened on top of this one, took the wallet's notifications
+            // and is gone: this one takes them back, and catches up on what it missed.
+            Wallet attached = current;
+            WalletEventListener listener = eventListener;
+            new Thread(() -> {
+                try {
+                    attached.refresh(listener);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }, "wallet-refresh").start();
+        }
     }
 
     // mayStartWallet returns whether the wallet can start now. Android 17 and newer let the app
     // reach the local network only with the user's permission, so a wallet set to connect to
     // nodes there asks for it first, once for those nodes, and starts once the user has
     // answered, since a bchd node that it can't reach stops it.
-    private boolean mayStartWallet(String[] peers, String bchdIP) {
-        List<String> nodes = new ArrayList<>(Arrays.asList(peers));
-        if (!bchdIP.isEmpty()) {
-            nodes.add(bchdIP);
-        }
-        List<String> local = LocalNetwork.local(nodes);
-        if (local.isEmpty() || Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN
-                || ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_LOCAL_NETWORK) == PackageManager.PERMISSION_GRANTED) {
+    private boolean mayStartWallet() {
+        List<String> local = WalletStarter.localNodesWithoutPermission(this, settings);
+        if (local.isEmpty() || Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN) {
             return true;
         }
         String asked = TextUtils.join(",", local);
@@ -371,10 +358,9 @@ public class MainActivity extends CloseActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        cancelCloseTimer();
         if (settings != null) {
-            // Start the wallet again if the close timer stopped it while the app
-            // was in the background.
+            // Start the wallet if it stopped while the app was in the background, or listen to
+            // the one that WalletCloser started again while another screen was in front.
             createWallet();
         }
     }
@@ -986,6 +972,7 @@ public class MainActivity extends CloseActivity {
                 if (mainActivity == null) {
                     return;
                 }
+                mainActivity.eventListener = listener;
                 wallet.loadWallet(listener, mainActivity.settings.getMnemonic());
                 // Pull to refresh asks the wallet off the main thread, and for its balance too,
                 // which a notification the screen missed would have left behind.

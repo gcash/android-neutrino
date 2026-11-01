@@ -36,8 +36,6 @@ public class SettingsActivity extends AppCompatActivity implements PreferenceFra
             ft.commit();
         }
 
-        CloseActivity.cancelCloseTimer();
-
         Toolbar myToolbar = findViewById(R.id.settingsToolbar);
         setSupportActionBar(myToolbar);
 

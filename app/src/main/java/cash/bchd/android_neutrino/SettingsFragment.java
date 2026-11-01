@@ -36,7 +36,6 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     public static final String DONATE_URI = "bitcoincash:qrhea03074073ff3zv9whh0nggxc7k03ssh8jv9mkx?label=The%20bchd%20project&message=<3%20BCHD";
 
     private static Settings settings;
-    private static Wallet wallet;
 
     public static String activeScreen;
 
@@ -49,12 +48,14 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         setPreferencesFromResource(R.xml.preferences, rootKey);
 
         settings = Settings.getInstance();
-        wallet = Wallet.getInstance();
+        // The wallet that runs now, as the one that ran when the screen opened may have stopped
+        // since, and started again.
+        Wallet wallet = Wallet.getInstance();
 
         if (rootKey == null) {
             activeScreen = "root";
             try {
-                Api.NetworkResponse net = wallet.network();
+                Api.NetworkResponse net = Wallet.getInstance().network();
                 settings.setLastBlockHeight(net.getBestHeight());
                 settings.setLastBlockHash(net.getBestBlock());
                 settings.setScanHeight(net.getSyncedTo());
@@ -72,7 +73,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
                     try {
-                        Api.NetworkResponse net = wallet.network();
+                        Api.NetworkResponse net = Wallet.getInstance().network();
                         String blockchainInfo = "Height: " + net.getBestHeight() + "\nHash: " + net.getBestBlock() + "\nScanned Through: " + net.getSyncedTo();
                         blockchainPref.setSummary(blockchainInfo);
                     } catch (Exception e) {
@@ -262,8 +263,10 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 }
             };
 
-            wallet.listenRescan(listener);
-            wallet.listenBlockchain(listener);
+            if (wallet != null) {
+                wallet.listenRescan(listener);
+                wallet.listenBlockchain(listener);
+            }
         } else if (rootKey.equals("bchd")) {
             activeScreen = "bchd";
             Preference ipPref = (Preference) findPreference("ip");
