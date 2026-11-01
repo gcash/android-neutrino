@@ -19,3 +19,15 @@ the English word list of
 
 By the authors of BIP 39, Marek Palatinus, Pavol Rusnak, Aaron Voisine and Sean
 Bowe. Licensed under the [MIT License](https://opensource.org/licenses/MIT).
+
+## Cashonize token identicons
+
+`app/src/main/java/cash/bchd/android_neutrino/tokens/Identicon.java` ports
+`src/utils/icons/blockies.ts` of
+[Cashonize](https://github.com/cashonize/cashonize-wallet) at commit 7ea6ba53,
+which adapts [@download/blockies](https://github.com/download13/blockies), so
+that a token's image matches Cashonize's.
+
+Copyright (c) 2023-2026 Mathieu Geukens and Cashonize contributors, and
+@download/blockies by Erin Dachtler and Alex Van de Sande. Both licensed under
+the [MIT License](https://opensource.org/licenses/MIT).
