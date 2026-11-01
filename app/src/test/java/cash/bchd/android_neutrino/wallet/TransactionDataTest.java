@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +26,33 @@ public class TransactionDataTest {
             "AEBmNDE4NGZjNTk2NDAzYjlkNjM4NzgzY2Y1N2FkZmU0Yzc1YzYwNWY2MzU2ZmJjOTEzMzg1MzBlOTgzMWU5ZTE2c3EAfgAC" +
             "AAAAAAABhqAADgm2AQAAAABo/NTAdAAGJDI3LjgwcQB+AAZ0AABxAH4ADHQAQDBlM2UyMzU3ZTgwNmI2Y2RiMWY3MGI1NGMz" +
             "YTNhMTdiNjcxNGVlMWYwZTY4YmViYjQ0YTc0YjFlZmQ1MTIwOTh4";
+
+    // A received transaction that moved tokens as TransactionStore saved it before TokenChange
+    // had the commitments of the NFTs, written by that version of the classes.
+    private static final String SAVED_BEFORE_COMMITMENTS =
+            "rO0ABXNyABNqYXZhLnV0aWwuQXJyYXlMaXN0eIHSHZnHYZ0DAAFJAARzaXpleHAAAAABdwQAAAABc3IAMWNhc2guYmNoZC5h" +
+            "bmRyb2lkX25ldXRyaW5vLndhbGxldC5UcmFuc2FjdGlvbkRhdGF//edCsc/8UQIADEoABmFtb3VudEkABmhlaWdodFoACGlu" +
+            "Y29taW5nSQAObW9yZVJlY2lwaWVudHNKAAl0aW1lc3RhbXBaAAp0b1lvdXJzZWxmTAAKZmlhdEFtb3VudHQAEkxqYXZhL2xh" +
+            "bmcvU3RyaW5nO0wADGZpYXRDdXJyZW5jeXEAfgADTAAEbWVtb3EAfgADTAAJdG9BZGRyZXNzcQB+AANMAAZ0b2tlbnN0ABVM" +
+            "amF2YS91dGlsL0FycmF5TGlzdDtMAAR0eGlkcQB+AAN4cAAAAAAAAAPoAA4KJAEAAAAAAAAAAGkFOTAAdAAAcQB+AAZxAH4A" +
+            "BnEAfgAGc3EAfgAAAAAAAncEAAAAAnNyAC1jYXNoLmJjaGQuYW5kcm9pZF9uZXV0cmluby53YWxsZXQuVG9rZW5DaGFuZ2UA" +
+            "AAAAAAAAAQIAA0oABmFtb3VudEkABG5mdHNMAAhjYXRlZ29yeXEAfgADeHAAAAAAAAAAGQAAAAB0AAJiYnNxAH4ACAAAAAAA" +
+            "AAAAAAAAAXQAAmNjeHQAQDBlNjg2N2EzMDViOWM5ZDRkMzY5ZmM4NTBiMDEyYzRlOGY1MzFmMjE0ZTM2OTM2YjhjNzgyMmI3" +
+            "MDM5YzNhYTB4";
+
+    @Test
+    public void readsTheTokensSavedBeforeTheyHadCommitments() throws Exception {
+        byte[] saved = Base64.getDecoder().decode(SAVED_BEFORE_COMMITMENTS);
+        List<?> list;
+        try (ObjectInputStream is = new ObjectInputStream(new ByteArrayInputStream(saved))) {
+            list = (List<?>) is.readObject();
+        }
+        TransactionData tx = (TransactionData) list.get(0);
+        assertEquals("0e6867a305b9c9d4d369fc850b012c4e8f531f214e36936b8c7822b7039c3aa0", tx.getTxid());
+        assertEquals(Arrays.asList(new TokenChange("bb", 25, 0), new TokenChange("cc", 0, 1)), tx.getTokens());
+        assertEquals(Collections.emptyList(), tx.getTokens().get(1).nftsReceived());
+        assertEquals(0, tx.getSpendableAmount());
+    }
 
     @Test
     public void readsTheTransactionsSavedBeforeItHadRecipients() throws Exception {

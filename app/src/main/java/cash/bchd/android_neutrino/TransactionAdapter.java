@@ -1,8 +1,10 @@
 package cash.bchd.android_neutrino;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.text.TextPaint;
 import android.text.TextUtils;
+import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,8 +20,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
+import cash.bchd.android_neutrino.tokens.Identicon;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Network;
+import cash.bchd.android_neutrino.wallet.TokenBalance;
+import cash.bchd.android_neutrino.wallet.TokenChange;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 
 public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.TxViewHolder> {
@@ -35,6 +40,8 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     // The popup with a transaction's details, and the transaction, while it shows.
     private PopupWindow detailsPopup;
     private TransactionData detailsTx;
+    // The identicons of the tokens that rows lead with, by token ID.
+    private final LruCache<String, Bitmap> icons = new LruCache<>(64);
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -114,6 +121,13 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         // - replace the contents of the view with that element
 
         TransactionData tx = mDataset.get(position);
+        holder.layout.setOnClickListener(v -> showDetails(tx));
+        if (!tx.getTokens().isEmpty()) {
+            bindTokens(holder, tx);
+            return;
+        }
+        // A token's row, which this one may be reused from, draws its identicon unscaled.
+        holder.arrowImage.setScaleType(ImageView.ScaleType.FIT_CENTER);
         String bch = "₿" + new Amount(tx.getAmount()).toString();
         holder.bchAmount.setText(bch);
 
@@ -151,8 +165,51 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
                 holder.txMemo.setText(tx.getMemo());
             }
         }
+    }
 
-        holder.layout.setOnClickListener(v -> showDetails(tx));
+    // bindTokens draws the row of a transaction that moved tokens, which leads with the first
+    // token it moved: its identicon, whether the wallet received or sent it, its memo or the
+    // token's short ID, with how many more tokens it moved, and how much of the token. Below the
+    // amount are the confirmations, then, once they're ten, the change of the spendable balance,
+    // if it's the floor or more either way, as the BCH that tokens carry isn't spendable.
+    private void bindTokens(TxViewHolder holder, TransactionData tx) {
+        List<TokenChange> tokens = tx.getTokens();
+        TokenChange first = tokens.get(0);
+        boolean received = first.received();
+        boolean nftsOnly = first.amount == 0;
+        holder.arrowImage.setScaleType(ImageView.ScaleType.CENTER);
+        holder.arrowImage.setImageBitmap(icon(first.category));
+        holder.txDescription.setText(received ? (nftsOnly ? R.string.received_nft : R.string.received_token)
+                : (nftsOnly ? R.string.sent_nft : R.string.sent_token));
+        holder.txMemo.setEllipsize(TextUtils.TruncateAt.END);
+        String what = tx.getMemo() == null || tx.getMemo().isEmpty() ? TokenBalance.shortId(first.category) : tx.getMemo();
+        int more = tokens.size() - 1;
+        holder.txMemo.setText(more > 0 ? ctx.getResources().getQuantityString(R.plurals.token_row_more, more, what, more) : what);
+        holder.bchAmount.setText(TokenTexts.change(ctx, first));
+        holder.bchAmount.setTextColor(ContextCompat.getColor(ctx, received ? R.color.darkGreen : R.color.neonPurple));
+
+        int confirmations = TransactionRows.confirmations(tx, blockHeight);
+        if (confirmations <= 0) {
+            holder.fiatAmount.setText(R.string.unconfirmed);
+            holder.fiatAmount.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.red_circle, 0, 0, 0);
+        } else if (confirmations < 10) {
+            holder.fiatAmount.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.yellow_circle, 0, 0, 0);
+            holder.fiatAmount.setText(ctx.getResources().getQuantityString(R.plurals.confirmations, confirmations, confirmations));
+        } else {
+            holder.fiatAmount.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0);
+            long spendable = tx.getSpendableAmount();
+            String bch = Math.abs(spendable) >= TokenBalance.FLOOR ? "₿" + new Amount(spendable).toString() : null;
+            holder.fiatAmount.setText(bch);
+        }
+    }
+
+    private Bitmap icon(String category) {
+        Bitmap icon = icons.get(category);
+        if (icon == null) {
+            icon = Identicon.of(category).bitmap(ctx.getResources().getDimensionPixelSize(R.dimen.token_row_icon));
+            icons.put(category, icon);
+        }
+        return icon;
     }
 
     /**

@@ -44,6 +44,15 @@
             android:text=""
             android:layout_marginBottom="20dp"/>
 
+        <!-- How the transaction changed the wallet's tokens, if it did. -->
+        <LinearLayout
+            android:id="@+id/txDetailsTokens"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp"
+            android:orientation="vertical"
+            android:visibility="gone" />
+
         <View
             android:id="@+id/divider"
             android:layout_width="match_parent"

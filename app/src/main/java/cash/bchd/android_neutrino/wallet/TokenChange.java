@@ -1,7 +1,10 @@
 package cash.bchd.android_neutrino.wallet;
 
+import com.google.common.io.BaseEncoding;
+
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -11,20 +14,32 @@ import walletrpc.Api;
 
 /**
  * TokenChange is how a transaction changed what the wallet holds of a token category: its
- * fungible amount and its number of NFTs, each more or less, as TransactionData keeps it.
+ * fungible amount and its number of NFTs, each more or less, and which NFTs came and went, as
+ * TransactionData keeps it.
  */
 public final class TokenChange implements Serializable {
 
+    // The same as before the class kept the NFTs' commitments, as it only has more fields since.
     private static final long serialVersionUID = 1L;
 
     public final String category;
     public final long amount;
     public final int nfts;
+    // The commitments, in hex, of the NFTs that came to the wallet and that it sent, but for those
+    // it sent itself, or null in a change saved before the app kept them.
+    private final ArrayList<String> nftsReceived;
+    private final ArrayList<String> nftsSent;
 
     public TokenChange(String category, long amount, int nfts) {
+        this(category, amount, nfts, Collections.emptyList(), Collections.emptyList());
+    }
+
+    public TokenChange(String category, long amount, int nfts, List<String> nftsReceived, List<String> nftsSent) {
         this.category = category;
         this.amount = amount;
         this.nfts = nfts;
+        this.nftsReceived = new ArrayList<>(nftsReceived);
+        this.nftsSent = new ArrayList<>(nftsSent);
     }
 
     /**
@@ -34,32 +49,50 @@ public final class TokenChange implements Serializable {
      * itself.
      */
     static List<TokenChange> of(Api.TransactionDetails tx) {
-        Map<String, long[]> changes = new TreeMap<>();
+        Map<String, Change> changes = new TreeMap<>();
         for (Api.TransactionDetails.Output output : tx.getCreditsList()) {
             if (output.hasToken()) {
-                add(changes, output.getToken(), 1);
+                change(changes, output.getToken()).add(output.getToken(), 1);
             }
         }
         for (Api.TransactionDetails.Input input : tx.getDebitsList()) {
             if (input.hasPreviousToken()) {
-                add(changes, input.getPreviousToken(), -1);
+                change(changes, input.getPreviousToken()).add(input.getPreviousToken(), -1);
             }
         }
         List<TokenChange> list = new ArrayList<>();
-        for (Map.Entry<String, long[]> change : changes.entrySet()) {
-            long[] by = change.getValue();
-            if (by[0] != 0 || by[1] != 0) {
-                list.add(new TokenChange(change.getKey(), by[0], (int) by[1]));
+        for (Map.Entry<String, Change> entry : changes.entrySet()) {
+            Change change = entry.getValue();
+            // An NFT that went out and came back, with the same commitment, stayed in the wallet.
+            for (String commitment : new ArrayList<>(change.received)) {
+                if (change.sent.remove(commitment)) {
+                    change.received.remove(commitment);
+                }
+            }
+            int nfts = change.received.size() - change.sent.size();
+            if (change.amount != 0 || nfts != 0) {
+                list.add(new TokenChange(entry.getKey(), change.amount, nfts, change.received, change.sent));
             }
         }
         return list;
     }
 
-    private static void add(Map<String, long[]> changes, Api.TokenData token, int sign) {
-        long[] by = changes.computeIfAbsent(token.getCategory(), category -> new long[2]);
-        by[0] += sign * token.getAmount();
-        if (token.getHasNft()) {
-            by[1] += sign;
+    private static Change change(Map<String, Change> changes, Api.TokenData token) {
+        return changes.computeIfAbsent(token.getCategory(), category -> new Change());
+    }
+
+    // Change sums up a category's tokens in and out of the wallet.
+    private static final class Change {
+        long amount;
+        final List<String> received = new ArrayList<>();
+        final List<String> sent = new ArrayList<>();
+
+        void add(Api.TokenData token, int sign) {
+            amount += sign * token.getAmount();
+            if (token.getHasNft()) {
+                String commitment = BaseEncoding.base16().lowerCase().encode(token.getCommitment().toByteArray());
+                (sign > 0 ? received : sent).add(commitment);
+            }
         }
     }
 
@@ -76,6 +109,20 @@ public final class TokenChange implements Serializable {
     }
 
     /**
+     * nftsReceived returns the commitments, in hex, of the NFTs that came to the wallet.
+     */
+    public List<String> nftsReceived() {
+        return nftsReceived != null ? Collections.unmodifiableList(nftsReceived) : Collections.emptyList();
+    }
+
+    /**
+     * nftsSent returns the commitments, in hex, of the NFTs that the wallet sent.
+     */
+    public List<String> nftsSent() {
+        return nftsSent != null ? Collections.unmodifiableList(nftsSent) : Collections.emptyList();
+    }
+
+    /**
      * received returns whether the wallet holds more of the category after the transaction, and
      * no less of either its fungible tokens or its NFTs.
      */
@@ -89,16 +136,17 @@ public final class TokenChange implements Serializable {
             return false;
         }
         TokenChange other = (TokenChange) o;
-        return category.equals(other.category) && amount == other.amount && nfts == other.nfts;
+        return category.equals(other.category) && amount == other.amount && nfts == other.nfts
+                && nftsReceived().equals(other.nftsReceived()) && nftsSent().equals(other.nftsSent());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(category, amount, nfts);
+        return Objects.hash(category, amount, nfts, nftsReceived(), nftsSent());
     }
 
     @Override
     public String toString() {
-        return category + " " + amount + " " + nfts;
+        return category + " " + amount + " " + nfts + " +" + nftsReceived() + " -" + nftsSent();
     }
 }

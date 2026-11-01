@@ -17,13 +17,14 @@ public final class TransactionList {
     }
 
     /**
-     * rebuild returns the wallet's transactions that move coins, newest first. The wallet lists
-     * them oldest first, in block order, which decides between transactions of the same time, such
-     * as a payment and its spending in one block. A transaction that was shown already keeps its
-     * entry, with the fiat value of when it was first shown and the memo of a payment the app sent,
-     * which the wallet doesn't have, and takes the wallet's height, recipients and tokens for it,
-     * which corrects the recipient of an entry saved before the wallet named recipients, and
-     * gives tokens to one saved before the app read them.
+     * rebuild returns the wallet's transactions that move coins or tokens, newest first. The
+     * wallet lists them oldest first, in block order, which decides between transactions of the
+     * same time, such as a payment and its spending in one block. A transaction that was shown
+     * already keeps its entry, with the fiat value of when it was first shown and the memo of a
+     * payment the app sent, which the wallet doesn't have, and takes the wallet's height,
+     * recipients, tokens and change of the spendable balance for it, which corrects the recipient
+     * of an entry saved before the wallet named recipients, and gives tokens to one saved before
+     * the app read them.
      */
     public static List<TransactionData> rebuild(List<TransactionData> shown, List<TransactionData> wallet) {
         Map<String, TransactionData> previous = new HashMap<>();
@@ -34,7 +35,7 @@ public final class TransactionList {
         List<TransactionData> newestFirst = new ArrayList<>(wallet);
         Collections.reverse(newestFirst);
         for (TransactionData tx : newestFirst) {
-            if (tx.getAmount() == 0) {
+            if (tx.getAmount() == 0 && tx.getTokens().isEmpty()) {
                 continue;
             }
             TransactionData old = previous.remove(tx.getTxid());
@@ -45,6 +46,7 @@ public final class TransactionList {
             old.setHeight(tx.getHeight());
             old.setRecipients(tx.getToAddress(), tx.getMoreRecipients(), tx.getToYourself());
             old.setTokens(tx.getTokens());
+            old.setSpendableAmount(tx.getSpendableAmount());
             if (old.getFiatAmount().isEmpty()) {
                 old.setFiatAmount(tx.getFiatAmount());
                 old.setFiatCurrency(tx.getFiatCurrency());

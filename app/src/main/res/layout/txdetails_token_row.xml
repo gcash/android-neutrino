@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- How a transaction changed one of the wallet's tokens, in the transaction's details: the
+     token's identicon and short ID, and its fungible amount and NFTs, a line for each. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingStart="20dp"
+    android:paddingTop="6dp"
+    android:paddingEnd="20dp"
+    android:paddingBottom="6dp">
+
+    <ImageView
+        android:id="@+id/txDetailsTokenIcon"
+        android:layout_width="@dimen/token_details_icon"
+        android:layout_height="@dimen/token_details_icon"
+        android:layout_marginEnd="10dp"
+        android:importantForAccessibility="no" />
+
+    <TextView
+        android:id="@+id/txDetailsTokenId"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:fontFamily="monospace"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/txDetailsTokenChange"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:gravity="end"
+        android:textSize="15sp" />
+</LinearLayout>

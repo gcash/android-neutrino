@@ -165,6 +165,21 @@
     <!-- When an NFT came, which opens the transaction it came in. -->
     <string name="nft_received">Received %1$s ›</string>
     <string name="commitment_copied">Commitment copied to clipboard.</string>
+    <string name="received_token">Received token</string>
+    <string name="sent_token">Sent token</string>
+    <string name="received_nft">Received NFT</string>
+    <string name="sent_nft">Sent NFT</string>
+    <!-- A transaction's memo or its first token's short ID, and how many more tokens it moved. -->
+    <plurals name="token_row_more">
+        <item quantity="one">%1$s +%2$d more</item>
+        <item quantity="other">%1$s +%2$d more</item>
+    </plurals>
+    <!-- An NFT that came to the wallet, or that it sent, in a transaction's details, with its
+         commitment if it has one. -->
+    <string name="nft_in">+NFT</string>
+    <string name="nft_in_with">+NFT %1$s</string>
+    <string name="nft_out">-NFT</string>
+    <string name="nft_out_with">-NFT %1$s</string>
     <string name="token_sent">Sent</string>
     <string name="send_all_leaves_tokens">Send All sends the BCH you can spend. The wallet\'s CashTokens stay here, with the %1$s BCH they carry, as this app can\'t send tokens yet. Keep this wallet\'s recovery phrase to keep them.</string>
     <string name="restore_loses_tokens">This wallet also holds CashTokens, with %1$s BCH. They\'re lost too unless you have this wallet\'s recovery phrase.</string>

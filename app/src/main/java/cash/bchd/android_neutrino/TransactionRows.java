@@ -28,7 +28,8 @@ final class TransactionRows {
         Row(TransactionData tx, int blockHeight) {
             txid = tx.getTxid();
             contents = Arrays.asList(tx.getAmount(), tx.getIncoming(), tx.getMemo(), confirmations(tx, blockHeight),
-                    tx.getFiatAmount(), tx.getSentTo(), tx.getToAddress(), tx.getMoreRecipients());
+                    tx.getFiatAmount(), tx.getSentTo(), tx.getToAddress(), tx.getMoreRecipients(), tx.getTokens(),
+                    tx.getSpendableAmount());
         }
     }
 

@@ -11,7 +11,6 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -128,7 +127,7 @@ final class TokenHistoryAdapter extends RecyclerView.Adapter<TransactionAdapter.
         // one.
         holder.txMemo.setText(DateUtils.formatDateTime(ctx, row.tx.getTimestamp() * 1000,
                 DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME | DateUtils.FORMAT_ABBREV_MONTH));
-        holder.bchAmount.setText(change(row.change));
+        holder.bchAmount.setText(TokenTexts.change(ctx, row.change));
         holder.bchAmount.setTextColor(ContextCompat.getColor(ctx, received ? R.color.darkGreen : R.color.neonPurple));
 
         // The status shows a dot before it until the transaction has ten confirmations.
@@ -149,21 +148,5 @@ final class TokenHistoryAdapter extends RecyclerView.Adapter<TransactionAdapter.
     @Override
     public int getItemCount() {
         return rows.size();
-    }
-
-    // change says how the transaction changed the token: its fungible amount, its NFTs, or both,
-    // each with its sign.
-    private String change(TokenChange change) {
-        String amount = change.amount == 0 ? null : signed(change.amount);
-        String nfts = change.nfts == 0 ? null : ctx.getResources().getQuantityString(
-                R.plurals.token_nfts_change, Math.abs(change.nfts), signed(change.nfts));
-        if (amount == null) {
-            return nfts;
-        }
-        return nfts == null ? amount : ctx.getString(R.string.token_amount_and_nfts, amount, nfts);
-    }
-
-    private static String signed(long n) {
-        return (n > 0 ? "+" : "-") + NumberFormat.getIntegerInstance().format(Math.abs(n));
     }
 }

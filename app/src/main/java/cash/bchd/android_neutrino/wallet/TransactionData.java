@@ -26,6 +26,8 @@ public class TransactionData implements Serializable, Comparable<TransactionData
     // How the transaction changed the wallet's tokens, by token ID, or null in a transaction
     // saved before the app read them.
     private ArrayList<TokenChange> tokens;
+    // How much it changed the spendable balance by: amount, less the BCH of outputs with tokens.
+    private long spendableAmount;
 
     /**
      * SentTo is whom the transaction list says a sent transaction paid.
@@ -106,6 +108,19 @@ public class TransactionData implements Serializable, Comparable<TransactionData
 
     public void setTokens(List<TokenChange> tokens) {
         this.tokens = new ArrayList<>(tokens);
+    }
+
+    /**
+     * getSpendableAmount returns how much the transaction changed the spendable balance by, in
+     * satoshis, which leaves out the BCH that outputs with tokens carry, and is 0 for a
+     * transaction saved before the app read tokens.
+     */
+    public long getSpendableAmount() {
+        return this.spendableAmount;
+    }
+
+    public void setSpendableAmount(long spendableAmount) {
+        this.spendableAmount = spendableAmount;
     }
 
     public SentTo getSentTo() {

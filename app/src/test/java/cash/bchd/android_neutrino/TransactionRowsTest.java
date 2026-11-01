@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import cash.bchd.android_neutrino.wallet.TokenChange;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 
 import static org.junit.Assert.assertEquals;
@@ -52,6 +53,17 @@ public class TransactionRowsTest {
         TransactionData a = tx("a", 0);
         List<TransactionRows.Row> shown = TransactionRows.of(Collections.singletonList(a), 100);
         a.setHeight(100);
+        assertEquals(Collections.singletonList("change 0 1"),
+                changes(shown, TransactionRows.of(Collections.singletonList(a), 100)));
+    }
+
+    @Test
+    public void redrawsATransactionThatLearnedItsTokens() {
+        // TransactionList.rebuild gives the tokens to an entry saved before the app read them.
+        TransactionData a = tx("a", 100);
+        List<TransactionRows.Row> shown = TransactionRows.of(Collections.singletonList(a), 100);
+        a.setTokens(Collections.singletonList(new TokenChange("bb", 25, 0)));
+        a.setSpendableAmount(0);
         assertEquals(Collections.singletonList("change 0 1"),
                 changes(shown, TransactionRows.of(Collections.singletonList(a), 100)));
     }

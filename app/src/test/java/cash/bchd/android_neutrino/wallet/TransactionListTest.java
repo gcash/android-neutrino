@@ -80,8 +80,20 @@ public class TransactionListTest {
         TransactionData shown = tx("a", 1000, 100, 10);
         TransactionData wallet = tx("a", 1000, 100, 10);
         wallet.setTokens(Collections.singletonList(new TokenChange("bb", 25, 0)));
+        wallet.setSpendableAmount(-300);
         TransactionList.rebuild(Collections.singletonList(shown), Collections.singletonList(wallet));
         assertEquals(Collections.singletonList(new TokenChange("bb", 25, 0)), shown.getTokens());
+        assertEquals(-300, shown.getSpendableAmount());
+    }
+
+    @Test
+    public void keepsTransactionsThatMoveTokensAndNoCoins() {
+        // Tokens that came in a swap for as much BCH as their output carries, so that the
+        // transaction moved no coins.
+        TransactionData tokensOnly = tx("tokens", 0, 100, 10);
+        tokensOnly.setTokens(Collections.singletonList(new TokenChange("bb", 25, 0)));
+        List<TransactionData> wallet = Arrays.asList(tokensOnly, tx("zero", 0, 200, 20));
+        assertEquals(Collections.singletonList("tokens"), txids(TransactionList.rebuild(Collections.emptyList(), wallet)));
     }
 
     @Test

@@ -9,16 +9,21 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
+import cash.bchd.android_neutrino.tokens.Identicon;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Network;
+import cash.bchd.android_neutrino.wallet.TokenBalance;
+import cash.bchd.android_neutrino.wallet.TokenChange;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 
 /**
  * TransactionDetailsPopup shows a transaction's details in a popup over a screen's layout: its
- * amount, date and status, whom it paid, its memo, its ID and its page on an explorer.
+ * amount, how it changed the wallet's tokens, its date and status, whom it paid, its memo, its
+ * ID and its page on an explorer.
  */
 final class TransactionDetailsPopup {
 
@@ -49,6 +54,21 @@ final class TransactionDetailsPopup {
 
         TextView fiatAmount = customView.findViewById(R.id.txDetailsFiatAmount);
         fiatAmount.setText(tx.getFiatAmount());
+
+        // A row for each token the transaction moved: its identicon and short ID, and how much.
+        LinearLayout tokens = customView.findViewById(R.id.txDetailsTokens);
+        int iconSize = ctx.getResources().getDimensionPixelSize(R.dimen.token_details_icon);
+        for (TokenChange change : tx.getTokens()) {
+            View row = LayoutInflater.from(ctx).inflate(R.layout.txdetails_token_row, tokens, false);
+            ImageView icon = row.findViewById(R.id.txDetailsTokenIcon);
+            icon.setImageBitmap(Identicon.of(change.category).bitmap(iconSize));
+            TextView id = row.findViewById(R.id.txDetailsTokenId);
+            id.setText(TokenBalance.shortId(change.category));
+            TextView amount = row.findViewById(R.id.txDetailsTokenChange);
+            amount.setText(TokenTexts.details(ctx, change));
+            tokens.addView(row);
+        }
+        tokens.setVisibility(tx.getTokens().isEmpty() ? View.GONE : View.VISIBLE);
 
         TextView dateView = customView.findViewById(R.id.txDetailsDate);
         // In the phone's language and its 12 or 24 hour clock.
