@@ -9,6 +9,7 @@ import java.util.List;
 
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
+import cash.bchd.android_neutrino.wallet.TokenNft;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -37,7 +38,8 @@ public class SettingsTest {
         mainnet.setPeers("35.208.165.58");
         mainnet.setEncryptionType(EncryptionType.PIN);
         mainnet.setLastBalance(5000);
-        List<TokenBalance> tokens = Collections.singletonList(new TokenBalance("aa", 5, 1, 0));
+        List<TokenBalance> tokens = Collections.singletonList(new TokenBalance("aa", 5, 1, 0,
+                Collections.singletonList(new TokenNft(TokenNft.Capability.MINTING, "01", "bb", 0, 1000))));
         mainnet.setLastTokens(tokens);
         mainnet.setLastTokenAddress("zpm2qsznhks23z7629mms6s4cwef74vcwvrqekrq9w");
         mainnet.hideToken("aa");

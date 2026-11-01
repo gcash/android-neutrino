@@ -763,7 +763,8 @@ public class Wallet implements Serializable {
         return txData;
     }
 
-    private static String txidToString(ByteString txid) {
+    // txidToString writes a transaction hash, in the byte order of the wire, as a transaction ID.
+    static String txidToString(ByteString txid) {
         byte[] txBytes = txid.toByteArray();
         reverse(txBytes);
         return BaseEncoding.base16().lowerCase().encode(txBytes);

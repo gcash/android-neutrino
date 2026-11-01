@@ -805,11 +805,9 @@ public class MainActivity extends CloseActivity {
         }
     }
 
-    // openToken opens the screen of a token on the Tokens page.
+    // openToken opens the screen of a token on the Tokens page, or of its NFTs.
     private void openToken(TokenBalance token) {
-        Intent intent = new Intent(this, TokenActivity.class);
-        intent.putExtra(TokenActivity.EXTRA_CATEGORY, token.category);
-        startActivity(intent);
+        TokenActivity.open(this, token);
     }
 
     // showBchPlease asks for BCH on the Activity page while the wallet has no transactions.
