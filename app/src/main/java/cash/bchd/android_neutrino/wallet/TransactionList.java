@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * TransactionList makes the list of transactions the main screen shows from the ones the wallet
@@ -56,5 +57,32 @@ public final class TransactionList {
         // A stable sort, which keeps transactions of the same time newest first.
         Collections.sort(list, Collections.reverseOrder());
         return list;
+    }
+
+    /**
+     * withoutHidden returns the transactions but those that moved only tokens the user hid, and
+     * moved the spendable balance by less than the floor either way, as spam tokens come. A
+     * transaction that also moved BCH, or another token, stays.
+     */
+    public static List<TransactionData> withoutHidden(List<TransactionData> txs, Set<String> hidden) {
+        List<TransactionData> list = new ArrayList<>();
+        for (TransactionData tx : txs) {
+            if (!movedOnlyHidden(tx, hidden) || Math.abs(tx.getSpendableAmount()) >= TokenBalance.FLOOR) {
+                list.add(tx);
+            }
+        }
+        return list;
+    }
+
+    private static boolean movedOnlyHidden(TransactionData tx, Set<String> hidden) {
+        if (tx.getTokens().isEmpty()) {
+            return false;
+        }
+        for (TokenChange change : tx.getTokens()) {
+            if (!hidden.contains(change.category)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

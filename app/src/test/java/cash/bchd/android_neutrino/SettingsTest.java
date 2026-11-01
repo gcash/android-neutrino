@@ -66,6 +66,15 @@ public class SettingsTest {
     }
 
     @Test
+    public void showsAHiddenTokenAgain() {
+        Settings settings = new Settings(new InMemoryPreferences(), new InMemoryPreferences(), Network.TESTNET4);
+        settings.hideToken("aa");
+        settings.hideToken("bb");
+        settings.showToken("aa");
+        assertEquals(Collections.singleton("bb"), settings.getHiddenTokens());
+    }
+
+    @Test
     public void sharesTheAppsSettingsOnEveryNetwork() {
         InMemoryPreferences appPrefs = new InMemoryPreferences();
         Settings mainnet = new Settings(appPrefs, appPrefs, Network.MAINNET);

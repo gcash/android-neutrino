@@ -165,6 +165,13 @@
     <!-- When an NFT came, which opens the transaction it came in. -->
     <string name="nft_received">Received %1$s ›</string>
     <string name="commitment_copied">Commitment copied to clipboard.</string>
+    <string name="hidden_tokens">Hidden Tokens</string>
+    <plurals name="hidden_tokens_summary">
+        <item quantity="one">%d token hidden from the Tokens tab.</item>
+        <item quantity="other">%d tokens hidden from the Tokens tab.</item>
+    </plurals>
+    <!-- Puts a hidden token back on the main screen. -->
+    <string name="show_token">Show</string>
     <string name="received_token">Received token</string>
     <string name="sent_token">Sent token</string>
     <string name="received_nft">Received NFT</string>

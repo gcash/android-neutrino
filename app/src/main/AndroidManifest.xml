@@ -105,6 +105,11 @@
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait" />
         <activity
+            android:name=".HiddenTokensActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".ReceiveActivity"
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar"

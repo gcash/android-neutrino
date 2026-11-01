@@ -228,6 +228,12 @@ public class Settings {
         prefs.edit().putStringSet(HIDDEN_TOKENS_KEY, hidden).apply();
     }
 
+    void showToken(String category) {
+        Set<String> hidden = getHiddenTokens();
+        hidden.remove(category);
+        prefs.edit().putStringSet(HIDDEN_TOKENS_KEY, hidden).apply();
+    }
+
     void setLastBlockHeight(int blockHeight) {
         putInt(LAST_BLOCK_HEIGHT_KEY, blockHeight);
     }

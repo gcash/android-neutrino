@@ -181,7 +181,9 @@ public class MainActivity extends CloseActivity {
         TransitionManager.beginDelayedTransition(mCLayout, changeTransform);
         List<TransactionData> txs = txStore.getData();
         Collections.sort(txs, Collections.reverseOrder());
-        mAdapter = new TransactionAdapter(txs, this, mCLayout, settings.getLastBlockHeight(), network);
+        // Without the transactions of the tokens the user hid, which the store keeps.
+        mAdapter = new TransactionAdapter(TransactionList.withoutHidden(txs, settings.getHiddenTokens()), this,
+                mCLayout, settings.getLastBlockHeight(), network);
         tokenAdapter = new TokenAdapter(this, this::openToken);
         mainPages = new MainPages(mAdapter, tokenAdapter, this::refresh, savedInstanceState);
         pages = findViewById(R.id.pages);
@@ -376,8 +378,11 @@ public class MainActivity extends CloseActivity {
     protected void onStart() {
         super.onStart();
         if (settings != null) {
-            // The tokens as the wallet last told them, without one that its screen hid since.
+            // The tokens as the wallet last told them, and the transactions, without a token
+            // that its screen hid since, or with one that Settings showed again.
             showTokens(settings.getLastTokens());
+            mAdapter.setNewData(TransactionList.withoutHidden(txStore.getData(), settings.getHiddenTokens()));
+            showBchPlease();
             // Start the wallet if it stopped while the app was in the background, or listen to
             // the one that WalletCloser started again while another screen was in front.
             createWallet();
@@ -1051,13 +1056,15 @@ public class MainActivity extends CloseActivity {
                                     tx.setFiatAmount(formattedFiat);
                                 }
                                 // Show the transactions the wallet has, which drops the ones it no
-                                // longer has, such as one a double spend replaced.
-                                List<TransactionData> list = TransactionList.rebuild(mainActivity2.mAdapter.getData(), txs);
+                                // longer has, such as one a double spend replaced. The screen keeps
+                                // all of them, and the list leaves out those of hidden tokens.
+                                List<TransactionData> list = TransactionList.rebuild(mainActivity2.txStore.getData(), txs);
                                 // A transaction added at the top goes above the first row shown, so
                                 // the list scrolls to show it when it showed the newest before.
                                 LinearLayoutManager rows = mainActivity2.mainPages.rows(MainPages.ACTIVITY);
                                 boolean atTop = rows == null || rows.findFirstVisibleItemPosition() <= 0;
-                                mainActivity2.mAdapter.setNewData(list);
+                                mainActivity2.mAdapter.setNewData(TransactionList.withoutHidden(list,
+                                        mainActivity2.settings.getHiddenTokens()));
                                 if (atTop && rows != null) {
                                     rows.scrollToPosition(0);
                                 }

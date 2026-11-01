@@ -97,6 +97,25 @@ public class TransactionListTest {
     }
 
     @Test
+    public void leavesOutTheTransactionsOfHiddenTokens() {
+        // A spam token's payment, a payment of a hidden token with BCH, one of a hidden token
+        // and another, and a payment of BCH.
+        TransactionData spam = tx("spam", 1000, 400, 10);
+        spam.setTokens(Collections.singletonList(new TokenChange("aa", 1000000, 0)));
+        TransactionData withBch = tx("withBch", 101000, 300, 10);
+        withBch.setTokens(Collections.singletonList(new TokenChange("aa", 5, 0)));
+        withBch.setSpendableAmount(100000);
+        TransactionData both = tx("both", 2000, 200, 10);
+        both.setTokens(Arrays.asList(new TokenChange("aa", 5, 0), new TokenChange("bb", 7, 0)));
+        TransactionData bch = tx("bch", 5000, 100, 10);
+        bch.setSpendableAmount(5000);
+        List<TransactionData> txs = Arrays.asList(spam, withBch, both, bch);
+        assertEquals(Arrays.asList("withBch", "both", "bch"),
+                txids(TransactionList.withoutHidden(txs, Collections.singleton("aa"))));
+        assertEquals(txs, TransactionList.withoutHidden(txs, Collections.emptySet()));
+    }
+
+    @Test
     public void fillsAFiatValueTheShownEntryLacked() {
         TransactionData shown = tx("a", 1000, 100, 10);
         TransactionData wallet = new TransactionData("a", true, "", 1000, "$0.28", "USD", 100, "", 10);

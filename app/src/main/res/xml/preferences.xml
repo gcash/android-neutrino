@@ -46,6 +46,18 @@
         app:summary="Rescan blocks for missing transactions. This may take a while."
         app:title="Rescan Blocks" />
 
+    <!-- Only while a token is hidden, which SettingsFragment tells. -->
+    <Preference
+        app:icon="@drawable/hidden_icon_small"
+        app:isPreferenceVisible="false"
+        app:key="hiddenTokens"
+        app:title="@string/hidden_tokens">
+
+        <intent
+            android:targetClass="cash.bchd.android_neutrino.HiddenTokensActivity"
+            android:targetPackage="cash.bchd.android_neutrino" />
+    </Preference>
+
     <SwitchPreferenceCompat
         app:icon="@drawable/block_icon_small"
         app:key="blocksonly"

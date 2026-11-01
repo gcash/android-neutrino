@@ -419,4 +419,22 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             }
         }, ContextCompat.getMainExecutor(context));
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        showHiddenTokens();
+    }
+
+    // showHiddenTokens shows the entry of the hidden tokens while any is hidden, with how many,
+    // also after the screen it opens showed some again.
+    private void showHiddenTokens() {
+        Preference hiddenTokens = findPreference("hiddenTokens");
+        if (hiddenTokens == null || settings == null) {
+            return;
+        }
+        int hidden = settings.getHiddenTokens().size();
+        hiddenTokens.setVisible(hidden > 0);
+        hiddenTokens.setSummary(getResources().getQuantityString(R.plurals.hidden_tokens_summary, hidden, hidden));
+    }
 }
