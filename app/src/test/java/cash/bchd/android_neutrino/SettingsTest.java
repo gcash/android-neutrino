@@ -37,6 +37,7 @@ public class SettingsTest {
         mainnet.setLastBalance(5000);
         List<TokenBalance> tokens = Collections.singletonList(new TokenBalance("aa", 5, 1));
         mainnet.setLastTokens(tokens);
+        mainnet.setLastTokenAddress("zpm2qsznhks23z7629mms6s4cwef74vcwvrqekrq9w");
         mainnet.setWalletInitialized(true);
 
         Settings testnet4 = new Settings(appPrefs, testnet4Prefs, Network.TESTNET4);
@@ -44,6 +45,7 @@ public class SettingsTest {
         assertEquals(EncryptionType.UNENCRYPTED, testnet4.getEncryptionType());
         assertEquals(0, testnet4.getLastBalance());
         assertEquals(Collections.emptyList(), testnet4.getLastTokens());
+        assertEquals("", testnet4.getLastTokenAddress());
         assertEquals(false, testnet4.getWalletInitialized());
         testnet4.setPeers("35.208.255.10");
         testnet4.setLastBalance(7);
@@ -51,6 +53,7 @@ public class SettingsTest {
         assertEquals("35.208.165.58", mainnet.getPeers());
         assertEquals(5000, mainnet.getLastBalance());
         assertEquals(tokens, mainnet.getLastTokens());
+        assertEquals("zpm2qsznhks23z7629mms6s4cwef74vcwvrqekrq9w", mainnet.getLastTokenAddress());
         assertEquals("35.208.255.10", testnet4.getPeers());
     }
 

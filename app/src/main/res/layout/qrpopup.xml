@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/qrCodeLayout"
     android:layout_width="wrap_content"
     android:layout_height="match_parent"
@@ -8,6 +9,32 @@
     android:gravity="center"
     android:orientation="vertical"
     android:padding="10dp">
+
+    <!-- Shows the address in its plain form, or in its token-aware form, which receives
+         CashTokens and BCH. -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/addressTabs"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginBottom="10dp"
+        android:background="@android:color/transparent"
+        app:tabGravity="fill"
+        app:tabIndicatorColor="@android:color/white"
+        app:tabMode="fixed"
+        app:tabSelectedTextColor="@android:color/white"
+        app:tabTextAppearance="@style/TabText"
+        app:tabTextColor="@color/liteGrey">
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tab_bch" />
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tab_tokens" />
+    </com.google.android.material.tabs.TabLayout>
 
     <!-- Takes the height that the text below leaves, so that the text shows also when the
          screen is short, as on a tablet held sideways. It spans the text's width, white
@@ -45,5 +72,19 @@
         android:paddingBottom="10dp"
         android:textColor="#000"
         android:textSize="20sp" />
+
+    <!-- Under the token-aware form, what it receives. -->
+    <TextView
+        android:id="@+id/addressNote"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#fcfcfc"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingBottom="10dp"
+        android:text="@string/token_address_note"
+        android:textColor="@color/grey"
+        android:textSize="15sp"
+        android:visibility="gone" />
 
 </LinearLayout>

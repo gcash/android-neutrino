@@ -179,6 +179,7 @@ public class RestoreActivity extends AppCompatActivity {
         settings.setLastBalance(0);
         settings.setLastTokens(Collections.emptyList());
         settings.setLastAddress("");
+        settings.setLastTokenAddress("");
         settings.setBackupReminder(false);
 
         // Stop the wallet, and delete its files once it has closed them, so

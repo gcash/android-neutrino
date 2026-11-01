@@ -11,7 +11,6 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
@@ -50,6 +49,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
+import com.google.zxing.WriterException;
 
 import java.lang.ref.WeakReference;
 import java.text.NumberFormat;
@@ -62,6 +62,7 @@ import java.util.concurrent.TimeUnit;
 
 import cash.bchd.android_neutrino.tokens.TokenAdapter;
 import cash.bchd.android_neutrino.wallet.AddressListener;
+import cash.bchd.android_neutrino.wallet.Addresses;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.BitcoinPaymentURI;
 import cash.bchd.android_neutrino.wallet.ExchangeRates;
@@ -420,7 +421,8 @@ public class MainActivity extends CloseActivity {
     }
 
     // displayQRPopup shows the wallet's address and its QR code in a popup, from the menu, which
-    // it closes, or again on a recreated screen.
+    // it closes, or again on a recreated screen. Its tabs show the address in its plain form,
+    // first, or in its token-aware form, which receives CashTokens and BCH.
     private void displayQRPopup(boolean fromMenu) {
         String lastAddr = "";
         if (!wallet.isRunning()) {
@@ -444,22 +446,38 @@ public class MainActivity extends CloseActivity {
         qrPopup = popupWindow;
         try {
             String addr;
+            String tokenAddr;
             if (wallet.isRunning()) {
-                addr = wallet.currentAddress();
+                Addresses addresses = wallet.currentAddresses();
+                addr = addresses.plain;
+                tokenAddr = addresses.tokenAware;
                 settings.setLastAddress(addr);
+                settings.setLastTokenAddress(tokenAddr);
             } else {
                 addr = lastAddr;
+                // Empty until the wallet has loaded once since the app started keeping it.
+                tokenAddr = settings.getLastTokenAddress();
             }
-            DisplayMetrics metrics = getResources().getDisplayMetrics();
-            int smallerDimension = Math.min(metrics.widthPixels, metrics.heightPixels);
-            String addrURI = wallet.uriPrefix() + addr;
-            Bitmap bitmap = QrCodes.encode(addrURI, smallerDimension);
             qrImage = customView.findViewById(R.id.qrCodeView);
-            qrImage.setImageBitmap(bitmap);
-            qrImage.setOnClickListener(v -> copyToClipboard(addr));
             addrText = customView.findViewById(R.id.address);
-            addrText.setText(addr);
-            addrText.setOnClickListener(v -> copyToClipboard(addr));
+            TabLayout forms = customView.findViewById(R.id.addressTabs);
+            forms.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+                @Override
+                public void onTabSelected(TabLayout.Tab tab) {
+                    boolean tokenAware = tab.getPosition() == 1;
+                    showAddress(customView, tokenAware ? tokenAddr : addr, tokenAware);
+                }
+
+                @Override
+                public void onTabUnselected(TabLayout.Tab tab) {
+                }
+
+                @Override
+                public void onTabReselected(TabLayout.Tab tab) {
+                }
+            });
+            showAddress(customView, addr, false);
+            // The wallet tells of a payment to either form as one to the plain form.
             wallet.listenAddress(addr, new AddressListener() {
                 @Override
                 public void onPaymentReceived(long amount) {
@@ -474,6 +492,32 @@ public class MainActivity extends CloseActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    // showAddress shows an address in the QR code's popup, in its plain form or its token-aware
+    // one, which tapping it or its code copies.
+    private void showAddress(View popup, String address, boolean tokenAware) {
+        TextView help = popup.findViewById(R.id.addrHelpText);
+        help.setText(tokenAware ? R.string.token_address : R.string.wallet_address);
+        boolean known = !address.isEmpty();
+        popup.findViewById(R.id.addressNote).setVisibility(tokenAware && known ? View.VISIBLE : View.GONE);
+        if (!known) {
+            qrImage.setImageDrawable(null);
+            qrImage.setOnClickListener(null);
+            addrText.setText(R.string.wallet_is_not_loaded_yet);
+            addrText.setOnClickListener(null);
+            return;
+        }
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        try {
+            qrImage.setImageBitmap(QrCodes.encode(wallet.uriPrefix() + address,
+                    Math.min(metrics.widthPixels, metrics.heightPixels)));
+        } catch (WriterException e) {
+            e.printStackTrace();
+        }
+        qrImage.setOnClickListener(v -> copyToClipboard(address));
+        addrText.setText(address);
+        addrText.setOnClickListener(v -> copyToClipboard(address));
     }
 
     private void copyToClipboard(String data) {

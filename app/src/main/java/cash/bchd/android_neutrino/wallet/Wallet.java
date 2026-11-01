@@ -425,6 +425,16 @@ public class Wallet implements Serializable {
         return reply.getAddress();
     }
 
+    /**
+     * currentAddresses returns the wallet's current address, plain and in the token-aware form
+     * that wallets send CashTokens to.
+     */
+    public Addresses currentAddresses() throws Exception {
+        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
+        return Addresses.current(tokenAware -> stub.currentAddress(
+                Api.CurrentAddressRequest.newBuilder().setTokenAware(tokenAware).build()).getAddress());
+    }
+
     public ListenableFuture<Api.ChangePassphraseResponse> changePasswordAsync(String currentPw, String newPw) throws Exception {
         ByteString bvo = ByteString.copyFromUtf8(currentPw);
         ByteString bvn = ByteString.copyFromUtf8(newPw);
