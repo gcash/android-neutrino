@@ -107,7 +107,7 @@
         <TextView
             android:id="@+id/fiatBalanceView"
             android:layout_width="match_parent"
-            android:layout_height="58dp"
+            android:layout_height="@dimen/fiat_balance_height"
             android:layout_below="@+id/bchBalanceView"
             android:text=""
             android:textAlignment="center"
@@ -126,6 +126,22 @@
             android:textSize="14sp"
             android:visibility="gone"
             app:layout_anchorGravity="center_horizontal" />
+
+        <!-- The tabs of the Activity and Tokens pages, along the bottom of the 244dp header,
+             while the wallet holds tokens. -->
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabs"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_marginTop="204dp"
+            android:background="@android:color/transparent"
+            android:visibility="gone"
+            app:tabGravity="fill"
+            app:tabIndicatorColor="@android:color/white"
+            app:tabMode="fixed"
+            app:tabSelectedTextColor="@android:color/white"
+            app:tabTextAppearance="@style/TabText"
+            app:tabTextColor="@color/liteGrey" />
 
     </RelativeLayout>
 

@@ -3,8 +3,8 @@ package cash.bchd.android_neutrino.wallet;
 import walletrpc.Api;
 
 /**
- * TokensHeld is what the wallet holds with CashTokens, which the app doesn't show or send yet:
- * the number of token categories, and the BCH that the outputs with tokens carry, which the
+ * TokensHeld is what the wallet holds with CashTokens, which the app doesn't send yet: the
+ * number of token categories, and the BCH that the outputs with tokens carry, which the
  * spendable balance leaves out.
  */
 public final class TokensHeld {

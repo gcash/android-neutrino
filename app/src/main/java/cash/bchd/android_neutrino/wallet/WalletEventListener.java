@@ -7,6 +7,12 @@ public class WalletEventListener {
 
     public void onBalanceChange(long satoshis){}
 
+    /**
+     * Called with what the wallet holds of each token category, in the order the Tokens page lists
+     * them, after each balance it tells.
+     */
+    public void onTokenBalances(List<TokenBalance> tokens) {}
+
     public void onWalletCreated(String seed){}
 
     /**

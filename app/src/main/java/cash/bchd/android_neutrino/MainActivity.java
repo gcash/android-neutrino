@@ -43,13 +43,13 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.os.BundleCompat;
-import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
 
 import java.lang.ref.WeakReference;
 import java.text.NumberFormat;
@@ -60,12 +60,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import cash.bchd.android_neutrino.tokens.TokenAdapter;
 import cash.bchd.android_neutrino.wallet.AddressListener;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.BitcoinPaymentURI;
 import cash.bchd.android_neutrino.wallet.ExchangeRates;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.SyncStatus;
+import cash.bchd.android_neutrino.wallet.TokenBalance;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 import cash.bchd.android_neutrino.wallet.TransactionList;
 import cash.bchd.android_neutrino.wallet.Wallet;
@@ -97,9 +99,13 @@ public class MainActivity extends CloseActivity {
     TextView addrText;
     PopupWindow qrPopup;
     TransactionStore txStore;
-    RecyclerView.LayoutManager layoutManager;
     TransactionAdapter mAdapter;
-    SwipeRefreshLayout mSwipeRefreshLayout;
+    TokenAdapter tokenAdapter;
+    // The Activity and Tokens pages, and the tabs between them, which show while the wallet
+    // holds tokens.
+    MainPages mainPages;
+    ViewPager2 pages;
+    TabLayout tabs;
     // The wallet this activity listens to the events of, which it started or found running, and
     // the listener it listens with.
     private Wallet wallet;
@@ -146,12 +152,10 @@ public class MainActivity extends CloseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         SystemBars.apply(this);
-        layoutManager = new LinearLayoutManager(this);
         this.settings = Settings.load(this);
         Network network = settings.getNetwork();
         Networks.showBadge(this, network);
         this.txStore = new TransactionStore(this, network);
-        this.mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         TextView bchBalanceView = findViewById(R.id.bchBalanceView);
         Amount lastBal = new Amount(this.settings.getLastBalance());
         bchBalanceView.setText(getString(R.string.bch_amount, lastBal.toString()));
@@ -172,21 +176,30 @@ public class MainActivity extends CloseActivity {
         changeTransform.setDuration(500);
         changeTransform.setInterpolator(new AccelerateInterpolator());
         TransitionManager.beginDelayedTransition(mCLayout, changeTransform);
-        RecyclerView recyclerView = findViewById(R.id.txRecylerView);
-        recyclerView.setHasFixedSize(true);
-        DividerItemDecoration decor = new DividerItemDecoration(getApplicationContext(), DividerItemDecoration.VERTICAL);
-        recyclerView.addItemDecoration(decor);
-        // use a linear layout manager
-        recyclerView.setLayoutManager(layoutManager);
-        // specify an adapter
         List<TransactionData> txs = txStore.getData();
         Collections.sort(txs, Collections.reverseOrder());
-        if (txs.size() > 0) {
-            TextView bchPlease = findViewById(R.id.bchPlease);
-            bchPlease.setVisibility(View.GONE);
-        }
         mAdapter = new TransactionAdapter(txs, this, mCLayout, settings.getLastBlockHeight(), network);
-        recyclerView.setAdapter(mAdapter);
+        tokenAdapter = new TokenAdapter(this);
+        mainPages = new MainPages(mAdapter, tokenAdapter, this::refresh, savedInstanceState);
+        pages = findViewById(R.id.pages);
+        pages.setAdapter(mainPages);
+        // The pager keeps its pages in a list of its own, which takes the focus before them. Used
+        // without a touch screen, the screen focuses that list before the pages are made, so a
+        // whole page showed as focused; taking the focus after them, the list hands it to the
+        // first row once they're made, as the screen's list did before it had pages.
+        ((ViewGroup) pages.getChildAt(0)).setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
+        pages.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                showBchPlease();
+            }
+        });
+        tabs = findViewById(R.id.tabs);
+        new TabLayoutMediator(tabs, pages, (tab, position) ->
+                tab.setText(position == MainPages.TOKENS ? R.string.tab_tokens : R.string.tab_activity)).attach();
+        // The tokens the wallet held when it last told them, until it tells them again.
+        showTokens(settings.getLastTokens());
+        showBchPlease();
         fab.setOnClickListener(view -> toggleFABMenu());
         getOnBackPressedDispatcher().addCallback(this, closeMenuOnBack);
         listenForMenuSlides();
@@ -239,6 +252,7 @@ public class MainActivity extends CloseActivity {
         super.onSaveInstanceState(outState);
         outState.putBoolean(STATE_QR_POPUP, qrPopup != null && qrPopup.isShowing());
         outState.putSerializable(STATE_TX_DETAILS, mAdapter.shownDetails());
+        mainPages.saveState(outState);
     }
 
     @Override
@@ -717,6 +731,54 @@ public class MainActivity extends CloseActivity {
         syncStatusView.setVisibility(View.VISIBLE);
     }
 
+    // showTokens lists the wallet's tokens on the Tokens page, and shows the tabs while it holds
+    // any. The header keeps its height: the tabs take its bottom, and the fiat balance's line
+    // gets shorter so that the sync status fits above them.
+    void showTokens(List<TokenBalance> tokens) {
+        tokenAdapter.setTokens(tokens);
+        boolean any = !tokens.isEmpty();
+        tabs.setVisibility(any ? View.VISIBLE : View.GONE);
+        pages.setUserInputEnabled(any);
+        if (!any && pages.getCurrentItem() != MainPages.ACTIVITY) {
+            pages.setCurrentItem(MainPages.ACTIVITY, false);
+        }
+        TextView fiatBalanceView = findViewById(R.id.fiatBalanceView);
+        ViewGroup.LayoutParams lp = fiatBalanceView.getLayoutParams();
+        int height = any ? ViewGroup.LayoutParams.WRAP_CONTENT
+                : getResources().getDimensionPixelSize(R.dimen.fiat_balance_height);
+        if (lp.height != height) {
+            lp.height = height;
+            fiatBalanceView.setLayoutParams(lp);
+        }
+    }
+
+    // showBchPlease asks for BCH on the Activity page while the wallet has no transactions.
+    private void showBchPlease() {
+        boolean empty = mAdapter.getItemCount() == 0;
+        boolean shown = empty && pages.getCurrentItem() == MainPages.ACTIVITY;
+        findViewById(R.id.bchPlease).setVisibility(shown ? View.VISIBLE : View.GONE);
+    }
+
+    // refresh asks the wallet again, off the main thread, for pull to refresh on either page, and
+    // for its balance and tokens too, which a notification the screen missed would have left
+    // behind.
+    private void refresh() {
+        Wallet current = wallet;
+        WalletEventListener listener = eventListener;
+        if (current == null || listener == null) {
+            mainPages.stopRefreshing();
+            return;
+        }
+        new Thread(() -> {
+            try {
+                current.refresh(listener);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            runOnUiThread(mainPages::stopRefreshing);
+        }, "wallet-refresh").start();
+    }
+
     private static class ExchangeRateFetcher implements Runnable {
         private final WeakReference<MainActivity> mainActivityRef;
         private final Amount lastBal;
@@ -886,6 +948,16 @@ public class MainActivity extends CloseActivity {
                     }
 
                     @Override
+                    public void onTokenBalances(List<TokenBalance> tokens) {
+                        MainActivity mainActivity = mainActivityRef.get();
+                        if (mainActivity == null) {
+                            return;
+                        }
+                        mainActivity.settings.setLastTokens(tokens);
+                        mainActivity.runOnUiThread(() -> mainActivity.showTokens(tokens));
+                    }
+
+                    @Override
                     public void onWalletCreated(String seed) {
                         MainActivity mainActivity = mainActivityRef.get();
                         if (mainActivity == null) {
@@ -923,16 +995,15 @@ public class MainActivity extends CloseActivity {
                                 // Show the transactions the wallet has, which drops the ones it no
                                 // longer has, such as one a double spend replaced.
                                 List<TransactionData> list = TransactionList.rebuild(mainActivity2.mAdapter.getData(), txs);
-                                TextView bchPlease = mainActivity2.findViewById(R.id.bchPlease);
-                                bchPlease.setVisibility(list.isEmpty() ? View.VISIBLE : View.GONE);
                                 // A transaction added at the top goes above the first row shown, so
                                 // the list scrolls to show it when it showed the newest before.
-                                LinearLayoutManager rows = (LinearLayoutManager) mainActivity2.layoutManager;
-                                boolean atTop = rows.findFirstVisibleItemPosition() <= 0;
+                                LinearLayoutManager rows = mainActivity2.mainPages.rows(MainPages.ACTIVITY);
+                                boolean atTop = rows == null || rows.findFirstVisibleItemPosition() <= 0;
                                 mainActivity2.mAdapter.setNewData(list);
-                                if (atTop) {
+                                if (atTop && rows != null) {
                                     rows.scrollToPosition(0);
                                 }
+                                mainActivity2.showBchPlease();
                                 mainActivity2.txStore.setData(list);
                                 try {
                                     mainActivity2.txStore.save(mainActivity2.getApplicationContext());
@@ -974,16 +1045,6 @@ public class MainActivity extends CloseActivity {
                 }
                 mainActivity.eventListener = listener;
                 wallet.loadWallet(listener, mainActivity.settings.getMnemonic());
-                // Pull to refresh asks the wallet off the main thread, and for its balance too,
-                // which a notification the screen missed would have left behind.
-                mainActivity.mSwipeRefreshLayout.setOnRefreshListener(() -> new Thread(() -> {
-                    try {
-                        wallet.refresh(listener);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    mainActivity.runOnUiThread(() -> mainActivity.mSwipeRefreshLayout.setRefreshing(false));
-                }, "wallet-refresh").start());
             } catch (Exception e) {
                 e.printStackTrace();
             }

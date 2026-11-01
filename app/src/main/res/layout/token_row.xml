@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A row of the Tokens page: a token category's identicon, short token ID and amount. The
+     identicon's center lines up with the arrow of a transaction's row. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="56dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/tokenIcon"
+        android:layout_width="@dimen/token_row_icon"
+        android:layout_height="@dimen/token_row_icon"
+        android:layout_marginStart="19dp"
+        android:layout_marginEnd="14dp"
+        android:importantForAccessibility="no" />
+
+    <TextView
+        android:id="@+id/tokenId"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="monospace"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tokenAmount"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="20dp"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:gravity="end"
+        android:maxLines="1"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+</LinearLayout>

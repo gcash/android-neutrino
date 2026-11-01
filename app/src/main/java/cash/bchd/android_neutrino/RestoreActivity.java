@@ -21,6 +21,7 @@ import com.google.common.util.concurrent.Futures;
 import java.io.File;
 import java.text.DateFormat;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -97,8 +98,8 @@ public class RestoreActivity extends AppCompatActivity {
                     phraseLayout.setError(null);
             }
 
-            // The current wallet is asked whether it holds CashTokens, which the app doesn't show,
-            // so that the warning can say they're lost too.
+            // The current wallet is asked whether it holds CashTokens, so that the warning can say
+            // they're lost too.
             Wallet current = Wallet.getInstance();
             if (current == null || !current.isRunning()) {
                 confirmRestore(screenLock, null);
@@ -176,6 +177,7 @@ public class RestoreActivity extends AppCompatActivity {
         settings.setScanHeight(0);
         settings.setEncryptionType(EncryptionType.UNENCRYPTED);
         settings.setLastBalance(0);
+        settings.setLastTokens(Collections.emptyList());
         settings.setLastAddress("");
         settings.setBackupReminder(false);
 

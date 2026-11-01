@@ -5,7 +5,10 @@ import android.content.SharedPreferences;
 
 import androidx.preference.PreferenceManager;
 
+import java.util.List;
+
 import cash.bchd.android_neutrino.wallet.Network;
+import cash.bchd.android_neutrino.wallet.TokenBalance;
 import cash.bchd.android_neutrino.wallet.WalletSecret;
 
 /**
@@ -32,6 +35,7 @@ public class Settings {
     private static final String MNEMONIC_KEY = "Mnemonic";
     private static final String SEALED_MNEMONIC_KEY = "SealedMnemonic";
     private static final String LAST_BALANCE_KEY = "LastBalance";
+    private static final String LAST_TOKENS_KEY = "LastTokens";
     private static final String LAST_ADDRESS_KEY = "LastAddress";
     private static final String LAST_BLOCK_HEIGHT_KEY = "LastBlockHeight";
     private static final String LAST_BLOCK_HASH_KEY = "LastBlockHash";
@@ -169,6 +173,16 @@ public class Settings {
 
     long getLastBalance() {
         return prefs.getLong(LAST_BALANCE_KEY, 0);
+    }
+
+    // The wallet's token balances when it last told them, which the main screen shows when it
+    // opens, until the wallet tells them again.
+    void setLastTokens(List<TokenBalance> tokens) {
+        putString(LAST_TOKENS_KEY, TokenBalance.toJson(tokens));
+    }
+
+    List<TokenBalance> getLastTokens() {
+        return TokenBalance.fromJson(prefs.getString(LAST_TOKENS_KEY, "[]"));
     }
 
     void setFiatCurrency(String currency) {

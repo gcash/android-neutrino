@@ -173,7 +173,7 @@ public class Wallet implements Serializable {
                 });
                 running = true;
                 listener.onWalletReady();
-                listener.onBalanceChange(balance());
+                tellBalances(listener);
                 getTransactions(listener);
                 listenTransactions(listener);
             } catch (Exception e) {
@@ -376,8 +376,7 @@ public class Wallet implements Serializable {
         }
         if (hasMinedTransactions || hasUnMinedTransactions) {
             try {
-                long bal = balance();
-                listener.onBalanceChange(bal);
+                tellBalances(listener);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -394,14 +393,21 @@ public class Wallet implements Serializable {
     }
 
     /**
-     * refresh tells the listener the wallet's tip, balance and transactions again, as when it may
-     * have missed notifications of them. It throws when the wallet doesn't answer.
+     * refresh tells the listener the wallet's tip, balance, tokens and transactions again, as when
+     * it may have missed notifications of them. It throws when the wallet doesn't answer.
      */
     public void refresh(WalletEventListener listener) throws Exception {
         Api.NetworkResponse net = network();
         listener.onBlock(net.getBestHeight(), net.getBestBlock());
-        listener.onBalanceChange(balance());
+        tellBalances(listener);
         getTransactions(listener);
+    }
+
+    // tellBalances tells the listener the wallet's spendable balance, then its tokens, which the
+    // same transactions change.
+    private void tellBalances(WalletEventListener listener) throws Exception {
+        listener.onBalanceChange(balance());
+        listener.onTokenBalances(tokenBalances());
     }
 
     public void listenAddress(String address, AddressListener listener) {
@@ -568,8 +574,18 @@ public class Wallet implements Serializable {
     }
 
     /**
-     * tokensHeldAsync returns what the wallet holds with CashTokens, which the app doesn't show or
-     * send yet, or fails if the wallet doesn't answer within ten seconds.
+     * tokenBalances returns what the wallet holds of each token category, counting unmined
+     * transactions as the balance does, in the order the Tokens page lists them.
+     */
+    public List<TokenBalance> tokenBalances() throws Exception {
+        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
+        Api.TokenBalancesRequest request = Api.TokenBalancesRequest.newBuilder().setAccountNumber(0).setRequiredConfirmations(0).build();
+        return TokenBalance.of(stub.tokenBalances(request));
+    }
+
+    /**
+     * tokensHeldAsync returns what the wallet holds with CashTokens, which the app doesn't send
+     * yet, or fails if the wallet doesn't answer within ten seconds.
      */
     public ListenableFuture<TokensHeld> tokensHeldAsync() {
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel)
@@ -683,7 +699,7 @@ public class Wallet implements Serializable {
                 Api.NetworkResponse net = network();
                 listener.onBlock(net.getBestHeight(), net.getBestBlock());
                 getTransactions(listener);
-                listener.onBalanceChange(balance());
+                tellBalances(listener);
                 listener.onScanProgress(value.getHeight());
             } catch (Exception e) {
                 e.printStackTrace();
@@ -692,7 +708,7 @@ public class Wallet implements Serializable {
         } else {
             try {
                 getTransactions(listener);
-                listener.onBalanceChange(balance());
+                tellBalances(listener);
                 listener.onScanProgress(value.getHeight());
             } catch (Exception e) {
                 e.printStackTrace();

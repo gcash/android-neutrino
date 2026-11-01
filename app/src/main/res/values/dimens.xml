@@ -6,4 +6,8 @@
     <dimen name="standard_230">230dp</dimen>
     <dimen name="standard_285">285dp</dimen>
     <dimen name="pin_label_margin_top">100dp</dimen>
+    <!-- The fiat balance's line on the main screen, which is shorter while the tabs show below
+         it. -->
+    <dimen name="fiat_balance_height">58dp</dimen>
+    <dimen name="token_row_icon">32dp</dimen>
 </resources>

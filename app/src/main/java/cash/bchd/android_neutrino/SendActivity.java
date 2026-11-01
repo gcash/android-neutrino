@@ -492,8 +492,8 @@ public class SendActivity extends AppCompatActivity {
     }
 
     // warnOfTokens tells that Send All leaves the wallet's CashTokens here, with the BCH they
-    // carry, when it holds any, as the app can't send them yet and doesn't show them, so that the
-    // wallet isn't taken for empty.
+    // carry, when it holds any, as the app can't send them yet, so that the wallet isn't taken
+    // for empty.
     private void warnOfTokens() {
         Wallet wallet = Wallet.getInstance();
         if (wallet == null) {
