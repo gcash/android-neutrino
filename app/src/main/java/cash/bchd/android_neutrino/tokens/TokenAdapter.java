@@ -27,7 +27,15 @@ import cash.bchd.android_neutrino.wallet.TokenBalance;
  */
 public final class TokenAdapter extends RecyclerView.Adapter<TokenAdapter.Row> {
 
+    /**
+     * OnClick is told of the token whose row was tapped.
+     */
+    public interface OnClick {
+        void onClick(TokenBalance token);
+    }
+
     private final Context context;
+    private final OnClick onClick;
     private final int iconSize;
     // The identicons drawn so far, by token ID.
     private final LruCache<String, Bitmap> icons = new LruCache<>(64);
@@ -46,8 +54,9 @@ public final class TokenAdapter extends RecyclerView.Adapter<TokenAdapter.Row> {
         }
     }
 
-    public TokenAdapter(Context context) {
+    public TokenAdapter(Context context, OnClick onClick) {
         this.context = context;
+        this.onClick = onClick;
         iconSize = context.getResources().getDimensionPixelSize(R.dimen.token_row_icon);
     }
 
@@ -94,6 +103,7 @@ public final class TokenAdapter extends RecyclerView.Adapter<TokenAdapter.Row> {
         row.icon.setImageBitmap(icon(token.category));
         row.id.setText(TokenBalance.shortId(token.category));
         row.amount.setText(amount(token));
+        row.itemView.setOnClickListener(v -> onClick.onClick(token));
     }
 
     @Override

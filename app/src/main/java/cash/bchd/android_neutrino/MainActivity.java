@@ -53,9 +53,11 @@ import com.google.zxing.WriterException;
 
 import java.lang.ref.WeakReference;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Currency;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -180,7 +182,7 @@ public class MainActivity extends CloseActivity {
         List<TransactionData> txs = txStore.getData();
         Collections.sort(txs, Collections.reverseOrder());
         mAdapter = new TransactionAdapter(txs, this, mCLayout, settings.getLastBlockHeight(), network);
-        tokenAdapter = new TokenAdapter(this);
+        tokenAdapter = new TokenAdapter(this, this::openToken);
         mainPages = new MainPages(mAdapter, tokenAdapter, this::refresh, savedInstanceState);
         pages = findViewById(R.id.pages);
         pages.setAdapter(mainPages);
@@ -374,6 +376,8 @@ public class MainActivity extends CloseActivity {
     protected void onStart() {
         super.onStart();
         if (settings != null) {
+            // The tokens as the wallet last told them, without one that its screen hid since.
+            showTokens(settings.getLastTokens());
             // Start the wallet if it stopped while the app was in the background, or listen to
             // the one that WalletCloser started again while another screen was in front.
             createWallet();
@@ -775,12 +779,19 @@ public class MainActivity extends CloseActivity {
         syncStatusView.setVisibility(View.VISIBLE);
     }
 
-    // showTokens lists the wallet's tokens on the Tokens page, and shows the tabs while it holds
-    // any. The header keeps its height: the tabs take its bottom, and the fiat balance's line
-    // gets shorter so that the sync status fits above them.
+    // showTokens lists the wallet's tokens on the Tokens page, but those the user hid, and shows
+    // the tabs while it holds any others. The header keeps its height: the tabs take its bottom,
+    // and the fiat balance's line gets shorter so that the sync status fits above them.
     void showTokens(List<TokenBalance> tokens) {
-        tokenAdapter.setTokens(tokens);
-        boolean any = !tokens.isEmpty();
+        Set<String> hidden = settings.getHiddenTokens();
+        List<TokenBalance> shown = new ArrayList<>();
+        for (TokenBalance token : tokens) {
+            if (!hidden.contains(token.category)) {
+                shown.add(token);
+            }
+        }
+        tokenAdapter.setTokens(shown);
+        boolean any = !shown.isEmpty();
         tabs.setVisibility(any ? View.VISIBLE : View.GONE);
         pages.setUserInputEnabled(any);
         if (!any && pages.getCurrentItem() != MainPages.ACTIVITY) {
@@ -794,6 +805,13 @@ public class MainActivity extends CloseActivity {
             lp.height = height;
             fiatBalanceView.setLayoutParams(lp);
         }
+    }
+
+    // openToken opens the screen of a token on the Tokens page.
+    private void openToken(TokenBalance token) {
+        Intent intent = new Intent(this, TokenActivity.class);
+        intent.putExtra(TokenActivity.EXTRA_CATEGORY, token.category);
+        startActivity(intent);
     }
 
     // showBchPlease asks for BCH on the Activity page while the wallet has no transactions.

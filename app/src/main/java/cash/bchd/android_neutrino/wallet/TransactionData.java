@@ -1,6 +1,9 @@
 package cash.bchd.android_neutrino.wallet;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class TransactionData implements Serializable, Comparable<TransactionData> {
     // The version Java computed for the class before it had moreRecipients and toYourself, so
@@ -20,6 +23,9 @@ public class TransactionData implements Serializable, Comparable<TransactionData
     private int moreRecipients;
     // Whether every output of a sent transaction pays the wallet.
     private boolean toYourself;
+    // How the transaction changed the wallet's tokens, by token ID, or null in a transaction
+    // saved before the app read them.
+    private ArrayList<TokenChange> tokens;
 
     /**
      * SentTo is whom the transaction list says a sent transaction paid.
@@ -88,6 +94,18 @@ public class TransactionData implements Serializable, Comparable<TransactionData
 
     public boolean getToYourself() {
         return this.toYourself;
+    }
+
+    /**
+     * getTokens returns how the transaction changed the wallet's tokens, by token ID, which is
+     * nothing for a transaction saved before the app read them.
+     */
+    public List<TokenChange> getTokens() {
+        return this.tokens != null ? Collections.unmodifiableList(this.tokens) : Collections.emptyList();
+    }
+
+    public void setTokens(List<TokenChange> tokens) {
+        this.tokens = new ArrayList<>(tokens);
     }
 
     public SentTo getSentTo() {

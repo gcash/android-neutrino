@@ -10,4 +10,5 @@
          it. -->
     <dimen name="fiat_balance_height">58dp</dimen>
     <dimen name="token_row_icon">32dp</dimen>
+    <dimen name="token_screen_icon">64dp</dimen>
 </resources>

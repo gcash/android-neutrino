@@ -2,7 +2,9 @@ package cash.bchd.android_neutrino;
 
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 import cash.bchd.android_neutrino.wallet.Network;
@@ -35,9 +37,11 @@ public class SettingsTest {
         mainnet.setPeers("35.208.165.58");
         mainnet.setEncryptionType(EncryptionType.PIN);
         mainnet.setLastBalance(5000);
-        List<TokenBalance> tokens = Collections.singletonList(new TokenBalance("aa", 5, 1));
+        List<TokenBalance> tokens = Collections.singletonList(new TokenBalance("aa", 5, 1, 0));
         mainnet.setLastTokens(tokens);
         mainnet.setLastTokenAddress("zpm2qsznhks23z7629mms6s4cwef74vcwvrqekrq9w");
+        mainnet.hideToken("aa");
+        mainnet.hideToken("bb");
         mainnet.setWalletInitialized(true);
 
         Settings testnet4 = new Settings(appPrefs, testnet4Prefs, Network.TESTNET4);
@@ -46,6 +50,7 @@ public class SettingsTest {
         assertEquals(0, testnet4.getLastBalance());
         assertEquals(Collections.emptyList(), testnet4.getLastTokens());
         assertEquals("", testnet4.getLastTokenAddress());
+        assertEquals(Collections.emptySet(), testnet4.getHiddenTokens());
         assertEquals(false, testnet4.getWalletInitialized());
         testnet4.setPeers("35.208.255.10");
         testnet4.setLastBalance(7);
@@ -54,6 +59,7 @@ public class SettingsTest {
         assertEquals(5000, mainnet.getLastBalance());
         assertEquals(tokens, mainnet.getLastTokens());
         assertEquals("zpm2qsznhks23z7629mms6s4cwef74vcwvrqekrq9w", mainnet.getLastTokenAddress());
+        assertEquals(new HashSet<>(Arrays.asList("aa", "bb")), mainnet.getHiddenTokens());
         assertEquals("35.208.255.10", testnet4.getPeers());
     }
 

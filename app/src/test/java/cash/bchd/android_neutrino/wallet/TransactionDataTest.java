@@ -5,6 +5,7 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -47,6 +48,8 @@ public class TransactionDataTest {
         assertEquals(0, sent.getMoreRecipients());
         assertFalse(sent.getToYourself());
         assertEquals(TransactionData.SentTo.ADDRESS, sent.getSentTo());
+        // Saved before the app read tokens.
+        assertEquals(Collections.emptyList(), sent.getTokens());
 
         TransactionData received = (TransactionData) list.get(1);
         assertEquals("0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098", received.getTxid());

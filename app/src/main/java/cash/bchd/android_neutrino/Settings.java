@@ -5,7 +5,10 @@ import android.content.SharedPreferences;
 
 import androidx.preference.PreferenceManager;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
@@ -38,6 +41,7 @@ public class Settings {
     private static final String LAST_TOKENS_KEY = "LastTokens";
     private static final String LAST_ADDRESS_KEY = "LastAddress";
     private static final String LAST_TOKEN_ADDRESS_KEY = "LastTokenAddress";
+    private static final String HIDDEN_TOKENS_KEY = "HiddenTokens";
     private static final String LAST_BLOCK_HEIGHT_KEY = "LastBlockHeight";
     private static final String LAST_BLOCK_HASH_KEY = "LastBlockHash";
     private static final String BCHD_IP_KEY = "BchdIP";
@@ -210,6 +214,18 @@ public class Settings {
 
     String getLastTokenAddress() {
         return prefs.getString(LAST_TOKEN_ADDRESS_KEY, "");
+    }
+
+    // The token IDs of the tokens the user hid, which the main screen leaves out. Restoring a
+    // wallet keeps them, as its tokens come back with it.
+    Set<String> getHiddenTokens() {
+        return new HashSet<>(prefs.getStringSet(HIDDEN_TOKENS_KEY, Collections.emptySet()));
+    }
+
+    void hideToken(String category) {
+        Set<String> hidden = getHiddenTokens();
+        hidden.add(category);
+        prefs.edit().putStringSet(HIDDEN_TOKENS_KEY, hidden).apply();
     }
 
     void setLastBlockHeight(int blockHeight) {

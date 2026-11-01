@@ -734,7 +734,8 @@ public class Wallet implements Serializable {
     /**
      * transactionData makes the list's entry for one of the wallet's transactions. A transaction
      * it sent names the first address its outputs pay besides the wallet's and how many more they
-     * pay, each address once, or that every output pays the wallet.
+     * pay, each address once, or that every output pays the wallet. The entry also has how the
+     * transaction changed the wallet's tokens.
      */
     static TransactionData transactionData(Api.TransactionDetails tx, int height, long timestamp, String memo) {
         long total = 0;
@@ -747,6 +748,7 @@ public class Wallet implements Serializable {
 
         String txid = txidToString(tx.getHash());
         TransactionData txData = new TransactionData(txid, (total > 0), memo, total, "", "", timestamp, "", height);
+        txData.setTokens(TokenChange.of(tx));
         if (total <= 0) {
             // An output that pays no single address, such as OP_RETURN data, has none.
             Set<String> addresses = new LinkedHashSet<>();

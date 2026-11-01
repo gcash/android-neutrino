@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The menu of a token's screen. -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/copyTokenId"
+        android:title="@string/copy_token_id"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/hideToken"
+        android:title="@string/hide_token"
+        app:showAsAction="never" />
+
+</menu>

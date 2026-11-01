@@ -76,6 +76,15 @@ public class TransactionListTest {
     }
 
     @Test
+    public void givesTheWalletsTokensToAnEntrySavedBeforeTheAppReadThem() {
+        TransactionData shown = tx("a", 1000, 100, 10);
+        TransactionData wallet = tx("a", 1000, 100, 10);
+        wallet.setTokens(Collections.singletonList(new TokenChange("bb", 25, 0)));
+        TransactionList.rebuild(Collections.singletonList(shown), Collections.singletonList(wallet));
+        assertEquals(Collections.singletonList(new TokenChange("bb", 25, 0)), shown.getTokens());
+    }
+
+    @Test
     public void fillsAFiatValueTheShownEntryLacked() {
         TransactionData shown = tx("a", 1000, 100, 10);
         TransactionData wallet = new TransactionData("a", true, "", 1000, "$0.28", "USD", 100, "", 10);

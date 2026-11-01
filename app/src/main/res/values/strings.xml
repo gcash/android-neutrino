@@ -135,8 +135,23 @@
         <item quantity="one">%d NFT</item>
         <item quantity="other">%d NFTs</item>
     </plurals>
-    <!-- A token category's fungible amount and its NFTs, in a row of the Tokens page. -->
+    <!-- A token category's fungible amount and its NFTs, in a row of the Tokens page, or how
+         a transaction changed them, in a row of a token's screen. -->
     <string name="token_amount_and_nfts">%1$s · %2$s</string>
+    <!-- How many NFTs a transaction added or took away, with the sign. -->
+    <plurals name="token_nfts_change">
+        <item quantity="one">%1$s NFT</item>
+        <item quantity="other">%1$s NFTs</item>
+    </plurals>
+    <!-- The BCH that a token's outputs carry above the 1000 sats each that wallets attach. -->
+    <string name="token_bch_held">%1$s BCH held with it</string>
+    <!-- A token ID on two lines. -->
+    <string name="token_id_lines" translatable="false">%1$s\n%2$s</string>
+    <string name="token_id_copied">Token ID copied to clipboard.</string>
+    <string name="copy_token_id">Copy token ID</string>
+    <string name="hide_token">Hide</string>
+    <string name="token_received">Received</string>
+    <string name="token_sent">Sent</string>
     <string name="send_all_leaves_tokens">Send All sends the BCH you can spend. The wallet\'s CashTokens stay here, with the %1$s BCH they carry, as this app can\'t send tokens yet. Keep this wallet\'s recovery phrase to keep them.</string>
     <string name="restore_loses_tokens">This wallet also holds CashTokens, with %1$s BCH. They\'re lost too unless you have this wallet\'s recovery phrase.</string>
     <string name="wallet_birthday_note_test_network">The wallet looks for its coins in the blocks from this date on. Earlier dates take longer to scan.</string>
