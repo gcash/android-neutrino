@@ -2,6 +2,7 @@ package cash.bchd.android_neutrino.wallet;
 
 import android.content.Context;
 import android.util.Base64;
+import android.util.Log;
 
 import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.FutureCallback;
@@ -19,9 +20,11 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import io.grpc.ManagedChannel;
@@ -54,7 +57,12 @@ public class Wallet implements Serializable {
     private HashMap<String, AddressListener> addressListeners = new HashMap<String, AddressListener>();
     // The memos of the transactions the app sent, which the wallet doesn't have, by transaction.
     private HashMap<ByteString, String> memos = new HashMap<ByteString, String>();
-    private List<WalletEventListener> blockchainListeners = new ArrayList<WalletEventListener>();
+    // The listeners told of each new block, from any thread.
+    private final List<WalletEventListener> blockchainListeners = new CopyOnWriteArrayList<>();
+    // The listener of the screen that shows the wallet, which the notification streams tell of
+    // the wallet's balance and transactions, and the streams, which its first listener starts.
+    private volatile WalletEventListener mainListener;
+    private NotificationStreams streams;
 
     private int lastBlockHeight;
     private String lastBlockHash;
@@ -74,6 +82,19 @@ public class Wallet implements Serializable {
     // Starts and stops the wallet daemon one after the other, off the UI
     // thread, since stopping it waits for it to close its databases.
     private static final ExecutorService lifecycle = Executors.newSingleThreadExecutor();
+
+    // Subscribes again to the notification streams that ended, after a pause from the first
+    // to the longest.
+    private static final ScheduledExecutorService notificationsScheduler =
+            Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread thread = new Thread(r, "wallet-notifications");
+                thread.setDaemon(true);
+                return thread;
+            });
+    private static final long STREAM_FIRST_DELAY_MILLIS = 1000;
+    private static final long STREAM_MAX_DELAY_MILLIS = 30000;
+
+    private static final String TAG = "Wallet";
 
     /**
      * The wallet constructor takes in a context which it uses to derive the config file
@@ -241,7 +262,15 @@ public class Wallet implements Serializable {
         return config.getNetwork();
     }
 
+    /**
+     * listenTransactions tells the listener, the one of the screen that shows the wallet, of the
+     * wallet's new blocks, balance and transactions, in place of the listener before it. The
+     * notification streams it starts the first time run until the wallet stops, and subscribe
+     * again when they end, as when their connection closes.
+     */
     public void listenTransactions(WalletEventListener listener) {
+        WalletEventListener previous = mainListener;
+        mainListener = listener;
         try {
             Api.NetworkResponse network = network();
             lastBlockHeight = network.getBestHeight();
@@ -251,84 +280,115 @@ public class Wallet implements Serializable {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        if (previous != null) {
+            blockchainListeners.remove(previous);
+        }
         blockchainListeners.add(listener);
 
-        listenRescan(listener);
-
-        WalletServiceGrpc.WalletServiceStub stub = WalletServiceGrpc.newStub(channel).withCallCredentials(creds);
-        Api.TransactionNotificationsRequest request = Api.TransactionNotificationsRequest.newBuilder().build();
-        stub.transactionNotifications(request, new StreamObserver<Api.TransactionNotificationsResponse>() {
-            @Override
-            public void onNext(Api.TransactionNotificationsResponse value) {
-                List<Api.BlockDetails> blocks = value.getAttachedBlocksList();
-                if (value.getDetachedBlocksCount() > 0) {
-                    lastBlockHeight = 0;
+        synchronized (this) {
+            if (streams != null || stopped) {
+                return;
+            }
+            WalletServiceGrpc.WalletServiceStub stub = WalletServiceGrpc.newStub(channel).withCallCredentials(creds);
+            streams = new NotificationStreams(stub, notificationsScheduler, new NotificationStreams.Handler() {
+                @Override
+                public void onTransactions(Api.TransactionNotificationsResponse value) {
+                    onTransactionNotification(value);
                 }
-                boolean hasMinedTransactions = false;
-                for (Api.BlockDetails block : blocks) {
-                    if (block.getHeight() > lastBlockHeight) {
-                        lastBlockHeight = block.getHeight();
-                        lastBlockHash = txidToString(block.getHash());
 
-                        for (WalletEventListener blockchainListener : blockchainListeners) {
-                            blockchainListener.onBlock(lastBlockHeight, lastBlockHash);
+                @Override
+                public void onRescan(Api.RescanNotificationsResponse value) {
+                    WalletEventListener main = mainListener;
+                    if (main != null) {
+                        onRescanNotification(value, main);
+                    }
+                }
+
+                @Override
+                public void refresh() throws Exception {
+                    WalletEventListener main = mainListener;
+                    if (main != null) {
+                        Wallet.this.refresh(main);
+                    }
+                }
+            }, STREAM_FIRST_DELAY_MILLIS, STREAM_MAX_DELAY_MILLIS, message -> Log.w(TAG, message));
+            streams.start();
+        }
+    }
+
+    private void onTransactionNotification(Api.TransactionNotificationsResponse value) {
+        List<Api.BlockDetails> blocks = value.getAttachedBlocksList();
+        if (value.getDetachedBlocksCount() > 0) {
+            lastBlockHeight = 0;
+        }
+        boolean hasMinedTransactions = false;
+        for (Api.BlockDetails block : blocks) {
+            if (block.getHeight() > lastBlockHeight) {
+                lastBlockHeight = block.getHeight();
+                lastBlockHash = txidToString(block.getHash());
+
+                for (WalletEventListener blockchainListener : blockchainListeners) {
+                    blockchainListener.onBlock(lastBlockHeight, lastBlockHash);
+                }
+            }
+            if (block.getTransactionsCount() > 0) {
+                hasMinedTransactions = true;
+                for (Api.TransactionDetails tx : block.getTransactionsList()) {
+                    for (Api.TransactionDetails.Output output : tx.getCreditsList()) {
+                        AddressListener addrListener = (AddressListener) addressListeners.get(output.getAddress());
+                        if (addrListener != null) {
+                            addrListener.onPaymentReceived(output.getAmount());
                         }
-                    }
-                    if (block.getTransactionsCount() > 0) {
-                        hasMinedTransactions = true;
-                        for (Api.TransactionDetails tx : block.getTransactionsList()) {
-                            for (Api.TransactionDetails.Output output : tx.getCreditsList()) {
-                                AddressListener addrListener = (AddressListener) addressListeners.get(output.getAddress());
-                                if (addrListener != null) {
-                                    addrListener.onPaymentReceived(output.getAmount());
-                                }
-                            }
-                        }
-                    }
-                }
-
-                boolean hasUnMinedTransactions = false;
-                if (value.getUnminedTransactionsCount() > 0 || hasMinedTransactions) {
-                    hasUnMinedTransactions = true;
-                    for (Api.TransactionDetails tx : value.getUnminedTransactionsList()) {
-                        for (Api.TransactionDetails.Output output : tx.getCreditsList()) {
-                            AddressListener addrListener = (AddressListener) addressListeners.get(output.getAddress());
-                            if (addrListener != null) {
-                                addrListener.onPaymentReceived(output.getAmount());
-                            }
-                        }
-                    }
-                }
-
-                if (hasMinedTransactions || hasUnMinedTransactions) {
-                    try {
-                        long bal = balance();
-                        listener.onBalanceChange(bal);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-                // The listener rebuilds its list from all of the wallet's transactions, which
-                // also drops the ones the wallet removed and moves the ones a reorg detached.
-                if (hasMinedTransactions || hasUnMinedTransactions || value.getDetachedBlocksCount() > 0) {
-                    try {
-                        getTransactions(listener);
-                    } catch (Exception e) {
-                        e.printStackTrace();
                     }
                 }
             }
+        }
 
-            @Override
-            public void onError(Throwable t) {
-                t.printStackTrace();
+        boolean hasUnMinedTransactions = false;
+        if (value.getUnminedTransactionsCount() > 0 || hasMinedTransactions) {
+            hasUnMinedTransactions = true;
+            for (Api.TransactionDetails tx : value.getUnminedTransactionsList()) {
+                for (Api.TransactionDetails.Output output : tx.getCreditsList()) {
+                    AddressListener addrListener = (AddressListener) addressListeners.get(output.getAddress());
+                    if (addrListener != null) {
+                        addrListener.onPaymentReceived(output.getAmount());
+                    }
+                }
             }
+        }
 
-            @Override
-            public void onCompleted() {
-
+        WalletEventListener listener = mainListener;
+        if (listener == null) {
+            return;
+        }
+        if (hasMinedTransactions || hasUnMinedTransactions) {
+            try {
+                long bal = balance();
+                listener.onBalanceChange(bal);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        });
+        }
+        // The listener rebuilds its list from all of the wallet's transactions, which
+        // also drops the ones the wallet removed and moves the ones a reorg detached.
+        if (hasMinedTransactions || hasUnMinedTransactions || value.getDetachedBlocksCount() > 0) {
+            try {
+                getTransactions(listener);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * refresh tells the listener the wallet's tip, balance and transactions again, as when it may
+     * have missed notifications of them. It throws when the wallet doesn't answer.
+     */
+    public void refresh(WalletEventListener listener) throws Exception {
+        Api.NetworkResponse net = network();
+        listener.onBlock(net.getBestHeight(), net.getBestBlock());
+        listener.onBalanceChange(balance());
+        getTransactions(listener);
     }
 
     public void listenAddress(String address, AddressListener listener) {
@@ -589,26 +649,7 @@ public class Wallet implements Serializable {
         stub.rescanNotifications(request, new StreamObserver<Api.RescanNotificationsResponse>() {
             @Override
             public void onNext(Api.RescanNotificationsResponse value) {
-                if (value.getFinished()) {
-                   try {
-                       Api.NetworkResponse net = network();
-                       listener.onBlock(net.getBestHeight(), net.getBestBlock());
-                       getTransactions(listener);
-                       listener.onBalanceChange(balance());
-                       listener.onScanProgress(value.getHeight());
-                   } catch (Exception e) {
-                       e.printStackTrace();
-                   }
-
-                } else {
-                    try {
-                        getTransactions(listener);
-                        listener.onBalanceChange(balance());
-                        listener.onScanProgress(value.getHeight());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
+                onRescanNotification(value, listener);
             }
 
             @Override
@@ -621,6 +662,29 @@ public class Wallet implements Serializable {
 
             }
         });
+    }
+
+    private void onRescanNotification(Api.RescanNotificationsResponse value, WalletEventListener listener) {
+        if (value.getFinished()) {
+            try {
+                Api.NetworkResponse net = network();
+                listener.onBlock(net.getBestHeight(), net.getBestBlock());
+                getTransactions(listener);
+                listener.onBalanceChange(balance());
+                listener.onScanProgress(value.getHeight());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        } else {
+            try {
+                getTransactions(listener);
+                listener.onBalanceChange(balance());
+                listener.onScanProgress(value.getHeight());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private TransactionData extractTransactionData(Api.TransactionDetails tx, int height, long timestamp) {
@@ -688,6 +752,9 @@ public class Wallet implements Serializable {
         running = false;
         if (instance == this) {
             instance = null;
+        }
+        if (streams != null) {
+            streams.stop();
         }
         ManagedChannel channel = this.channel;
         lifecycle.execute(() -> {

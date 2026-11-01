@@ -74,7 +74,6 @@ import cash.bchd.android_neutrino.wallet.TransactionData;
 import cash.bchd.android_neutrino.wallet.TransactionList;
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
-import walletrpc.Api;
 
 
 
@@ -988,16 +987,16 @@ public class MainActivity extends CloseActivity {
                     return;
                 }
                 wallet.loadWallet(listener, mainActivity.settings.getMnemonic());
-                mainActivity.mSwipeRefreshLayout.setOnRefreshListener(() -> {
+                // Pull to refresh asks the wallet off the main thread, and for its balance too,
+                // which a notification the screen missed would have left behind.
+                mainActivity.mSwipeRefreshLayout.setOnRefreshListener(() -> new Thread(() -> {
                     try {
-                        Api.NetworkResponse net = wallet.network();
-                        listener.onBlock(net.getBestHeight(), net.getBestBlock());
-                        wallet.getTransactions(listener);
+                        wallet.refresh(listener);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                    mainActivity.mSwipeRefreshLayout.setRefreshing(false);
-                });
+                    mainActivity.runOnUiThread(() -> mainActivity.mSwipeRefreshLayout.setRefreshing(false));
+                }, "wallet-refresh").start());
             } catch (Exception e) {
                 e.printStackTrace();
             }
