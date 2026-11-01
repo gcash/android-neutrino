@@ -130,7 +130,6 @@
     <string name="tab_tokens">Tokens</string>
     <string name="tab_bch">BCH</string>
     <string name="token_address">TOKEN ADDRESS</string>
-    <string name="token_address_note">Receives CashTokens and BCH.</string>
     <plurals name="token_nfts">
         <item quantity="one">%d NFT</item>
         <item quantity="other">%d NFTs</item>

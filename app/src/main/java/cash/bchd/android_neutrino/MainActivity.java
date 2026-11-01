@@ -503,9 +503,7 @@ public class MainActivity extends CloseActivity {
     private void showAddress(View popup, String address, boolean tokenAware) {
         TextView help = popup.findViewById(R.id.addrHelpText);
         help.setText(tokenAware ? R.string.token_address : R.string.wallet_address);
-        boolean known = !address.isEmpty();
-        popup.findViewById(R.id.addressNote).setVisibility(tokenAware && known ? View.VISIBLE : View.GONE);
-        if (!known) {
+        if (address.isEmpty()) {
             qrImage.setImageDrawable(null);
             qrImage.setOnClickListener(null);
             addrText.setText(R.string.wallet_is_not_loaded_yet);
