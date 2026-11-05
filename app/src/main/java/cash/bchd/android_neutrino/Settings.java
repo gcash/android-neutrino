@@ -28,6 +28,10 @@ public class Settings {
     private static final String FIAT_CURRENCY_KEY = "FiatCurrency";
     private static final String FEE_PER_BYTE_KEY = "FeePerByte";
     private static final String DEFAULT_LABEL_KEY = "DefaultLabel";
+    private static final String IPFS_GATEWAYS_KEY = "IpfsGateways";
+    private static final String TOKEN_IMAGES_KEY = "TokenImages";
+    private static final String DEFAULT_IPFS_GATEWAYS =
+            "https://gateway.pinata.cloud,https://ipfs.filebase.io,https://ipfs.io,https://dweb.link";
     private static final String DEFAULT_MEMO_KEY = "DefaultMemo";
     private static final String LAST_NOTIFICATION_KEY = "LastNotification";
     private static final String REPO_VERSION_KEY = "RepoVersion";
@@ -42,6 +46,7 @@ public class Settings {
     private static final String LAST_ADDRESS_KEY = "LastAddress";
     private static final String LAST_TOKEN_ADDRESS_KEY = "LastTokenAddress";
     private static final String HIDDEN_TOKENS_KEY = "HiddenTokens";
+    private static final String LOADED_ICONS_KEY = "LoadedTokenIcons";
     private static final String LAST_BLOCK_HEIGHT_KEY = "LastBlockHeight";
     private static final String LAST_BLOCK_HASH_KEY = "LastBlockHash";
     private static final String BCHD_IP_KEY = "BchdIP";
@@ -220,6 +225,17 @@ public class Settings {
     // wallet keeps them, as its tokens come back with it.
     Set<String> getHiddenTokens() {
         return new HashSet<>(prefs.getStringSet(HIDDEN_TOKENS_KEY, Collections.emptySet()));
+    }
+
+    // The token IDs of the tokens the user loaded an icon for from the token's menu.
+    Set<String> getLoadedIcons() {
+        return new HashSet<>(prefs.getStringSet(LOADED_ICONS_KEY, Collections.emptySet()));
+    }
+
+    void addLoadedIcon(String category) {
+        Set<String> loaded = getLoadedIcons();
+        loaded.add(category);
+        prefs.edit().putStringSet(LOADED_ICONS_KEY, loaded).apply();
     }
 
     void hideToken(String category) {
@@ -422,6 +438,39 @@ public class Settings {
      * The peers to sync from in SPV mode, host or host:port, as entered separated by commas or
      * spaces. Entries with characters a host and port can't have are left out.
      */
+    // The gateways for ipfs:// token registries and icons. They only ever serve files the wallet
+    // checks, so a bad one can only fail.
+    String[] getIpfsGateways() {
+        return parseGateways(appPrefs.getString(IPFS_GATEWAYS_KEY, DEFAULT_IPFS_GATEWAYS));
+    }
+
+    String getIpfsGatewaysText() {
+        return appPrefs.getString(IPFS_GATEWAYS_KEY, DEFAULT_IPFS_GATEWAYS);
+    }
+
+    void setIpfsGateways(String gateways) {
+        appPrefs.edit().putString(IPFS_GATEWAYS_KEY, gateways).apply();
+    }
+
+    static String[] parseGateways(String text) {
+        java.util.List<String> gateways = new java.util.ArrayList<>();
+        for (String gateway : text.split("[,\\s]+")) {
+            if (gateway.matches("https://[A-Za-z0-9.:-]+/?")) {
+                gateways.add(gateway);
+            }
+        }
+        return gateways.toArray(new String[0]);
+    }
+
+    // Whether token icons load by themselves. It's off, as a host sees who asks.
+    boolean getTokenImages() {
+        return appPrefs.getBoolean(TOKEN_IMAGES_KEY, false);
+    }
+
+    void setTokenImages(boolean on) {
+        appPrefs.edit().putBoolean(TOKEN_IMAGES_KEY, on).apply();
+    }
+
     String[] getPeerList() {
         return parsePeers(getPeers());
     }

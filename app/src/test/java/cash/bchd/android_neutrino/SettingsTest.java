@@ -108,4 +108,12 @@ public class SettingsTest {
         assertNotEquals(TransactionStore.fileName(Network.MAINNET), TransactionStore.fileName(Network.TESTNET4));
         assertEquals("wallet_testnet4", Settings.walletPrefsName(Network.TESTNET4));
     }
+
+    @org.junit.Test
+    public void gatewaysAreHttpsHostsOnly() {
+        String[] gateways = Settings.parseGateways(
+                "https://a.example, https://b.example:8443/\nhttp://c.example ftp://d.example https://e.example/path");
+        org.junit.Assert.assertArrayEquals(
+                new String[]{"https://a.example", "https://b.example:8443/"}, gateways);
+    }
 }

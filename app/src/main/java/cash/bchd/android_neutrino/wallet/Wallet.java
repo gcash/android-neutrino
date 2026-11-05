@@ -594,6 +594,40 @@ public class Wallet implements Serializable {
     }
 
     /**
+     * tokenMetadataAsync returns what the wallet can say of the tokens, or fails if it doesn't
+     * answer within ten seconds. Asking is what makes a token load, so only ask for the ones that
+     * show.
+     */
+    public ListenableFuture<List<TokenMeta>> tokenMetadataAsync(List<String> categories, boolean nftTypes) {
+        WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel)
+                .withCallCredentials(this.creds).withDeadlineAfter(10, TimeUnit.SECONDS);
+        return Futures.transform(stub.tokenMetadata(
+                Api.TokenMetadataRequest.newBuilder().addAllCategories(categories)
+                        .setIncludeNftTypes(nftTypes).build()),
+                TokenMeta::of, MoreExecutors.directExecutor());
+    }
+
+    /**
+     * refreshTokenMetadataAsync has the wallet find a token's metadata, or find it again.
+     */
+    public ListenableFuture<Api.RefreshTokenMetadataResponse> refreshTokenMetadataAsync(String category) {
+        WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel)
+                .withCallCredentials(this.creds).withDeadlineAfter(10, TimeUnit.SECONDS);
+        return stub.refreshTokenMetadata(
+                Api.RefreshTokenMetadataRequest.newBuilder().setCategory(category).build());
+    }
+
+    /**
+     * tokenIconAsync reads the image at an icon's URI, or fails within a minute.
+     */
+    public ListenableFuture<byte[]> tokenIconAsync(String uri) {
+        WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel)
+                .withCallCredentials(this.creds).withDeadlineAfter(60, TimeUnit.SECONDS);
+        return Futures.transform(stub.tokenIcon(Api.TokenIconRequest.newBuilder().setUri(uri).build()),
+                reply -> reply.getData().toByteArray(), MoreExecutors.directExecutor());
+    }
+
+    /**
      * tokensHeldAsync returns what the wallet holds with CashTokens, which the app doesn't send
      * yet, or fails if the wallet doesn't answer within ten seconds.
      */

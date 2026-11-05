@@ -57,6 +57,11 @@ public class Config {
 
     private long birthday;
 
+    // The files and gateways for token metadata, set after the config is made.
+    private String bcmrHints = "";
+    private String bcmrKnown = "";
+    private String[] bcmrGateways = new String[0];
+
     // The port of the wallet's gRPC server on 127.0.0.1. A random one is
     // picked for each start, so that the wallet still starts, and the app does
     // not talk to another app, when another app listens on a fixed port.
@@ -93,6 +98,15 @@ public class Config {
 
         // A port in the dynamic range, 49152 to 65535.
         this.rpcPort = 49152 + random.nextInt(16384);
+    }
+
+    /**
+     * setTokenMetadata gives the wallet what it reads token metadata with.
+     */
+    public void setTokenMetadata(String hints, String known, String[] gateways) {
+        this.bcmrHints = hints;
+        this.bcmrKnown = known;
+        this.bcmrGateways = gateways;
     }
 
     /**
@@ -135,6 +149,15 @@ public class Config {
         }
         if (!this.caFilePath.equals("")) {
             configFileContents += "cafile=" + this.caFilePath + "\n";
+        }
+        if (!this.bcmrHints.equals("")) {
+            configFileContents += "bcmrhints=" + this.bcmrHints + "\n";
+        }
+        if (!this.bcmrKnown.equals("")) {
+            configFileContents += "bcmrknown=" + this.bcmrKnown + "\n";
+        }
+        for (String gateway : this.bcmrGateways) {
+            configFileContents += "bcmrgateway=" + gateway + "\n";
         }
         return configFileContents;
     }
