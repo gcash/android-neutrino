@@ -165,6 +165,23 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 }
             });
 
+            androidx.preference.SwitchPreferenceCompat imagesPref = findPreference("tokenImages");
+            if (imagesPref != null) {
+                imagesPref.setChecked(settings.getTokenImages());
+                imagesPref.setOnPreferenceChangeListener((preference, o) -> {
+                    settings.setTokenImages((Boolean) o);
+                    return true;
+                });
+            }
+            EditTextPreference gatewaysPref = findPreference("ipfsGateways");
+            if (gatewaysPref != null) {
+                gatewaysPref.setText(settings.getIpfsGatewaysText());
+                gatewaysPref.setOnPreferenceChangeListener((preference, o) -> {
+                    settings.setIpfsGateways(o.toString());
+                    return true;
+                });
+            }
+
             EditTextPreference peersPref = (EditTextPreference) findPreference("peers");
             String peers = settings.getPeers();
             peersPref.setText(peers);

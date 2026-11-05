@@ -9,6 +9,16 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/fetchTokenMetadata"
+        android:title="@string/fetch_token_metadata"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/loadTokenIcon"
+        android:title="@string/load_token_icon"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/hideToken"
         android:title="@string/hide_token"
         app:showAsAction="never" />

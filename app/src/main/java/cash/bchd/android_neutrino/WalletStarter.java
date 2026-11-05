@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.BcmrFiles;
 import cash.bchd.android_neutrino.wallet.Config;
 import cash.bchd.android_neutrino.wallet.Migration;
@@ -52,6 +53,7 @@ final class WalletStarter {
                 bchdIP.equals(""), settings.getBlocksOnly(), peersOnly ? peers : none, peersOnly ? none : peers,
                 settings.getBchdIP(), settings.getBchdUsername(),
                 settings.getBchdPassword(), settings.getBchdCert(), birthday);
+        TokenLabels.clear();
         cfg.setTokenMetadata(BcmrFiles.hintsPath(context, settings.getNetwork()),
                 BcmrFiles.knownPath(context, settings.getNetwork()), settings.getIpfsGateways());
         Wallet wallet = new Wallet(context, cfg);

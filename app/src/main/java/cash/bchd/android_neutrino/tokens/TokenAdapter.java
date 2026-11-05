@@ -13,8 +13,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.math.BigInteger;
-import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.List;
 
@@ -23,7 +21,7 @@ import cash.bchd.android_neutrino.wallet.TokenBalance;
 
 /**
  * TokenAdapter lists the wallet's tokens on the main screen's Tokens page, a row for each
- * category: its identicon, its short token ID, and its fungible amount, its NFTs, or both.
+ * category: its identicon, its name or short token ID, and its fungible amount, its NFTs, or both.
  */
 public final class TokenAdapter extends RecyclerView.Adapter<TokenAdapter.Row> {
 
@@ -44,12 +42,14 @@ public final class TokenAdapter extends RecyclerView.Adapter<TokenAdapter.Row> {
     public static final class Row extends RecyclerView.ViewHolder {
         final ImageView icon;
         final TextView id;
+        final TextView badge;
         final TextView amount;
 
         Row(View v) {
             super(v);
             icon = v.findViewById(R.id.tokenIcon);
             id = v.findViewById(R.id.tokenId);
+            badge = v.findViewById(R.id.tokenBadge);
             amount = v.findViewById(R.id.tokenAmount);
         }
     }
@@ -58,6 +58,21 @@ public final class TokenAdapter extends RecyclerView.Adapter<TokenAdapter.Row> {
         this.context = context;
         this.onClick = onClick;
         iconSize = context.getResources().getDimensionPixelSize(R.dimen.token_row_icon);
+    }
+
+    /**
+     * labelsChanged redraws the rows, as the wallet said more of the tokens.
+     */
+    public void labelsChanged() {
+        notifyItemRangeChanged(0, tokens.size());
+    }
+
+    /**
+     * iconsChanged redraws the rows with the icons that were loaded.
+     */
+    public void iconsChanged() {
+        icons.evictAll();
+        notifyItemRangeChanged(0, tokens.size());
     }
 
     /**
@@ -101,7 +116,12 @@ public final class TokenAdapter extends RecyclerView.Adapter<TokenAdapter.Row> {
     public void onBindViewHolder(@NonNull Row row, int position) {
         TokenBalance token = tokens.get(position);
         row.icon.setImageBitmap(icon(token.category));
-        row.id.setText(TokenBalance.shortId(token.category));
+        row.id.setText(TokenLabels.title(token.category));
+        int badge = TokenLabels.badge(token.category);
+        row.badge.setVisibility(badge == 0 ? View.GONE : View.VISIBLE);
+        if (badge != 0) {
+            row.badge.setText(badge);
+        }
         row.amount.setText(amount(token));
         row.itemView.setOnClickListener(v -> onClick.onClick(token));
     }
@@ -114,7 +134,7 @@ public final class TokenAdapter extends RecyclerView.Adapter<TokenAdapter.Row> {
     private Bitmap icon(String category) {
         Bitmap icon = icons.get(category);
         if (icon == null) {
-            icon = Identicon.of(category).bitmap(iconSize);
+            icon = TokenIcons.bitmap(context, category, iconSize);
             icons.put(category, icon);
         }
         return icon;
@@ -128,7 +148,7 @@ public final class TokenAdapter extends RecyclerView.Adapter<TokenAdapter.Row> {
         if (token.amount == 0) {
             return nfts;
         }
-        String amount = NumberFormat.getIntegerInstance().format(new BigInteger(Long.toUnsignedString(token.amount)));
+        String amount = TokenLabels.amount(token.category, token.amount);
         return nfts == null ? amount : context.getString(R.string.token_amount_and_nfts, amount, nfts);
     }
 }

@@ -14,6 +14,7 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import cash.bchd.android_neutrino.tokens.Identicon;
+import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
@@ -63,7 +64,7 @@ final class TransactionDetailsPopup {
             ImageView icon = row.findViewById(R.id.txDetailsTokenIcon);
             icon.setImageBitmap(Identicon.of(change.category).bitmap(iconSize));
             TextView id = row.findViewById(R.id.txDetailsTokenId);
-            id.setText(TokenBalance.shortId(change.category));
+            id.setText(TokenLabels.listTitle(change.category));
             TextView amount = row.findViewById(R.id.txDetailsTokenChange);
             amount.setText(TokenTexts.details(ctx, change));
             tokens.addView(row);

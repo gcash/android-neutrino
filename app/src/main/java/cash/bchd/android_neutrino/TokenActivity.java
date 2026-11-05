@@ -6,6 +6,8 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -22,23 +24,27 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.snackbar.Snackbar;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.FutureCallback;
 
 import java.lang.ref.WeakReference;
-import java.math.BigInteger;
-import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-import cash.bchd.android_neutrino.tokens.Identicon;
+import cash.bchd.android_neutrino.tokens.TokenIcons;
+import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.tokens.NftAdapter;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
+import cash.bchd.android_neutrino.wallet.TokenMeta;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 import cash.bchd.android_neutrino.wallet.TransactionList;
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
+import walletrpc.Api;
 
 /**
  * TokenActivity shows a token the wallet holds, under a header like the main screen's: its
@@ -67,6 +73,10 @@ public class TokenActivity extends AppCompatActivity {
     private int blockHeight;
     private PopupWindow detailsPopup;
     private final WalletEventListener listener = new Listener(this);
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    // Whether the user asked for the token's metadata on this screen.
+    private boolean fetched;
+    private static final long ASK_INTERVAL_MS = 5_000;
 
     /**
      * open opens the screen of a token on the Tokens page: that of its NFTs for a category that
@@ -149,8 +159,7 @@ public class TokenActivity extends AppCompatActivity {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-        ImageView icon = findViewById(R.id.tokenIcon);
-        icon.setImageBitmap(Identicon.of(category).bitmap(getResources().getDimensionPixelSize(R.dimen.token_screen_icon)));
+        showIcon();
         showTokenId(this, findViewById(R.id.tokenId), layout, category);
 
         RecyclerView list = findViewById(R.id.tokenHistory);
@@ -158,7 +167,7 @@ public class TokenActivity extends AppCompatActivity {
         // With the application's context, as the main screen's lists have.
         list.addItemDecoration(new DividerItemDecoration(getApplicationContext(), DividerItemDecoration.VERTICAL));
         if (collection) {
-            nfts = new NftAdapter(this, nft -> NftActivity.open(this, category, nft));
+            nfts = new NftAdapter(this, category, nft -> NftActivity.open(this, category, nft));
             list.setAdapter(nfts);
         } else {
             history = new TokenHistoryAdapter(this, category, tx ->
@@ -170,6 +179,129 @@ public class TokenActivity extends AppCompatActivity {
             history.setTransactions(transactions, blockHeight);
         }
         showToken(settings.getLastTokens());
+        askWallet();
+    }
+
+    // showIcon shows the token's icon, which is its identicon until one is loaded.
+    private void showIcon() {
+        TokenIcons.configure(settings.getTokenImages(), settings.getLoadedIcons());
+        ImageView icon = findViewById(R.id.tokenIcon);
+        icon.setImageBitmap(TokenIcons.bitmap(this, category,
+                getResources().getDimensionPixelSize(R.dimen.token_screen_icon)));
+    }
+
+    // askWallet shows what the wallet can say of the token now.
+    private void askWallet() {
+        Wallet wallet = Wallet.getInstance();
+        if (wallet == null || !wallet.isRunning()) {
+            showLabels();
+            return;
+        }
+        Futures.addCallback(wallet.tokenMetadataAsync(Collections.singletonList(category), true),
+                new FutureCallback<List<TokenMeta>>() {
+                    @Override
+                    public void onSuccess(List<TokenMeta> tokens) {
+                        TokenLabels.update(tokens);
+                        runOnUiThread(() -> {
+                            showLabels();
+                            showToken(settings.getLastTokens());
+                            if (nfts != null) {
+                                nfts.labelsChanged();
+                            }
+                        });
+                        if (!tokens.isEmpty() && tokens.get(0).status == TokenMeta.Status.SEARCHING
+                                && (tokens.get(0).loadsByItself || fetched)) {
+                            handler.postDelayed(TokenActivity.this::askWallet, ASK_INTERVAL_MS);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        t.printStackTrace();
+                    }
+                }, MoreExecutors.directExecutor());
+    }
+
+    // showLabels shows the token's name, how far to trust it, and its description, which are
+    // only there once the wallet has them.
+    private void showLabels() {
+        TokenMeta token = TokenLabels.get(category);
+        boolean has = token != null && token.hasMetadata;
+        TextView name = findViewById(R.id.tokenName);
+        name.setText(has ? token.name + " (" + token.symbol + ")" : "");
+        name.setVisibility(has ? View.VISIBLE : View.GONE);
+        TextView description = findViewById(R.id.tokenDescription);
+        description.setText(has ? token.description : "");
+        description.setVisibility(has && !token.description.isEmpty() ? View.VISIBLE : View.GONE);
+        TextView badge = findViewById(R.id.tokenBadge);
+        int text = TokenLabels.badge(category);
+        badge.setVisibility(text == 0 ? View.GONE : View.VISIBLE);
+        if (text != 0) {
+            badge.setText(has && token.burned
+                    ? getString(R.string.token_badge_and_burned, getString(text)) : getString(text));
+        }
+    }
+
+    /**
+     * fetchMetadata has the wallet find a token's metadata, or find it again.
+     */
+    static void fetchMetadata(Activity screen, View layout, String category, Runnable asked) {
+        Wallet wallet = Wallet.getInstance();
+        if (wallet == null || !wallet.isRunning()) {
+            return;
+        }
+        Futures.addCallback(wallet.refreshTokenMetadataAsync(category),
+                new FutureCallback<Api.RefreshTokenMetadataResponse>() {
+                    @Override
+                    public void onSuccess(Api.RefreshTokenMetadataResponse reply) {
+                        screen.runOnUiThread(() -> {
+                            Snackbar.make(layout, R.string.fetching_token_metadata, Snackbar.LENGTH_LONG).show();
+                            asked.run();
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        screen.runOnUiThread(() -> Snackbar.make(layout,
+                                R.string.fetch_token_metadata_failed, Snackbar.LENGTH_LONG).show());
+                    }
+                }, MoreExecutors.directExecutor());
+    }
+
+    /**
+     * loadIcon loads a token's icon and tells done on the UI thread if it did. Only the user asks
+     * for this, or the setting that shows all icons, as the icon's host sees who asks.
+     */
+    static void loadIcon(Activity screen, Settings settings, View layout, String category, Runnable done) {
+        Wallet wallet = Wallet.getInstance();
+        TokenMeta token = TokenLabels.get(category);
+        if (wallet == null || !wallet.isRunning()) {
+            return;
+        }
+        if (token == null || token.iconUri.isEmpty()) {
+            Snackbar.make(layout, R.string.token_no_icon, Snackbar.LENGTH_LONG).show();
+            return;
+        }
+        Futures.addCallback(wallet.tokenIconAsync(token.iconUri), new FutureCallback<byte[]>() {
+            @Override
+            public void onSuccess(byte[] data) {
+                boolean saved = TokenIcons.save(screen, category, data);
+                screen.runOnUiThread(() -> {
+                    if (saved) {
+                        settings.addLoadedIcon(category);
+                        done.run();
+                    } else {
+                        Snackbar.make(layout, R.string.token_icon_failed, Snackbar.LENGTH_LONG).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                screen.runOnUiThread(() ->
+                        Snackbar.make(layout, R.string.token_icon_failed, Snackbar.LENGTH_LONG).show());
+            }
+        }, MoreExecutors.directExecutor());
     }
 
     @Override
@@ -192,6 +324,7 @@ public class TokenActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        handler.removeCallbacksAndMessages(null);
         if (detailsPopup != null) {
             detailsPopup.dismiss();
         }
@@ -212,6 +345,13 @@ public class TokenActivity extends AppCompatActivity {
             return true;
         } else if (itemId == R.id.copyTokenId) {
             copyTokenId(this, layout, category);
+            return true;
+        } else if (itemId == R.id.fetchTokenMetadata) {
+            fetched = true;
+            fetchMetadata(this, layout, category, this::askWallet);
+            return true;
+        } else if (itemId == R.id.loadTokenIcon) {
+            loadIcon(this, settings, layout, category, this::showIcon);
             return true;
         } else if (itemId == R.id.hideToken) {
             hide(this, settings, category);
@@ -243,8 +383,7 @@ public class TokenActivity extends AppCompatActivity {
             amount.setText(nftText);
             nftLine.setVisibility(View.GONE);
         } else {
-            // The amount is a uint64, as the API has it.
-            amount.setText(NumberFormat.getIntegerInstance().format(new BigInteger(Long.toUnsignedString(token.amount))));
+            amount.setText(TokenLabels.amount(category, token.amount));
             nftLine.setText(getString(R.string.token_nfts_open, nftText));
             nftLine.setOnClickListener(v -> openNfts(this, token));
             nftLine.setVisibility(token.nfts > 0 ? View.VISIBLE : View.GONE);
@@ -282,7 +421,10 @@ public class TokenActivity extends AppCompatActivity {
 
         @Override
         public void onTokenBalances(List<TokenBalance> tokens) {
-            update(activity -> activity.showToken(tokens));
+            update(activity -> {
+                activity.showToken(tokens);
+                activity.askWallet();
+            });
         }
 
         @Override

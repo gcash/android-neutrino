@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A row of the Tokens page: a token category's identicon, short token ID and amount. The
+<!-- A row of the Tokens page: a token category's identicon, name or short token ID and amount. The
      identicon's center lines up with the arrow of a transaction's row. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -15,13 +15,30 @@
         android:layout_marginEnd="14dp"
         android:importantForAccessibility="no" />
 
-    <TextView
-        android:id="@+id/tokenId"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:fontFamily="monospace"
-        android:textSize="15sp"
-        android:textStyle="bold" />
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tokenId"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="monospace"
+            android:maxLines="1"
+            android:maxWidth="180dp"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tokenBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:textSize="11sp"
+            android:visibility="gone" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tokenAmount"

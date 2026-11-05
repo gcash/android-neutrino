@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import cash.bchd.android_neutrino.tokens.Identicon;
+import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
@@ -182,7 +183,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         holder.txDescription.setText(received ? (nftsOnly ? R.string.received_nft : R.string.received_token)
                 : (nftsOnly ? R.string.sent_nft : R.string.sent_token));
         holder.txMemo.setEllipsize(TextUtils.TruncateAt.END);
-        String what = tx.getMemo() == null || tx.getMemo().isEmpty() ? TokenBalance.shortId(first.category) : tx.getMemo();
+        String what = tx.getMemo() == null || tx.getMemo().isEmpty() ? TokenLabels.listTitle(first.category) : tx.getMemo();
         int more = tokens.size() - 1;
         holder.txMemo.setText(more > 0 ? ctx.getResources().getQuantityString(R.plurals.token_row_more, more, what, more) : what);
         holder.bchAmount.setText(TokenTexts.change(ctx, first));

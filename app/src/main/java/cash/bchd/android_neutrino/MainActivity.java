@@ -17,6 +17,8 @@ import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Looper;
+import android.os.Handler;
 import android.text.TextUtils;
 import android.transition.ChangeTransform;
 import android.transition.TransitionManager;
@@ -53,16 +55,27 @@ import com.google.zxing.WriterException;
 
 import java.lang.ref.WeakReference;
 import java.text.NumberFormat;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.FutureCallback;
+
+import com.google.common.util.concurrent.Futures;
+
+import com.google.common.util.concurrent.MoreExecutors;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Currency;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import cash.bchd.android_neutrino.tokens.TokenAdapter;
+import cash.bchd.android_neutrino.tokens.TokenIcons;
+import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.AddressListener;
 import cash.bchd.android_neutrino.wallet.Addresses;
 import cash.bchd.android_neutrino.wallet.Amount;
@@ -71,6 +84,7 @@ import cash.bchd.android_neutrino.wallet.ExchangeRates;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.SyncStatus;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
+import cash.bchd.android_neutrino.wallet.TokenMeta;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 import cash.bchd.android_neutrino.wallet.TransactionList;
 import cash.bchd.android_neutrino.wallet.Wallet;
@@ -104,6 +118,11 @@ public class MainActivity extends CloseActivity {
     TransactionStore txStore;
     TransactionAdapter mAdapter;
     TokenAdapter tokenAdapter;
+    private static final int TOKEN_LABELS_PER_CALL = 50;
+    private static final long TOKEN_LABELS_INTERVAL_MS = 10_000;
+    private final Handler pagesHandler = new Handler(Looper.getMainLooper());
+    private final AtomicBoolean labelsAskPending = new AtomicBoolean();
+    private final Set<String> iconsTried = ConcurrentHashMap.newKeySet();
     // The Activity and Tokens pages, and the tabs between them, which show while the wallet
     // holds tokens.
     MainPages mainPages;
@@ -782,6 +801,90 @@ public class MainActivity extends CloseActivity {
         syncStatusView.setVisibility(View.VISIBLE);
     }
 
+    // askTokenLabels asks the wallet what it can say of the tokens that show, which is also what
+    // makes them load, so a hidden token costs nothing. With the setting on, it also loads the
+    // icons it can.
+    private void askTokenLabels(List<TokenBalance> shown) {
+        Wallet wallet = Wallet.getInstance();
+        if (wallet == null || !wallet.isRunning() || shown.isEmpty()) {
+            return;
+        }
+        TokenIcons.configure(settings.getTokenImages(), settings.getLoadedIcons());
+        List<String> categories = new ArrayList<>();
+        for (TokenBalance token : shown) {
+            categories.add(token.category);
+        }
+
+        // In parts, so that a reply stays well under what gRPC takes.
+        for (List<String> part : Lists.partition(categories, TOKEN_LABELS_PER_CALL)) {
+            Futures.addCallback(wallet.tokenMetadataAsync(part, false), new FutureCallback<List<TokenMeta>>() {
+                @Override
+                public void onSuccess(List<TokenMeta> tokens) {
+                    if (TokenLabels.update(tokens)) {
+                        runOnUiThread(() -> {
+                            tokenAdapter.labelsChanged();
+                            mAdapter.notifyItemRangeChanged(0, mAdapter.getItemCount());
+                        });
+                    }
+                    if (settings.getTokenImages()) {
+                        loadTokenIcons(wallet, tokens);
+                    }
+                    if (searching(tokens)) {
+                        askTokenLabelsSoon();
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    t.printStackTrace();
+                }
+            }, MoreExecutors.directExecutor());
+        }
+    }
+
+    // searching returns whether the wallet is still looking for any of the tokens.
+    private static boolean searching(List<TokenMeta> tokens) {
+        for (TokenMeta token : tokens) {
+            if (token.loadsByItself && token.status == TokenMeta.Status.SEARCHING) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // askTokenLabelsSoon asks again in a while, as the wallet tells nothing by itself.
+    private void askTokenLabelsSoon() {
+        if (labelsAskPending.compareAndSet(false, true)) {
+            pagesHandler.postDelayed(() -> {
+                labelsAskPending.set(false);
+                showTokens(settings.getLastTokens());
+            }, TOKEN_LABELS_INTERVAL_MS);
+        }
+    }
+
+    // loadTokenIcons loads the icons of the tokens that don't have theirs yet.
+    private void loadTokenIcons(Wallet wallet, List<TokenMeta> tokens) {
+        for (TokenMeta token : tokens) {
+            if (token.iconUri.isEmpty() || TokenIcons.has(this, token.category)
+                    || !iconsTried.add(token.category)) {
+                continue;
+            }
+            Futures.addCallback(wallet.tokenIconAsync(token.iconUri), new FutureCallback<byte[]>() {
+                @Override
+                public void onSuccess(byte[] data) {
+                    if (TokenIcons.save(MainActivity.this, token.category, data)) {
+                        runOnUiThread(() -> tokenAdapter.iconsChanged());
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    // It's tried again the next time the app starts.
+                }
+            }, MoreExecutors.directExecutor());
+        }
+    }
+
     // showTokens lists the wallet's tokens on the Tokens page, but those the user hid, and shows
     // the tabs while it holds any others. The header keeps its height: the tabs take its bottom,
     // and the fiat balance's line gets shorter so that the sync status fits above them.
@@ -794,6 +897,7 @@ public class MainActivity extends CloseActivity {
             }
         }
         tokenAdapter.setTokens(shown);
+        askTokenLabels(shown);
         boolean any = !shown.isEmpty();
         tabs.setVisibility(any ? View.VISIBLE : View.GONE);
         pages.setUserInputEnabled(any);
@@ -1092,6 +1196,7 @@ public class MainActivity extends CloseActivity {
                                     return;
                                 }
                                 mainActivity2.mAdapter.setBlockHeight(blockHeight);
+                                mainActivity2.showTokens(mainActivity2.settings.getLastTokens());
                                 mainActivity2.settings.setLastBlockHeight(blockHeight);
                                 mainActivity2.settings.setLastBlockHash(blockHash);
                             });

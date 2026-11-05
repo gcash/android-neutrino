@@ -41,6 +41,28 @@
                 android:importantForAccessibility="no" />
 
             <TextView
+                android:id="@+id/tokenName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginStart="32dp"
+                android:layout_marginEnd="32dp"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:maxLines="2"
+                android:textColor="@android:color/white"
+                android:textSize="20sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tokenBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/liteGrey"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <TextView
                 android:id="@+id/tokenAmount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -63,6 +85,20 @@
                 android:layout_marginTop="4dp"
                 android:textColor="@color/liteGrey"
                 android:textSize="16sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tokenDescription"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="32dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="32dp"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:maxLines="3"
+                android:textColor="@color/liteGrey"
+                android:textSize="14sp"
                 android:visibility="gone" />
 
             <TextView

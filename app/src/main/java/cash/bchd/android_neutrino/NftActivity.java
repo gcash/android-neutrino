@@ -21,12 +21,15 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout;
 
 import com.google.android.material.snackbar.Snackbar;
 
+import java.util.Collections;
 import java.util.List;
 
-import cash.bchd.android_neutrino.tokens.Identicon;
+import cash.bchd.android_neutrino.tokens.TokenIcons;
+import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
+import cash.bchd.android_neutrino.wallet.TokenMeta;
 import cash.bchd.android_neutrino.wallet.TokenNft;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 import cash.bchd.android_neutrino.wallet.Wallet;
@@ -84,8 +87,7 @@ public class NftActivity extends AppCompatActivity {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-        ImageView icon = findViewById(R.id.nftIcon);
-        icon.setImageBitmap(Identicon.of(category).bitmap(getResources().getDimensionPixelSize(R.dimen.token_screen_icon)));
+        showIcon();
         TokenActivity.showTokenId(this, findViewById(R.id.nftTokenId), layout, category);
         showReceived();
         showNft(settings.getLastTokens());
@@ -96,6 +98,7 @@ public class NftActivity extends AppCompatActivity {
             new Thread(() -> {
                 try {
                     List<TokenBalance> tokens = wallet.tokenBalances();
+                    TokenLabels.update(wallet.tokenMetadataAsync(Collections.singletonList(category), true).get());
                     runOnUiThread(() -> showNft(tokens));
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -127,11 +130,25 @@ public class NftActivity extends AppCompatActivity {
         } else if (itemId == R.id.copyTokenId) {
             TokenActivity.copyTokenId(this, layout, category);
             return true;
+        } else if (itemId == R.id.fetchTokenMetadata) {
+            TokenActivity.fetchMetadata(this, layout, category, () -> { });
+            return true;
+        } else if (itemId == R.id.loadTokenIcon) {
+            TokenActivity.loadIcon(this, settings, layout, category, this::showIcon);
+            return true;
         } else if (itemId == R.id.hideToken) {
             TokenActivity.hide(this, settings, category);
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    // showIcon shows the token's icon, which is its identicon until one is loaded.
+    private void showIcon() {
+        TokenIcons.configure(settings.getTokenImages(), settings.getLoadedIcons());
+        ImageView icon = findViewById(R.id.nftIcon);
+        icon.setImageBitmap(TokenIcons.bitmap(this, category,
+                getResources().getDimensionPixelSize(R.dimen.token_screen_icon)));
     }
 
     // showNft shows the NFT, among the token balances, or keeps what it shows if they don't have
@@ -142,6 +159,12 @@ public class NftActivity extends AppCompatActivity {
         if (nft == null) {
             return;
         }
+        TextView nameView = findViewById(R.id.nftName);
+        String name = TokenLabels.nftName(category, nft.commitment);
+        TokenMeta meta = TokenLabels.get(category);
+        String shown = name != null ? name : meta != null && meta.hasMetadata ? meta.name : null;
+        nameView.setText(shown);
+        nameView.setVisibility(shown == null ? View.GONE : View.VISIBLE);
         TextView kind = findViewById(R.id.nftKind);
         TextView explained = findViewById(R.id.nftKindExplained);
         switch (nft.capability) {

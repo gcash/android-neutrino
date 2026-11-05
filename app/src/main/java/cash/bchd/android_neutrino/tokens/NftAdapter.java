@@ -32,6 +32,7 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
 
     private final Context context;
     private final OnClick onClick;
+    private final String category;
     private List<TokenNft> nfts = Collections.emptyList();
 
     public static final class Row extends RecyclerView.ViewHolder {
@@ -45,7 +46,8 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
         }
     }
 
-    public NftAdapter(Context context, OnClick onClick) {
+    public NftAdapter(Context context, String category, OnClick onClick) {
+        this.category = category;
         this.context = context;
         this.onClick = onClick;
     }
@@ -82,6 +84,13 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
         diff.dispatchUpdatesTo(this);
     }
 
+    /**
+     * labelsChanged redraws the rows, as the wallet said more of the NFTs.
+     */
+    public void labelsChanged() {
+        notifyItemRangeChanged(0, nfts.size());
+    }
+
     @NonNull
     @Override
     public Row onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -91,7 +100,11 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
     @Override
     public void onBindViewHolder(@NonNull Row row, int position) {
         TokenNft nft = nfts.get(position);
-        if (nft.commitment.isEmpty()) {
+        String name = TokenLabels.nftName(category, nft.commitment);
+        if (name != null) {
+            row.commitment.setTypeface(Typeface.DEFAULT);
+            row.commitment.setText(name);
+        } else if (nft.commitment.isEmpty()) {
             row.commitment.setTypeface(Typeface.DEFAULT);
             row.commitment.setText(R.string.nft_no_commitment);
         } else {

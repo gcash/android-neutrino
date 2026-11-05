@@ -3,11 +3,13 @@ package cash.bchd.android_neutrino;
 import android.content.Context;
 import android.text.TextUtils;
 
+import java.math.BigInteger;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 import cash.bchd.android_neutrino.tokens.NftAdapter;
+import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.TokenChange;
 
 /**
@@ -24,7 +26,7 @@ final class TokenTexts {
      * each with its sign.
      */
     static String change(Context ctx, TokenChange change) {
-        String amount = change.amount == 0 ? null : signed(change.amount);
+        String amount = change.amount == 0 ? null : signed(change.category, change.amount);
         String nfts = change.nfts == 0 ? null : nfts(ctx, change.nfts);
         if (amount == null) {
             return nfts;
@@ -39,7 +41,7 @@ final class TokenTexts {
     static String details(Context ctx, TokenChange change) {
         List<String> lines = new ArrayList<>();
         if (change.amount != 0) {
-            lines.add(signed(change.amount));
+            lines.add(signed(change.category, change.amount));
         }
         for (String commitment : change.nftsReceived()) {
             lines.add(commitment.isEmpty() ? ctx.getString(R.string.nft_in)
@@ -58,6 +60,10 @@ final class TokenTexts {
 
     private static String nfts(Context ctx, int nfts) {
         return ctx.getResources().getQuantityString(R.plurals.token_nfts_change, Math.abs(nfts), signed(nfts));
+    }
+
+    private static String signed(String category, long n) {
+        return (n > 0 ? "+" : "") + TokenLabels.amount(category, BigInteger.valueOf(n));
     }
 
     private static String signed(long n) {

@@ -149,6 +149,24 @@
     <string name="token_id_copied">Token ID copied to clipboard.</string>
     <string name="copy_token_id">Copy token ID</string>
     <string name="hide_token">Hide</string>
+    <string name="fetch_token_metadata">Fetch metadata</string>
+    <string name="fetch_token_metadata_failed">The wallet couldn\'t be asked for the token\'s metadata.</string>
+    <string name="fetching_token_metadata">Fetching the token\'s metadata.</string>
+    <string name="load_token_icon">Load icon</string>
+    <string name="token_icon_failed">The token\'s icon couldn\'t be loaded.</string>
+    <string name="token_no_icon">The token has no icon.</string>
+    <string name="token_images">Token images</string>
+    <string name="token_images_summary">Load the icons of your tokens. Each icon\'s host sees that you asked. You can also load one from a token\'s menu.</string>
+    <string name="ipfs_gateways">IPFS gateways</string>
+    <string name="ipfs_gateways_summary">The servers that token metadata and icons on IPFS load through, separated by commas. Takes effect the next time the wallet starts.</string>
+    <string name="token_identity_not_found">Its identity couldn\'t be found</string>
+    <string name="token_node_needs_index">Your node needs --bcmrindex for token names</string>
+    <string name="token_may_be_out_of_date">Verified, may be out of date</string>
+    <string name="token_known">Known</string>
+    <string name="token_verified">Verified</string>
+    <string name="token_not_yet_verified">Not yet verified</string>
+    <string name="token_look_alike">Look-alike of a Known token</string>
+    <string name="token_badge_and_burned">%1$s. Its metadata can\'t change anymore.</string>
     <string name="token_received">Received</string>
     <!-- The line of a token's screen that opens its NFTs. -->
     <string name="token_nfts_open">%1$s ›</string>
