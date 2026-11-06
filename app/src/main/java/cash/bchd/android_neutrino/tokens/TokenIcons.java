@@ -31,6 +31,11 @@ public final class TokenIcons {
         return new File(new File(context.getFilesDir(), "token-icons"), category);
     }
 
+    // nftFile returns the file of an NFT's own art, under a name no token ID has.
+    private static File nftFile(Context context, String category, String commitment) {
+        return file(context, category + "-" + commitment);
+    }
+
     /**
      * configure says which icons to show: all that were loaded, with the setting on, or else only
      * those the user loaded from a token's menu.
@@ -45,13 +50,35 @@ public final class TokenIcons {
      */
     public static Bitmap bitmap(Context context, String category, int size) {
         File file = file(context, category);
-        if ((showAll || chosen.contains(category)) && file.exists()) {
+        if (showing(category) && file.exists()) {
             Bitmap icon = decode(file.getPath(), size);
             if (icon != null) {
                 return icon;
             }
         }
         return Identicon.of(category).bitmap(size);
+    }
+
+    /**
+     * nftBitmap returns an NFT's own art at the size, or else its token's icon.
+     */
+    public static Bitmap nftBitmap(Context context, String category, String commitment, int size) {
+        File file = nftFile(context, category, commitment);
+        if (showing(category) && file.exists()) {
+            Bitmap art = decode(file.getPath(), size);
+            if (art != null) {
+                return art;
+            }
+        }
+        return bitmap(context, category, size);
+    }
+
+    /**
+     * showing returns whether a token's images are to show, and so to load: the setting is on, or
+     * the user loaded them from the token's menu.
+     */
+    public static boolean showing(String category) {
+        return showAll || chosen.contains(category);
     }
 
     /**
@@ -62,21 +89,38 @@ public final class TokenIcons {
     }
 
     /**
+     * hasNft returns whether an NFT's own art was loaded.
+     */
+    public static boolean hasNft(Context context, String category, String commitment) {
+        return nftFile(context, category, commitment).exists();
+    }
+
+    /**
      * save keeps an icon if it's an image this device can show, and returns whether it did.
      */
     public static boolean save(Context context, String category, byte[] data) {
+        return save(file(context, category), data);
+    }
+
+    /**
+     * saveNft keeps an NFT's own art as save keeps an icon.
+     */
+    public static boolean saveNft(Context context, String category, String commitment, byte[] data) {
+        return save(nftFile(context, category, commitment), data);
+    }
+
+    private static boolean save(File file, byte[] data) {
         BitmapFactory.Options bounds = new BitmapFactory.Options();
         bounds.inJustDecodeBounds = true;
         BitmapFactory.decodeByteArray(data, 0, data.length, bounds);
         if (!usable(bounds.outWidth, bounds.outHeight)) {
             return false;
         }
-        File file = file(context, category);
         File dir = file.getParentFile();
         if (dir == null || (!dir.isDirectory() && !dir.mkdirs())) {
             return false;
         }
-        File tmp = new File(dir, category + ".tmp");
+        File tmp = new File(dir, file.getName() + ".tmp");
         try (FileOutputStream out = new FileOutputStream(tmp)) {
             out.write(data);
         } catch (IOException e) {

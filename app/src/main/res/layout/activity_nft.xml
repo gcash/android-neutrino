@@ -35,8 +35,8 @@
 
             <ImageView
                 android:id="@+id/nftIcon"
-                android:layout_width="@dimen/token_screen_icon"
-                android:layout_height="@dimen/token_screen_icon"
+                android:layout_width="@dimen/nft_screen_icon"
+                android:layout_height="@dimen/nft_screen_icon"
                 android:layout_marginTop="8dp"
                 android:importantForAccessibility="no" />
 
@@ -52,6 +52,14 @@
                 android:maxLines="2"
                 android:textColor="@android:color/white"
                 android:textSize="20sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/nftBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/liteGrey"
+                android:textSize="13sp"
                 android:visibility="gone" />
 
             <TextView

@@ -1,16 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A row of a token's collection: an NFT's commitment and what it can do. -->
+<!-- A row of a token's collection: an NFT's art, its name or commitment and what it can do. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="56dp"
     android:gravity="center_vertical"
     android:orientation="horizontal">
 
+    <ImageView
+        android:id="@+id/nftIcon"
+        android:layout_width="@dimen/token_row_icon"
+        android:layout_height="@dimen/token_row_icon"
+        android:layout_marginStart="19dp"
+        android:layout_marginEnd="14dp"
+        android:importantForAccessibility="no" />
+
     <TextView
         android:id="@+id/nftCommitment"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
         android:layout_weight="1"
         android:ellipsize="end"
         android:maxLines="1"

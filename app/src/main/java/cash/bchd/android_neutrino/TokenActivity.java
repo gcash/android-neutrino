@@ -167,7 +167,10 @@ public class TokenActivity extends AppCompatActivity {
         // With the application's context, as the main screen's lists have.
         list.addItemDecoration(new DividerItemDecoration(getApplicationContext(), DividerItemDecoration.VERTICAL));
         if (collection) {
-            nfts = new NftAdapter(this, category, nft -> NftActivity.open(this, category, nft));
+            nfts = new NftAdapter(this, category, nft -> NftActivity.open(this, category, nft), uri -> {
+                Wallet wallet = Wallet.getInstance();
+                return wallet != null && wallet.isRunning() ? wallet.tokenIconAsync(uri) : null;
+            });
             list.setAdapter(nfts);
         } else {
             history = new TokenHistoryAdapter(this, category, tx ->
@@ -278,6 +281,15 @@ public class TokenActivity extends AppCompatActivity {
         if (wallet == null || !wallet.isRunning()) {
             return;
         }
+        // The NFTs' art counts as the token's images, whatever becomes of the icon.
+        boolean art = token != null && hasNftArt(token);
+        if (art) {
+            settings.addLoadedIcon(category);
+        }
+        if (art && token.iconUri.isEmpty()) {
+            done.run();
+            return;
+        }
         if (token == null || token.iconUri.isEmpty()) {
             Snackbar.make(layout, R.string.token_no_icon, Snackbar.LENGTH_LONG).show();
             return;
@@ -292,16 +304,33 @@ public class TokenActivity extends AppCompatActivity {
                         done.run();
                     } else {
                         Snackbar.make(layout, R.string.token_icon_failed, Snackbar.LENGTH_LONG).show();
+                        if (art) {
+                            done.run();
+                        }
                     }
                 });
             }
 
             @Override
             public void onFailure(Throwable t) {
-                screen.runOnUiThread(() ->
-                        Snackbar.make(layout, R.string.token_icon_failed, Snackbar.LENGTH_LONG).show());
+                screen.runOnUiThread(() -> {
+                    Snackbar.make(layout, R.string.token_icon_failed, Snackbar.LENGTH_LONG).show();
+                    if (art) {
+                        done.run();
+                    }
+                });
             }
         }, MoreExecutors.directExecutor());
+    }
+
+    // hasNftArt returns whether the token's NFTs have art of their own.
+    private static boolean hasNftArt(TokenMeta token) {
+        for (TokenMeta.NftType type : token.nftTypes) {
+            if (!type.iconUri.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -325,6 +354,9 @@ public class TokenActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         handler.removeCallbacksAndMessages(null);
+        if (nfts != null) {
+            nfts.stop();
+        }
         if (detailsPopup != null) {
             detailsPopup.dismiss();
         }
@@ -351,7 +383,12 @@ public class TokenActivity extends AppCompatActivity {
             fetchMetadata(this, layout, category, this::askWallet);
             return true;
         } else if (itemId == R.id.loadTokenIcon) {
-            loadIcon(this, settings, layout, category, this::showIcon);
+            loadIcon(this, settings, layout, category, () -> {
+                showIcon();
+                if (nfts != null) {
+                    nfts.iconsChanged();
+                }
+            });
             return true;
         } else if (itemId == R.id.hideToken) {
             hide(this, settings, category);

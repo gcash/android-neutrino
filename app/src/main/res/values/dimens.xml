@@ -11,6 +11,7 @@
     <dimen name="fiat_balance_height">58dp</dimen>
     <dimen name="token_row_icon">32dp</dimen>
     <dimen name="token_screen_icon">64dp</dimen>
+    <dimen name="nft_screen_icon">128dp</dimen>
     <dimen name="token_details_icon">24dp</dimen>
     <!-- The widest the popup of a transaction's details gets, and the room it leaves. -->
     <dimen name="tx_details_width">370dp</dimen>
