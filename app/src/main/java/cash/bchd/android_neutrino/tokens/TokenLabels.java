@@ -104,6 +104,16 @@ public final class TokenLabels {
     }
 
     /**
+     * rowBadge returns the badge of a token's row, where a token that may be out of date is only
+     * verified, as most tokens move on without publishing again, and its screen says the rest.
+     */
+    @StringRes
+    public static int rowBadge(String category) {
+        int badge = badge(category);
+        return badge == R.string.token_may_be_out_of_date ? R.string.token_verified : badge;
+    }
+
+    /**
      * badge returns the string that says how far to trust what shows of a token, or 0 for none:
      * a look-alike comes first, as it's the warning that matters, then what went wrong.
      */
@@ -122,11 +132,17 @@ public final class TokenLabels {
         if (token.status == TokenMeta.Status.UNAVAILABLE) {
             return R.string.token_node_needs_index;
         }
+        if (token.registryFailed) {
+            return R.string.token_registry_failed;
+        }
         if (!token.hasMetadata) {
             return 0;
         }
         if (token.known) {
             return R.string.token_known;
+        }
+        if (token.registryChanged) {
+            return R.string.token_registry_changed;
         }
         if (token.stale && token.status == TokenMeta.Status.VERIFIED) {
             return R.string.token_may_be_out_of_date;

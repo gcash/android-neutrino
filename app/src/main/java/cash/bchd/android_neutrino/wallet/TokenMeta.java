@@ -63,6 +63,10 @@ public final class TokenMeta {
     public final boolean burned;
     // Whether the publication isn't on the head, so the metadata may be out of date.
     public final boolean stale;
+    // Whether the metadata is from a file other than the published one, so nothing vouches for it.
+    public final boolean registryChanged;
+    // Whether the token published a registry that nothing could be read from.
+    public final boolean registryFailed;
     public final List<NftType> nftTypes;
 
     TokenMeta(Api.TokenMetadataResponse.Token token) {
@@ -80,6 +84,8 @@ public final class TokenMeta {
         lookAlike = token.getLookAlike();
         burned = token.getBurned();
         stale = token.getPublicationStale();
+        registryChanged = token.getRegistryChanged();
+        registryFailed = token.getRegistryFailed();
         List<NftType> types = new ArrayList<>();
         for (Api.TokenMetadataResponse.NftType type : token.getNftTypesList()) {
             types.add(new NftType(type));
@@ -112,11 +118,11 @@ public final class TokenMeta {
     }
 
     /**
-     * verified returns whether what shows is known good: followed to the tip, or from the Known
-     * list.
+     * verified returns whether what shows is known good: from the published registry of an
+     * identity followed to the tip, or from the Known list.
      */
     public boolean verified() {
-        return status == Status.VERIFIED || known;
+        return status == Status.VERIFIED && !registryChanged || known;
     }
 
     /**
@@ -168,7 +174,8 @@ public final class TokenMeta {
         return category.equals(o.category) && hasMetadata == o.hasMetadata && name.equals(o.name)
                 && symbol.equals(o.symbol) && decimals == o.decimals && status == o.status
                 && known == o.known && lookAlike == o.lookAlike && burned == o.burned
-                && stale == o.stale && nftTypes.size() == o.nftTypes.size()
+                && stale == o.stale && registryChanged == o.registryChanged
+                && registryFailed == o.registryFailed && nftTypes.size() == o.nftTypes.size()
                 && iconUri.equals(o.iconUri);
     }
 

@@ -165,6 +165,8 @@
     <string name="token_known">Known</string>
     <string name="token_verified">Verified</string>
     <string name="token_not_yet_verified">Not yet verified</string>
+    <string name="token_registry_changed">Registry changed since publishing</string>
+    <string name="token_registry_failed">Its registry can\'t be read</string>
     <string name="token_look_alike">Look-alike of a Known token</string>
     <string name="token_badge_and_burned">%1$s. Its metadata can\'t change anymore.</string>
     <string name="token_received">Received</string>

@@ -48,6 +48,10 @@ public class Wallet implements Serializable {
 
     private String getConfigFilePath;
     private final String host = "127.0.0.1";
+    // What the wallet can answer with: all the NFT types of the largest registry it reads, 16 MiB,
+    // and room for how the reply writes them.
+    private static final int MAX_REPLY_SIZE = 32 << 20;
+
     private ManagedChannel channel;
     public static final io.grpc.Context.Key<String> AUTH_TOKEN_KEY = io.grpc.Context.key("AuthenticationToken");
     private AuthCredentials creds;
@@ -104,7 +108,8 @@ public class Wallet implements Serializable {
         this.config = config;
         this.getConfigFilePath = config.getConfigFilePath();
         this.creds = new AuthCredentials(config.getAuthToken());
-        this.channel = ManagedChannelBuilder.forAddress(this.host, config.getRpcPort()).usePlaintext().build();
+        this.channel = ManagedChannelBuilder.forAddress(this.host, config.getRpcPort()).usePlaintext()
+                .maxInboundMessageSize(MAX_REPLY_SIZE).build();
         instance = this;
         try {
             config.save(context);

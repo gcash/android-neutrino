@@ -88,4 +88,26 @@ public class TokenLabelsTest {
         assertEquals("One", TokenLabels.nftName(CATEGORY, "01"));
         assertEquals(null, TokenLabels.nftName(CATEGORY, "02"));
     }
+
+    @Test
+    public void aRowCallsATokenThatMayBeOutOfDateVerified() {
+        update(token().setStatus(Api.TokenMetadataResponse.Status.VERIFIED).setPublicationStale(true));
+        assertEquals(R.string.token_may_be_out_of_date, TokenLabels.badge(CATEGORY));
+        assertEquals(R.string.token_verified, TokenLabels.rowBadge(CATEGORY));
+    }
+
+    @Test
+    public void aChangedRegistryShowsButIsNotVerified() {
+        update(token().setStatus(Api.TokenMetadataResponse.Status.VERIFIED).setRegistryChanged(true));
+        assertEquals("Name", TokenLabels.title(CATEGORY));
+        assertEquals(R.string.token_registry_changed, TokenLabels.badge(CATEGORY));
+        assertEquals(R.string.token_registry_changed, TokenLabels.rowBadge(CATEGORY));
+        assertEquals(TokenBalance.shortId(CATEGORY), TokenLabels.listTitle(CATEGORY));
+    }
+
+    @Test
+    public void aRegistryThatFailedSaysSo() {
+        update(Api.TokenMetadataResponse.Token.newBuilder().setCategory(CATEGORY).setRegistryFailed(true));
+        assertEquals(R.string.token_registry_failed, TokenLabels.badge(CATEGORY));
+    }
 }
