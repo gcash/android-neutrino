@@ -107,14 +107,14 @@
 
     <SwitchPreferenceCompat
         android:defaultValue="true"
-        android:icon="@drawable/memo_icon_small"
+        android:icon="@drawable/token_icon_small"
         android:key="tokenAutoLoad"
         android:title="@string/token_auto_load"
         app:summary="@string/token_auto_load_summary" />
 
     <SwitchPreferenceCompat
         android:defaultValue="false"
-        android:icon="@drawable/memo_icon_small"
+        android:icon="@drawable/token_icon_small"
         android:key="tokenImages"
         android:title="@string/token_images"
         app:summary="@string/token_images_summary" />

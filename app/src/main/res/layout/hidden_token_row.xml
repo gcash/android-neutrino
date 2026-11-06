@@ -31,7 +31,7 @@
         android:layout_weight="1"
         android:ellipsize="end"
         android:gravity="end"
-        android:maxLines="1"
+        android:maxLines="2"
         android:textSize="15sp"
         android:textStyle="bold" />
 
