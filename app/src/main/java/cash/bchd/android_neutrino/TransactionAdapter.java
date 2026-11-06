@@ -129,7 +129,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         }
         // A token's row, which this one may be reused from, draws its icon unscaled.
         holder.arrowImage.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        String bch = "₿" + new Amount(tx.getAmount()).toString();
+        String bch = new Amount(tx.getAmount()).withSymbol();
         holder.bchAmount.setText(bch);
 
         // The status shows a dot before it until the transaction has ten confirmations.
@@ -199,7 +199,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         } else {
             holder.fiatAmount.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0);
             long spendable = tx.getSpendableAmount();
-            String bch = Math.abs(spendable) >= TokenBalance.FLOOR ? "₿" + new Amount(spendable).toString() : null;
+            String bch = Math.abs(spendable) >= TokenBalance.FLOOR ? new Amount(spendable).withSymbol() : null;
             holder.fiatAmount.setText(bch);
         }
     }

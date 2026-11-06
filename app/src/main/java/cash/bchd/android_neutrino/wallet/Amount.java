@@ -46,6 +46,13 @@ public class Amount {
     }
 
     /**
+     * withSymbol writes the amount after the BCH symbol, with its sign first.
+     */
+    public String withSymbol() {
+        return (this.satoshis < 0 ? "-" : "") + "₿" + new Amount(Math.abs(this.satoshis));
+    }
+
+    /**
      * localize writes a plain decimal number, such as 0.5, with a comma for its point where the
      * phone's language writes decimals with one, which Amount.fromBCH and the fiat amount
      * fields read back. Its digits stay 0 to 9, which formatting in the phone's language would

@@ -62,4 +62,11 @@ public class AmountTest {
             assertEquals("0", new Amount(0).toString());
         });
     }
+
+    @Test
+    public void theSignComesBeforeTheSymbol() {
+        assertEquals("₿0.5", new Amount(50000000L).withSymbol());
+        assertEquals("-₿0.5", new Amount(-50000000L).withSymbol());
+        assertEquals("₿0", new Amount(0L).withSymbol());
+    }
 }

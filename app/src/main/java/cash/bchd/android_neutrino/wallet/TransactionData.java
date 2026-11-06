@@ -70,8 +70,12 @@ public class TransactionData implements Serializable, Comparable<TransactionData
         return this.amount;
     }
 
+    /**
+     * getFiatAmount returns the amount with its currency's symbol, and its sign before that, also
+     * for an amount saved with the sign after the symbol.
+     */
     public String getFiatAmount() {
-        return this.fiatAmount;
+        return this.fiatAmount == null ? null : this.fiatAmount.replaceFirst("^([^-0-9]+)-", "-$1");
     }
 
     public String getFiatCurrency() {

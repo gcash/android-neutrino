@@ -87,4 +87,16 @@ public class TransactionDataTest {
         assertEquals(1761400000L, received.getTimestamp());
         assertEquals(919990, received.getHeight());
     }
+
+    @Test
+    public void theSignOfAFiatAmountComesFirst() {
+        TransactionData tx = new TransactionData("", false, "", 0, "$-134.10", "USD", 0, "", 0);
+        assertEquals("-$134.10", tx.getFiatAmount());
+        tx.setFiatAmount("$134.10");
+        assertEquals("$134.10", tx.getFiatAmount());
+        tx.setFiatAmount("-134.10");
+        assertEquals("-134.10", tx.getFiatAmount());
+        tx.setFiatAmount("");
+        assertEquals("", tx.getFiatAmount());
+    }
 }
