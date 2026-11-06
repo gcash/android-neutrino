@@ -19,6 +19,9 @@ import walletrpc.Api;
  */
 public final class TokenMeta {
 
+    // The longest symbol an amount shows.
+    private static final int MAX_SHOWN_SYMBOL = 16;
+
     /**
      * Status is how far the wallet got with a token's identity.
      */
@@ -193,7 +196,15 @@ public final class TokenMeta {
      */
     public String formatAmount(BigInteger amount) {
         return formatUnits(amount, hasMetadata ? decimals : 0)
-                + (hasMetadata ? " " + symbol : "");
+                + (hasMetadata ? " " + shownSymbol() : "");
+    }
+
+    // shownSymbol returns the base symbol, up to the first hyphen, as the CHIP has amounts show it,
+    // and no more of it than leaves room for what else a row shows.
+    private String shownSymbol() {
+        int hyphen = symbol.indexOf('-');
+        String base = hyphen > 0 ? symbol.substring(0, hyphen) : symbol;
+        return base.length() <= MAX_SHOWN_SYMBOL ? base : base.substring(0, MAX_SHOWN_SYMBOL) + "…";
     }
 
     /**

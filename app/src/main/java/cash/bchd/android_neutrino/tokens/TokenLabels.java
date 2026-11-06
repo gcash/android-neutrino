@@ -91,6 +91,22 @@ public final class TokenLabels {
     }
 
     /**
+     * listAmount shows an amount where no badge shows, as in a transaction's row: without the
+     * symbol of a look-alike, as an amount of it is made to read as an amount of something else.
+     */
+    public static String listAmount(String category, BigInteger amount) {
+        return isLookAlike(category) ? number(category, amount) : amount(category, amount);
+    }
+
+    /**
+     * isLookAlike returns whether a token has the name or symbol of another.
+     */
+    public static boolean isLookAlike(String category) {
+        TokenMeta token = TOKENS.get(category);
+        return token != null && token.lookAlike;
+    }
+
+    /**
      * listTitle returns what to call a token where no badge shows, as in a transaction's row:
      * the name only if it can be trusted, as a look-alike's name is made to mislead.
      */

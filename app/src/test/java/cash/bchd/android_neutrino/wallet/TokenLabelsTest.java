@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.math.BigInteger;
 import java.util.Collections;
 
 import cash.bchd.android_neutrino.R;
@@ -148,5 +149,22 @@ public class TokenLabelsTest {
         update(token().setStatus(Api.TokenMetadataResponse.Status.VERIFIED));
         assertEquals(null, TokenLabels.listNftName(CATEGORY, "01"));
         assertFalse(TokenLabels.hasNftTypes(CATEGORY));
+    }
+
+    @Test
+    public void aLookAlikesAmountLeavesOutItsSymbolWhereNoBadgeShows() {
+        update(token().setLookAlike(true));
+        assertEquals("15", TokenLabels.listAmount(CATEGORY, BigInteger.valueOf(1500)));
+        assertEquals("15 SYM", TokenLabels.amount(CATEGORY, BigInteger.valueOf(1500)));
+        update(token());
+        assertEquals("15 SYM", TokenLabels.listAmount(CATEGORY, BigInteger.valueOf(1500)));
+    }
+
+    @Test
+    public void amountsShowTheBaseSymbolAndNoMoreThanFitsARow() {
+        update(token().setSymbol("MUSD-A"));
+        assertEquals("15 MUSD", TokenLabels.amount(CATEGORY, BigInteger.valueOf(1500)));
+        update(token().setSymbol("ABCDEFGHIJKLMNOPQRSTUVWXYZ"));
+        assertEquals("15 ABCDEFGHIJKLMNOP\u2026", TokenLabels.amount(CATEGORY, BigInteger.valueOf(1500)));
     }
 }

@@ -252,8 +252,8 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         Bitmap icon = icons.get(key);
         if (icon == null) {
             int size = ctx.getResources().getDimensionPixelSize(R.dimen.token_row_icon);
-            icon = commitment == null ? TokenIcons.bitmap(ctx, category, size)
-                    : TokenIcons.nftBitmap(ctx, category, commitment, size);
+            icon = commitment == null ? TokenIcons.listBitmap(ctx, category, size)
+                    : TokenIcons.listNftBitmap(ctx, category, commitment, size);
             icons.put(key, icon);
         }
         return icon;
@@ -295,6 +295,8 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
      */
     void labelsChanged() {
         askedTypes.clear();
+        // Icons drawn before the labels came may be of look-alikes.
+        icons.evictAll();
         notifyItemRangeChanged(0, getItemCount());
     }
 

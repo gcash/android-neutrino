@@ -103,6 +103,22 @@ public final class TokenIcons {
     }
 
     /**
+     * listBitmap returns a token's icon where no badge shows, as in a transaction's row: the
+     * identicon of a look-alike, as its icon is made to read as another token's.
+     */
+    public static Bitmap listBitmap(Context context, String category, int size) {
+        return TokenLabels.isLookAlike(category) ? Identicon.of(category).bitmap(size) : bitmap(context, category, size);
+    }
+
+    /**
+     * listNftBitmap returns an NFT's art where no badge shows, as listBitmap does a token's.
+     */
+    public static Bitmap listNftBitmap(Context context, String category, String commitment, int size) {
+        return TokenLabels.isLookAlike(category) ? Identicon.of(category).bitmap(size)
+                : nftBitmap(context, category, commitment, size);
+    }
+
+    /**
      * nftBitmap returns an NFT's own art at the size, or else its token's icon.
      */
     public static Bitmap nftBitmap(Context context, String category, String commitment, int size) {
