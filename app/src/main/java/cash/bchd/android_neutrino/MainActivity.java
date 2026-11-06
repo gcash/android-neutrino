@@ -69,6 +69,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -117,6 +118,8 @@ public class MainActivity extends CloseActivity {
     PopupWindow qrPopup;
     TransactionStore txStore;
     TransactionAdapter mAdapter;
+    // Which icons the rows show, to tell when that changes.
+    private String shownTokenIcons;
     TokenAdapter tokenAdapter;
     private static final int TOKEN_LABELS_PER_CALL = 50;
     private static final long TOKEN_LABELS_INTERVAL_MS = 10_000;
@@ -809,7 +812,7 @@ public class MainActivity extends CloseActivity {
         if (wallet == null || !wallet.isRunning() || shown.isEmpty()) {
             return;
         }
-        TokenIcons.configure(settings.getTokenImages(), settings.getLoadedIcons());
+        showTokenIcons();
         List<String> categories = new ArrayList<>();
         for (TokenBalance token : shown) {
             categories.add(token.category);
@@ -862,6 +865,24 @@ public class MainActivity extends CloseActivity {
         }
     }
 
+    // showTokenIcons says which icons to show, and redraws the rows if that changed, as when the
+    // user loaded one from a token's screen.
+    private void showTokenIcons() {
+        boolean all = settings.getTokenImages();
+        Set<String> loaded = settings.getLoadedIcons();
+        TokenIcons.configure(all, loaded);
+        String shown = all + " " + new TreeSet<>(loaded);
+        if (!shown.equals(shownTokenIcons)) {
+            shownTokenIcons = shown;
+            runOnUiThread(this::redrawTokenIcons);
+        }
+    }
+
+    private void redrawTokenIcons() {
+        tokenAdapter.iconsChanged();
+        mAdapter.iconsChanged();
+    }
+
     // loadTokenIcons loads the icons of the tokens that don't have theirs yet.
     private void loadTokenIcons(Wallet wallet, List<TokenMeta> tokens) {
         for (TokenMeta token : tokens) {
@@ -873,7 +894,7 @@ public class MainActivity extends CloseActivity {
                 @Override
                 public void onSuccess(byte[] data) {
                     if (TokenIcons.save(MainActivity.this, token.category, data)) {
-                        runOnUiThread(() -> tokenAdapter.iconsChanged());
+                        runOnUiThread(MainActivity.this::redrawTokenIcons);
                     }
                 }
 

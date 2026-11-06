@@ -20,7 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
-import cash.bchd.android_neutrino.tokens.Identicon;
+import cash.bchd.android_neutrino.tokens.TokenIcons;
 import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Network;
@@ -41,7 +41,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     // The popup with a transaction's details, and the transaction, while it shows.
     private PopupWindow detailsPopup;
     private TransactionData detailsTx;
-    // The identicons of the tokens that rows lead with, by token ID.
+    // The icons of the tokens that rows lead with, by token ID.
     private final LruCache<String, Bitmap> icons = new LruCache<>(64);
 
     // Provide a reference to the views for each data item
@@ -127,7 +127,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             bindTokens(holder, tx);
             return;
         }
-        // A token's row, which this one may be reused from, draws its identicon unscaled.
+        // A token's row, which this one may be reused from, draws its icon unscaled.
         holder.arrowImage.setScaleType(ImageView.ScaleType.FIT_CENTER);
         String bch = "₿" + new Amount(tx.getAmount()).toString();
         holder.bchAmount.setText(bch);
@@ -169,7 +169,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     }
 
     // bindTokens draws the row of a transaction that moved tokens, which leads with the first
-    // token it moved: its identicon, whether the wallet received or sent it, its memo or the
+    // token it moved: its icon, whether the wallet received or sent it, its memo or the
     // token's short ID, with how many more tokens it moved, and how much of the token. Below the
     // amount are the confirmations, then, once they're ten, the change of the spendable balance,
     // if it's the floor or more either way, as the BCH that tokens carry isn't spendable.
@@ -207,10 +207,18 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     private Bitmap icon(String category) {
         Bitmap icon = icons.get(category);
         if (icon == null) {
-            icon = Identicon.of(category).bitmap(ctx.getResources().getDimensionPixelSize(R.dimen.token_row_icon));
+            icon = TokenIcons.bitmap(ctx, category, ctx.getResources().getDimensionPixelSize(R.dimen.token_row_icon));
             icons.put(category, icon);
         }
         return icon;
+    }
+
+    /**
+     * iconsChanged redraws the rows with the icons that were loaded.
+     */
+    void iconsChanged() {
+        icons.evictAll();
+        notifyItemRangeChanged(0, getItemCount());
     }
 
     /**

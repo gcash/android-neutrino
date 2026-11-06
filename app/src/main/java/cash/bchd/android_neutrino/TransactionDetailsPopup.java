@@ -13,7 +13,7 @@ import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
-import cash.bchd.android_neutrino.tokens.Identicon;
+import cash.bchd.android_neutrino.tokens.TokenIcons;
 import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Network;
@@ -51,13 +51,13 @@ final class TransactionDetailsPopup {
         TextView fiatAmount = customView.findViewById(R.id.txDetailsFiatAmount);
         fiatAmount.setText(tx.getFiatAmount());
 
-        // A row for each token the transaction moved: its identicon and short ID, and how much.
+        // A row for each token the transaction moved: its icon and what to call it, and how much.
         LinearLayout tokens = customView.findViewById(R.id.txDetailsTokens);
         int iconSize = ctx.getResources().getDimensionPixelSize(R.dimen.token_details_icon);
         for (TokenChange change : tx.getTokens()) {
             View row = LayoutInflater.from(ctx).inflate(R.layout.txdetails_token_row, tokens, false);
             ImageView icon = row.findViewById(R.id.txDetailsTokenIcon);
-            icon.setImageBitmap(Identicon.of(change.category).bitmap(iconSize));
+            icon.setImageBitmap(TokenIcons.bitmap(ctx, change.category, iconSize));
             TextView id = row.findViewById(R.id.txDetailsTokenId);
             TokenLabels.showTitle(id, change.category, TokenLabels.listTitle(change.category), false);
             TextView amount = row.findViewById(R.id.txDetailsTokenChange);
