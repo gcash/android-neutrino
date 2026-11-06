@@ -273,7 +273,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         if (wallet == null || !wallet.isRunning() || !askedTypes.add(category)) {
             return;
         }
-        Futures.addCallback(wallet.tokenMetadataAsync(Collections.singletonList(category), true),
+        Futures.addCallback(wallet.peekTokenMetadataAsync(Collections.singletonList(category), true),
                 new FutureCallback<List<TokenMeta>>() {
                     @Override
                     public void onSuccess(List<TokenMeta> tokens) {

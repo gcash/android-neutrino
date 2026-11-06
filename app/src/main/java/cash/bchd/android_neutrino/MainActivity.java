@@ -65,6 +65,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Currency;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ConcurrentHashMap;
@@ -85,6 +86,7 @@ import cash.bchd.android_neutrino.wallet.ExchangeRates;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.SyncStatus;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
+import cash.bchd.android_neutrino.wallet.TokenChange;
 import cash.bchd.android_neutrino.wallet.TokenMeta;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 import cash.bchd.android_neutrino.wallet.TransactionList;
@@ -812,13 +814,14 @@ public class MainActivity extends CloseActivity {
     private void askTokenLabels(List<TokenBalance> shown) {
         showTokenIcons();
         Wallet wallet = Wallet.getInstance();
-        if (wallet == null || !wallet.isRunning() || shown.isEmpty()) {
+        if (wallet == null || !wallet.isRunning()) {
             return;
         }
         List<String> categories = new ArrayList<>();
         for (TokenBalance token : shown) {
             categories.add(token.category);
         }
+        runOnUiThread(() -> peekTokenLabels(wallet, categories));
 
         // In parts, so that a reply stays well under what gRPC takes.
         for (List<String> part : Lists.partition(categories, TOKEN_LABELS_PER_CALL)) {
@@ -836,6 +839,36 @@ public class MainActivity extends CloseActivity {
                     }
                     if (searching(tokens)) {
                         askTokenLabelsSoon();
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    t.printStackTrace();
+                }
+            }, MoreExecutors.directExecutor());
+        }
+    }
+
+    // peekTokenLabels asks what the wallet already knows of the tokens in the transactions that it
+    // doesn't hold any more, so that their rows read right, without having them load.
+    private void peekTokenLabels(Wallet wallet, List<String> held) {
+        Set<String> hidden = settings.getHiddenTokens();
+        Set<String> unknown = new HashSet<>();
+        for (TransactionData tx : mAdapter.getData()) {
+            for (TokenChange change : tx.getTokens()) {
+                if (TokenLabels.get(change.category) == null && !hidden.contains(change.category)) {
+                    unknown.add(change.category);
+                }
+            }
+        }
+        unknown.removeAll(held);
+        for (List<String> part : Lists.partition(new ArrayList<>(unknown), TOKEN_LABELS_PER_CALL)) {
+            Futures.addCallback(wallet.peekTokenMetadataAsync(part, false), new FutureCallback<List<TokenMeta>>() {
+                @Override
+                public void onSuccess(List<TokenMeta> tokens) {
+                    if (TokenLabels.update(tokens)) {
+                        runOnUiThread(() -> mAdapter.labelsChanged());
                     }
                 }
 
@@ -1192,6 +1225,7 @@ public class MainActivity extends CloseActivity {
                                 boolean atTop = rows == null || rows.findFirstVisibleItemPosition() <= 0;
                                 mainActivity2.mAdapter.setNewData(TransactionList.withoutHidden(list,
                                         mainActivity2.settings.getHiddenTokens()));
+                                mainActivity2.showTokens(mainActivity2.settings.getLastTokens());
                                 if (atTop && rows != null) {
                                     rows.scrollToPosition(0);
                                 }

@@ -204,7 +204,7 @@ final class TransactionDetailsPopup {
         if (categories.isEmpty() || wallet == null || !wallet.isRunning()) {
             return;
         }
-        Futures.addCallback(wallet.tokenMetadataAsync(new ArrayList<>(categories), true),
+        Futures.addCallback(wallet.peekTokenMetadataAsync(new ArrayList<>(categories), true),
                 new FutureCallback<List<TokenMeta>>() {
                     @Override
                     public void onSuccess(List<TokenMeta> tokens) {

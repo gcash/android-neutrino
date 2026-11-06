@@ -630,11 +630,23 @@ public class Wallet implements Serializable {
      * show.
      */
     public ListenableFuture<List<TokenMeta>> tokenMetadataAsync(List<String> categories, boolean nftTypes) {
+        return tokenMetadataAsync(categories, nftTypes, false);
+    }
+
+    /**
+     * peekTokenMetadataAsync returns what the wallet already knows of the tokens, without having
+     * them load, for tokens it no longer holds.
+     */
+    public ListenableFuture<List<TokenMeta>> peekTokenMetadataAsync(List<String> categories, boolean nftTypes) {
+        return tokenMetadataAsync(categories, nftTypes, true);
+    }
+
+    private ListenableFuture<List<TokenMeta>> tokenMetadataAsync(List<String> categories, boolean nftTypes, boolean peek) {
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel)
                 .withCallCredentials(this.creds).withDeadlineAfter(10, TimeUnit.SECONDS);
         return Futures.transform(stub.tokenMetadata(
                 Api.TokenMetadataRequest.newBuilder().addAllCategories(categories)
-                        .setIncludeNftTypes(nftTypes).build()),
+                        .setIncludeNftTypes(nftTypes).setPeek(peek).build()),
                 TokenMeta::of, MoreExecutors.directExecutor());
     }
 
