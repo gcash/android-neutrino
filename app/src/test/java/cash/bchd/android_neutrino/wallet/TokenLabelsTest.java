@@ -110,4 +110,40 @@ public class TokenLabelsTest {
         update(Api.TokenMetadataResponse.Token.newBuilder().setCategory(CATEGORY).setRegistryFailed(true));
         assertEquals(R.string.token_registry_failed, TokenLabels.badge(CATEGORY));
     }
+
+    private static Api.TokenMetadataResponse.NftType nft() {
+        return Api.TokenMetadataResponse.NftType.newBuilder().setCommitment("01").setName("One").build();
+    }
+
+    @Test
+    public void anAnswerWithoutNftTypesKeepsThem() {
+        update(token().addNftTypes(nft()));
+        assertFalse(update(token()));
+        assertEquals("One", TokenLabels.nftName(CATEGORY, "01"));
+    }
+
+    @Test
+    public void anotherTokenNameDropsTheNftTypes() {
+        update(token().addNftTypes(nft()));
+        update(token().setName("Other"));
+        assertEquals(null, TokenLabels.nftName(CATEGORY, "01"));
+    }
+
+    @Test
+    public void listsNameAnNftOnlyIfItCanBeTrusted() {
+        update(token().addNftTypes(nft()));
+        assertEquals(null, TokenLabels.listNftName(CATEGORY, "01"));
+        update(token().addNftTypes(nft()).setStatus(Api.TokenMetadataResponse.Status.VERIFIED));
+        assertEquals("One", TokenLabels.listNftName(CATEGORY, "01"));
+        update(token().addNftTypes(nft()).setStatus(Api.TokenMetadataResponse.Status.VERIFIED).setRegistryChanged(true));
+        assertEquals(null, TokenLabels.listNftName(CATEGORY, "01"));
+    }
+
+    @Test
+    public void namesFromAFileNobodyVouchesForAreNotKeptOnceItsVerified() {
+        update(token().addNftTypes(nft()).setStatus(Api.TokenMetadataResponse.Status.VERIFIED).setRegistryChanged(true));
+        update(token().setStatus(Api.TokenMetadataResponse.Status.VERIFIED));
+        assertEquals(null, TokenLabels.listNftName(CATEGORY, "01"));
+        assertFalse(TokenLabels.hasNftTypes(CATEGORY));
+    }
 }

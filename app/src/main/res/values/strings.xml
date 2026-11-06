@@ -207,6 +207,8 @@
     <string name="nft_in_with">+NFT %1$s</string>
     <string name="nft_out">-NFT</string>
     <string name="nft_out_with">-NFT %1$s</string>
+    <string name="nft_in_named">+%1$s</string>
+    <string name="nft_out_named">-%1$s</string>
     <string name="token_sent">Sent</string>
     <string name="send_all_leaves_tokens">Send All sends the BCH you can spend. The wallet\'s CashTokens stay here, with the %1$s BCH they carry, as this app can\'t send tokens yet. Keep this wallet\'s recovery phrase to keep them.</string>
     <string name="restore_loses_tokens">This wallet also holds CashTokens, with %1$s BCH. They\'re lost too unless you have this wallet\'s recovery phrase.</string>

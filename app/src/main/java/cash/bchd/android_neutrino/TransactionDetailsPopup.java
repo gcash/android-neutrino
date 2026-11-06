@@ -13,13 +13,26 @@ import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.MoreExecutors;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import cash.bchd.android_neutrino.tokens.TokenIcons;
 import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
 import cash.bchd.android_neutrino.wallet.TokenChange;
+import cash.bchd.android_neutrino.wallet.TokenMeta;
 import cash.bchd.android_neutrino.wallet.TransactionData;
+import cash.bchd.android_neutrino.wallet.Wallet;
 
 /**
  * TransactionDetailsPopup shows a transaction's details in a popup over a screen's layout: its
@@ -54,6 +67,7 @@ final class TransactionDetailsPopup {
         // A row for each token the transaction moved: its icon and what to call it, and how much.
         LinearLayout tokens = customView.findViewById(R.id.txDetailsTokens);
         int iconSize = ctx.getResources().getDimensionPixelSize(R.dimen.token_details_icon);
+        Map<TokenChange, TextView> amounts = new HashMap<>();
         for (TokenChange change : tx.getTokens()) {
             View row = LayoutInflater.from(ctx).inflate(R.layout.txdetails_token_row, tokens, false);
             ImageView icon = row.findViewById(R.id.txDetailsTokenIcon);
@@ -62,6 +76,7 @@ final class TransactionDetailsPopup {
             TokenLabels.showTitle(id, change.category, TokenLabels.listTitle(change.category), false);
             TextView amount = row.findViewById(R.id.txDetailsTokenChange);
             amount.setText(TokenTexts.details(ctx, change));
+            amounts.put(change, amount);
             tokens.addView(row);
         }
         tokens.setVisibility(tx.getTokens().isEmpty() ? View.GONE : View.VISIBLE);
@@ -106,7 +121,47 @@ final class TransactionDetailsPopup {
 
         TextView link = customView.findViewById(R.id.txDetailsLink);
         link.setText(network.explorerUrl(tx.getTxid()));
-        return open(ctx, layout, customView);
+        PopupWindow popupWindow = open(ctx, layout, customView);
+        showNftNames(ctx, layout, popupWindow, customView, amounts);
+        return popupWindow;
+    }
+
+    // showNftNames asks the wallet what the NFTs are called, if it hasn't said, as it only says for
+    // a few tokens at a time, and has the details say so.
+    private static void showNftNames(Context ctx, ViewGroup layout, PopupWindow popupWindow, View details,
+                                     Map<TokenChange, TextView> amounts) {
+        Set<String> categories = new HashSet<>();
+        for (TokenChange change : amounts.keySet()) {
+            boolean nfts = !change.nftsReceived().isEmpty() || !change.nftsSent().isEmpty();
+            if (nfts && !TokenLabels.hasNftTypes(change.category)) {
+                categories.add(change.category);
+            }
+        }
+        Wallet wallet = Wallet.getInstance();
+        if (categories.isEmpty() || wallet == null || !wallet.isRunning()) {
+            return;
+        }
+        Futures.addCallback(wallet.tokenMetadataAsync(new ArrayList<>(categories), true),
+                new FutureCallback<List<TokenMeta>>() {
+                    @Override
+                    public void onSuccess(List<TokenMeta> tokens) {
+                        TokenLabels.update(tokens);
+                        details.post(() -> {
+                            if (!popupWindow.isShowing()) {
+                                return;
+                            }
+                            for (Map.Entry<TokenChange, TextView> amount : amounts.entrySet()) {
+                                amount.getValue().setText(TokenTexts.details(ctx, amount.getKey()));
+                            }
+                            popupWindow.update(popupWindow.getWidth(), fit(ctx, layout, details, popupWindow.getWidth()));
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        t.printStackTrace();
+                    }
+                }, MoreExecutors.directExecutor());
     }
 
     // open shows the details in the middle of the layout, as wide as a phone allows, and as tall
@@ -115,14 +170,19 @@ final class TransactionDetailsPopup {
         int margin = ctx.getResources().getDimensionPixelSize(R.dimen.tx_details_margin);
         int width = Math.min(ctx.getResources().getDimensionPixelSize(R.dimen.tx_details_width),
                 layout.getWidth() - 2 * margin);
-        details.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-        int height = Math.min(details.getMeasuredHeight(), layout.getHeight() - 2 * margin);
-        PopupWindow popupWindow = new PopupWindow(details, width, height, true);
+        PopupWindow popupWindow = new PopupWindow(details, width, fit(ctx, layout, details, width), true);
         popupWindow.setOutsideTouchable(true);
         popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         popupWindow.showAtLocation(layout, Gravity.CENTER, 0, 0);
         return popupWindow;
+    }
+
+    // fit returns the height of the details at the width, up to what fits in the layout.
+    private static int fit(Context ctx, ViewGroup layout, View details, int width) {
+        int margin = ctx.getResources().getDimensionPixelSize(R.dimen.tx_details_margin);
+        details.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        return Math.min(details.getMeasuredHeight(), layout.getHeight() - 2 * margin);
     }
 
     // recipients says in full whom a sent transaction paid, or is null if no output that pays

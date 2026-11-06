@@ -11,6 +11,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -55,7 +57,9 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
     /**
      * setNfts shows the NFTs, adding, removing, moving and redrawing only the rows that changed.
      */
-    public void setNfts(List<TokenNft> nfts) {
+    public void setNfts(List<TokenNft> unsorted) {
+        List<TokenNft> nfts = new ArrayList<>(unsorted);
+        nfts.sort(this::compareNames);
         List<TokenNft> shown = this.nfts;
         DiffUtil.DiffResult diff = DiffUtil.calculateDiff(new DiffUtil.Callback() {
             @Override
@@ -85,10 +89,63 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
     }
 
     /**
-     * labelsChanged redraws the rows, as the wallet said more of the NFTs.
+     * labelsChanged sorts and redraws the rows, as the wallet said more of the NFTs.
      */
     public void labelsChanged() {
+        setNfts(nfts);
         notifyItemRangeChanged(0, nfts.size());
+    }
+
+    // compareNames puts the NFTs with names first, in the order of their names, and leaves the
+    // rest as they came.
+    private int compareNames(TokenNft a, TokenNft b) {
+        String nameA = TokenLabels.nftName(category, a.commitment);
+        String nameB = TokenLabels.nftName(category, b.commitment);
+        if (nameA == null || nameB == null) {
+            return Boolean.compare(nameA == null, nameB == null);
+        }
+        return compareNatural(nameA, nameB);
+    }
+
+    /**
+     * compareNatural orders names as a person reads them, with a run of digits as its number, so
+     * that Puffer #192 comes before Puffer #1144.
+     */
+    static int compareNatural(String a, String b) {
+        int i = 0;
+        int j = 0;
+        while (i < a.length() && j < b.length()) {
+            if (isDigit(a.charAt(i)) && isDigit(b.charAt(j))) {
+                int endA = digitsEnd(a, i);
+                int endB = digitsEnd(b, j);
+                int order = new BigInteger(a.substring(i, endA)).compareTo(new BigInteger(b.substring(j, endB)));
+                if (order != 0) {
+                    return order;
+                }
+                i = endA;
+                j = endB;
+            } else {
+                int order = Character.compare(Character.toLowerCase(a.charAt(i)), Character.toLowerCase(b.charAt(j)));
+                if (order != 0) {
+                    return order;
+                }
+                i++;
+                j++;
+            }
+        }
+        return Integer.compare(a.length() - i, b.length() - j);
+    }
+
+    private static boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+
+    private static int digitsEnd(String text, int start) {
+        int end = start;
+        while (end < text.length() && isDigit(text.charAt(end))) {
+            end++;
+        }
+        return end;
     }
 
     @NonNull

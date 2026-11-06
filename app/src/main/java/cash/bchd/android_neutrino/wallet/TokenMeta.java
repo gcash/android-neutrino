@@ -5,7 +5,9 @@ import java.math.BigInteger;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import walletrpc.Api;
@@ -68,6 +70,7 @@ public final class TokenMeta {
     // Whether the token published a registry that nothing could be read from.
     public final boolean registryFailed;
     public final List<NftType> nftTypes;
+    private final Map<String, NftType> nftTypesByCommitment;
 
     TokenMeta(Api.TokenMetadataResponse.Token token) {
         category = token.getCategory();
@@ -91,6 +94,51 @@ public final class TokenMeta {
             types.add(new NftType(type));
         }
         nftTypes = Collections.unmodifiableList(types);
+        nftTypesByCommitment = byCommitment(nftTypes);
+    }
+
+    // A copy of the token with the NFT types.
+    private TokenMeta(TokenMeta token, List<NftType> types) {
+        category = token.category;
+        hasMetadata = token.hasMetadata;
+        name = token.name;
+        description = token.description;
+        symbol = token.symbol;
+        decimals = token.decimals;
+        iconUri = token.iconUri;
+        webUri = token.webUri;
+        status = token.status;
+        known = token.known;
+        loadsByItself = token.loadsByItself;
+        lookAlike = token.lookAlike;
+        burned = token.burned;
+        stale = token.stale;
+        registryChanged = token.registryChanged;
+        registryFailed = token.registryFailed;
+        nftTypes = types;
+        nftTypesByCommitment = byCommitment(types);
+    }
+
+    private static Map<String, NftType> byCommitment(List<NftType> types) {
+        Map<String, NftType> map = new HashMap<>();
+        for (NftType type : types) {
+            map.put(type.commitment, type);
+        }
+        return map;
+    }
+
+    /**
+     * keepingNftTypes returns the token with the NFT types of what was said of it before, if it
+     * came without any, as an answer about many tokens does, and it's still the same token, as
+     * far to be trusted.
+     */
+    public TokenMeta keepingNftTypes(TokenMeta before) {
+        if (before == null || !nftTypes.isEmpty() || before.nftTypes.isEmpty() || !hasMetadata
+                || !name.equals(before.name) || !symbol.equals(before.symbol)
+                || verified() != before.verified()) {
+            return this;
+        }
+        return new TokenMeta(this, before.nftTypes);
     }
 
     private static Status statusOf(Api.TokenMetadataResponse.Status status) {
@@ -129,12 +177,7 @@ public final class TokenMeta {
      * nftType returns what the registry says of the NFT with the commitment, or null.
      */
     public NftType nftType(String commitment) {
-        for (NftType type : nftTypes) {
-            if (type.commitment.equals(commitment)) {
-                return type;
-            }
-        }
-        return null;
+        return nftTypesByCommitment.get(commitment);
     }
 
     /**

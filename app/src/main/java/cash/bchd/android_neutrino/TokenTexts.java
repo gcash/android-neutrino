@@ -3,6 +3,8 @@ package cash.bchd.android_neutrino;
 import android.content.Context;
 import android.text.TextUtils;
 
+import androidx.annotation.StringRes;
+
 import java.math.BigInteger;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -36,7 +38,7 @@ final class TokenTexts {
 
     /**
      * details says, a line for each, how the transaction changed the token: its fungible amount,
-     * and each NFT that came or went, with its commitment.
+     * and each NFT that came or went, by name or commitment.
      */
     static String details(Context ctx, TokenChange change) {
         List<String> lines = new ArrayList<>();
@@ -44,18 +46,29 @@ final class TokenTexts {
             lines.add(signed(change.category, change.amount));
         }
         for (String commitment : change.nftsReceived()) {
-            lines.add(commitment.isEmpty() ? ctx.getString(R.string.nft_in)
-                    : ctx.getString(R.string.nft_in_with, NftAdapter.shortCommitment(commitment)));
+            lines.add(nftLine(ctx, change.category, commitment, R.string.nft_in, R.string.nft_in_with,
+                    R.string.nft_in_named));
         }
         for (String commitment : change.nftsSent()) {
-            lines.add(commitment.isEmpty() ? ctx.getString(R.string.nft_out)
-                    : ctx.getString(R.string.nft_out_with, NftAdapter.shortCommitment(commitment)));
+            lines.add(nftLine(ctx, change.category, commitment, R.string.nft_out, R.string.nft_out_with,
+                    R.string.nft_out_named));
         }
         // A change saved before the app kept the NFTs' commitments has how many only.
         if (change.nfts != 0 && change.nftsReceived().isEmpty() && change.nftsSent().isEmpty()) {
             lines.add(nfts(ctx, change.nfts));
         }
         return TextUtils.join("\n", lines);
+    }
+
+    // nftLine says an NFT came or went, by its name if it has one to trust, or else its commitment.
+    private static String nftLine(Context ctx, String category, String commitment, @StringRes int bare,
+                                  @StringRes int withCommitment, @StringRes int named) {
+        String name = TokenLabels.listNftName(category, commitment);
+        if (name != null) {
+            return ctx.getString(named, name);
+        }
+        return commitment.isEmpty() ? ctx.getString(bare)
+                : ctx.getString(withCommitment, NftAdapter.shortCommitment(commitment));
     }
 
     private static String nfts(Context ctx, int nfts) {

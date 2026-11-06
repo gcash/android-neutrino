@@ -32,7 +32,10 @@ public final class TokenLabels {
     public static boolean update(List<TokenMeta> tokens) {
         boolean changed = false;
         for (TokenMeta token : tokens) {
-            changed |= !token.equals(TOKENS.put(token.category, token));
+            TokenMeta before = TOKENS.get(token.category);
+            TokenMeta now = token.keepingNftTypes(before);
+            TOKENS.put(token.category, now);
+            changed |= !now.equals(before);
         }
         return changed;
     }
@@ -101,6 +104,23 @@ public final class TokenLabels {
         TokenMeta token = TOKENS.get(category);
         TokenMeta.NftType type = token == null ? null : token.nftType(commitment);
         return type == null ? null : type.name;
+    }
+
+    /**
+     * listNftName returns what to call an NFT where no badge shows, as in a transaction's details:
+     * its name only if it can be trusted, as with listTitle, or else null.
+     */
+    public static String listNftName(String category, String commitment) {
+        TokenMeta token = TOKENS.get(category);
+        return token != null && token.verified() && !token.lookAlike ? nftName(category, commitment) : null;
+    }
+
+    /**
+     * hasNftTypes returns whether the wallet said what the token's NFTs are called.
+     */
+    public static boolean hasNftTypes(String category) {
+        TokenMeta token = TOKENS.get(category);
+        return token != null && !token.nftTypes.isEmpty();
     }
 
     /**
