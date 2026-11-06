@@ -57,11 +57,8 @@ final class TransactionDetailsPopup {
         View customView = LayoutInflater.from(ctx).inflate(R.layout.txdetailspopup, layout, false);
 
         ImageView arrow = customView.findViewById(R.id.txDetailsArrow);
-        if (tx.getIncoming()) {
-            arrow.setImageResource(R.drawable.receive_arrow);
-        } else {
-            arrow.setImageResource(R.drawable.send_arrow);
-        }
+        arrow.setImageResource(tx.shownIncoming() ? R.drawable.receive_arrow : R.drawable.send_arrow);
+        arrow.setVisibility(tx.swapped() ? View.GONE : View.VISIBLE);
         TextView bchAmount = customView.findViewById(R.id.txDetailsBchAmount);
         String detailsAmount = ctx.getString(R.string.bch_amount, new Amount(tx.shownAmount()).toString());
         bchAmount.setText(detailsAmount);

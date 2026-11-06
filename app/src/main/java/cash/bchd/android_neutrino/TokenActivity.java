@@ -8,8 +8,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.TextUtils;
-import android.text.method.ScrollingMovementMethod;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -79,8 +77,6 @@ public class TokenActivity extends AppCompatActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
     // Whether the user asked for the token's metadata on this screen.
     private boolean fetched;
-    // Whether the description shows in full.
-    private boolean descriptionOpen;
     // Whether the collection's NFTs can show, as they sort by the names the wallet says, and
     // shouldn't jump to their places once it has.
     private boolean nftsReady;
@@ -94,8 +90,6 @@ public class TokenActivity extends AppCompatActivity {
             askWallet();
         }
     });
-    private static final int DESCRIPTION_LINES = 3;
-    private static final int DESCRIPTION_OPEN_LINES = 10;
     private static final long ASK_INTERVAL_MS = 5_000;
 
     /**
@@ -182,7 +176,7 @@ public class TokenActivity extends AppCompatActivity {
         tokens = settings.getLastTokens();
         showIcon();
         showTokenId(this, findViewById(R.id.tokenId), layout, category);
-        findViewById(R.id.tokenDescription).setOnClickListener(v -> toggleDescription((TextView) v));
+        DescriptionToggle.attach(findViewById(R.id.tokenDescription), true);
 
         RecyclerView list = findViewById(R.id.tokenHistory);
         list.setLayoutManager(new LinearLayoutManager(this));
@@ -261,21 +255,6 @@ public class TokenActivity extends AppCompatActivity {
         if (!nftsReady) {
             nftsReady = true;
             showToken(tokens);
-        }
-    }
-
-    // toggleDescription shows all of the description, which scrolls in place if it's long, as the
-    // screen's list still has to show, or goes back to its first lines.
-    private void toggleDescription(TextView description) {
-        descriptionOpen = !descriptionOpen;
-        description.setMaxLines(descriptionOpen ? DESCRIPTION_OPEN_LINES : DESCRIPTION_LINES);
-        description.setEllipsize(descriptionOpen ? null : TextUtils.TruncateAt.END);
-        description.setMovementMethod(descriptionOpen ? ScrollingMovementMethod.getInstance() : null);
-        description.scrollTo(0, 0);
-        if (!descriptionOpen) {
-            // Clearing the movement leaves the view unclickable, and text that can't ellipsize.
-            description.setClickable(true);
-            description.setText(description.getText().toString());
         }
     }
 
@@ -477,7 +456,11 @@ public class TokenActivity extends AppCompatActivity {
         TextView bch = findViewById(R.id.tokenBch);
         String nftText = getResources().getQuantityString(R.plurals.token_nfts, token.nfts, token.nfts);
         if (collection) {
-            amount.setText(nftText);
+            // The rows are the collection, so how many there are is a detail.
+            amount.setVisibility(View.GONE);
+            TextView count = findViewById(R.id.tokenCount);
+            count.setText(nftText);
+            count.setVisibility(View.VISIBLE);
             nftLine.setVisibility(View.GONE);
             bch.setVisibility(View.GONE);
             if (nftsReady) {

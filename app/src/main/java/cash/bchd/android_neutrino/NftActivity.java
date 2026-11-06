@@ -111,6 +111,7 @@ public class NftActivity extends AppCompatActivity {
         layout = findViewById(R.id.nftLayout);
         art = new NftArt(this, (loadedCategory, loadedCommitment) -> showIcon());
         findViewById(R.id.nftArt).setOnClickListener(v -> togglePlaying());
+        DescriptionToggle.attach(findViewById(R.id.nftDescription), false);
 
         Toolbar toolbar = findViewById(R.id.nftToolbar);
         setSupportActionBar(toolbar);
@@ -401,16 +402,18 @@ public class NftActivity extends AppCompatActivity {
         switch (nft.capability) {
             case MINTING:
                 kind.setText(R.string.nft_kind_minting);
+                kind.setVisibility(View.VISIBLE);
                 explained.setText(R.string.nft_minting_explained);
                 explained.setVisibility(View.VISIBLE);
                 break;
             case MUTABLE:
                 kind.setText(R.string.nft_kind_mutable);
+                kind.setVisibility(View.VISIBLE);
                 explained.setText(R.string.nft_mutable_explained);
                 explained.setVisibility(View.VISIBLE);
                 break;
             default:
-                kind.setText(R.string.nft_kind_none);
+                kind.setVisibility(View.GONE);
                 explained.setVisibility(View.GONE);
         }
         TextView bch = findViewById(R.id.nftBch);

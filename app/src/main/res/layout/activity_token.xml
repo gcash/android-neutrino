@@ -118,6 +118,14 @@
                 android:textColor="@color/liteGrey"
                 android:textSize="13sp" />
 
+            <TextView
+                android:id="@+id/tokenCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/liteGrey"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
         </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView

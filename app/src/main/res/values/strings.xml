@@ -174,7 +174,6 @@
     <string name="token_received">Received</string>
     <!-- The line of a token's screen that opens its NFTs. -->
     <string name="token_nfts_open">%1$s ›</string>
-    <string name="nft_kind_none">NFT</string>
     <string name="nft_kind_mutable">Mutable NFT</string>
     <string name="nft_kind_minting">Minting NFT</string>
     <string name="nft_mutable_explained">Its commitment can be changed when it\'s sent.</string>

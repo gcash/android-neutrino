@@ -98,9 +98,10 @@
                 android:id="@+id/nftKind"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="4dp"
                 android:textColor="@android:color/white"
-                android:textSize="32sp" />
+                android:textSize="14sp"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/nftKindExplained"
@@ -149,6 +150,8 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="20dp"
+                    android:ellipsize="end"
+                    android:maxLines="3"
                     android:textColor="#000"
                     android:textSize="15sp"
                     android:visibility="gone" />
