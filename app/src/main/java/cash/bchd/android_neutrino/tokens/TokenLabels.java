@@ -9,6 +9,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import cash.bchd.android_neutrino.R;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
@@ -30,14 +31,17 @@ public final class TokenLabels {
      * update takes what the wallet said, and returns whether anything changed.
      */
     public static boolean update(List<TokenMeta> tokens) {
-        boolean changed = false;
+        AtomicBoolean changed = new AtomicBoolean();
         for (TokenMeta token : tokens) {
-            TokenMeta before = TOKENS.get(token.category);
-            TokenMeta now = token.keepingNftTypes(before);
-            TOKENS.put(token.category, now);
-            changed |= !now.equals(before);
+            TOKENS.compute(token.category, (category, before) -> {
+                TokenMeta now = token.keepingNftTypes(before);
+                if (!now.equals(before)) {
+                    changed.set(true);
+                }
+                return now;
+            });
         }
-        return changed;
+        return changed.get();
     }
 
     /**

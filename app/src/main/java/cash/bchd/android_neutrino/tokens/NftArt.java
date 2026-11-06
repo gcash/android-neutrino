@@ -111,8 +111,15 @@ public final class NftArt {
         Futures.addCallback(data, new FutureCallback<byte[]>() {
             @Override
             public void onSuccess(byte[] image) {
-                boolean saved = TokenIcons.saveNft(context, category, commitment, image);
-                HANDLER.post(() -> finished(category, commitment, saved));
+                // Whatever a stranger's file does, its turn has to end.
+                boolean saved = false;
+                try {
+                    saved = TokenIcons.saveNft(context, category, commitment, image);
+                } catch (RuntimeException | OutOfMemoryError e) {
+                    e.printStackTrace();
+                }
+                boolean done = saved;
+                HANDLER.post(() -> finished(category, commitment, done));
             }
 
             @Override

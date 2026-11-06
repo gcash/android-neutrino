@@ -3,7 +3,8 @@
      page, and Show. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="@dimen/list_row"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/list_row"
     android:gravity="center_vertical"
     android:orientation="horizontal">
 

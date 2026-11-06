@@ -2,7 +2,8 @@
 <!-- A row of a token's collection: an NFT's art, its name or commitment and what it can do. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="@dimen/list_row"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/list_row"
     android:gravity="center_vertical"
     android:orientation="horizontal">
 

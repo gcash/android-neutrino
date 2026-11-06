@@ -29,7 +29,7 @@ final class TokenTexts {
      */
     static String change(Context ctx, TokenChange change) {
         String amount = change.amount == 0 ? null : signed(change.category, change.amount);
-        String nfts = change.nfts == 0 ? null : nfts(ctx, change.nfts);
+        String nfts = nftsChange(ctx, change);
         if (amount == null) {
             return nfts;
         }
@@ -43,11 +43,21 @@ final class TokenTexts {
     static String changeOnTokenScreen(Context ctx, TokenChange change) {
         String amount = change.amount == 0 ? null
                 : (change.amount > 0 ? "+" : "") + TokenLabels.number(change.category, BigInteger.valueOf(change.amount));
-        String nfts = change.nfts == 0 ? null : nfts(ctx, change.nfts);
+        String nfts = nftsChange(ctx, change);
         if (amount == null) {
             return nfts;
         }
         return nfts == null ? amount : ctx.getString(R.string.token_amount_and_nfts, amount, nfts);
+    }
+
+    // nftsChange says how the NFTs changed, or both ways if as many came as went, or is null.
+    private static String nftsChange(Context ctx, TokenChange change) {
+        if (change.nfts != 0) {
+            return nfts(ctx, change.nfts);
+        }
+        int swapped = change.nftsReceived().size();
+        return swapped == 0 ? null
+                : ctx.getString(R.string.token_amount_and_nfts, nfts(ctx, swapped), nfts(ctx, -swapped));
     }
 
     /**

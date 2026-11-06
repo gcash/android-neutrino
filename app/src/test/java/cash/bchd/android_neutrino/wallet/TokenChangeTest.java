@@ -130,4 +130,14 @@ public class TokenChangeTest {
         assertEquals(null, new TokenChange("c", 0, 2, Arrays.asList("01", "02"), none).onlyNft());
         assertEquals(null, new TokenChange("c", 0, 1).onlyNft());
     }
+
+    @Test
+    public void keepsAnNftSwapThatComesToNoNftsMoreOrFewer() {
+        Api.TransactionDetails tx = Api.TransactionDetails.newBuilder()
+                .addDebits(debit(nft("aa", 0, (byte) 0x01)))
+                .addCredits(credit(nft("aa", 0, (byte) 0x02)))
+                .build();
+        assertEquals(Collections.singletonList(new TokenChange("aa", 0, 0,
+                Collections.singletonList("02"), Collections.singletonList("01"))), TokenChange.of(tx));
+    }
 }

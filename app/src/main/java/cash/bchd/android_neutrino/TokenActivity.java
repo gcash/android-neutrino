@@ -83,6 +83,9 @@ public class TokenActivity extends AppCompatActivity {
     // Whether the collection's NFTs can show, as they sort by the names the wallet says, and
     // shouldn't jump to their places once it has.
     private boolean nftsReady;
+    // The wallet's tokens as last told, which saved ones can be behind of.
+    private List<TokenBalance> tokens;
+    private final Runnable askAgain = this::askWallet;
     private static final int DESCRIPTION_LINES = 3;
     private static final int DESCRIPTION_OPEN_LINES = 10;
     private static final long ASK_INTERVAL_MS = 5_000;
@@ -168,6 +171,7 @@ public class TokenActivity extends AppCompatActivity {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
+        tokens = settings.getLastTokens();
         showIcon();
         showTokenId(this, findViewById(R.id.tokenId), layout, category);
         findViewById(R.id.tokenDescription).setOnClickListener(v -> toggleDescription((TextView) v));
@@ -190,7 +194,7 @@ public class TokenActivity extends AppCompatActivity {
             blockHeight = settings.getLastBlockHeight();
             history.setTransactions(transactions, blockHeight);
         }
-        showToken(settings.getLastTokens());
+        showToken(tokens);
         askWallet();
     }
 
@@ -213,20 +217,27 @@ public class TokenActivity extends AppCompatActivity {
         Futures.addCallback(wallet.tokenMetadataAsync(Collections.singletonList(category), true),
                 new FutureCallback<List<TokenMeta>>() {
                     @Override
-                    public void onSuccess(List<TokenMeta> tokens) {
-                        TokenLabels.update(tokens);
+                    public void onSuccess(List<TokenMeta> metadata) {
+                        boolean changed = TokenLabels.update(metadata);
                         runOnUiThread(() -> {
+                            if (isDestroyed()) {
+                                return;
+                            }
                             showLabels();
                             nftsReady = true;
-                            showToken(settings.getLastTokens());
+                            showToken(tokens);
+                            if (changed && history != null) {
+                                history.notifyItemRangeChanged(0, history.getItemCount());
+                            }
                             if (nfts != null) {
                                 nfts.labelsChanged();
                             }
+                            if (!metadata.isEmpty() && metadata.get(0).status == TokenMeta.Status.SEARCHING
+                                    && (metadata.get(0).loadsByItself || fetched)) {
+                                handler.removeCallbacks(askAgain);
+                                handler.postDelayed(askAgain, ASK_INTERVAL_MS);
+                            }
                         });
-                        if (!tokens.isEmpty() && tokens.get(0).status == TokenMeta.Status.SEARCHING
-                                && (tokens.get(0).loadsByItself || fetched)) {
-                            handler.postDelayed(TokenActivity.this::askWallet, ASK_INTERVAL_MS);
-                        }
                     }
 
                     @Override
@@ -241,7 +252,7 @@ public class TokenActivity extends AppCompatActivity {
     private void showNftsAnyway() {
         if (!nftsReady) {
             nftsReady = true;
-            showToken(settings.getLastTokens());
+            showToken(tokens);
         }
     }
 
@@ -497,7 +508,13 @@ public class TokenActivity extends AppCompatActivity {
 
         @Override
         public void onTokenBalances(List<TokenBalance> tokens) {
+            // The main screen saves them while it listens, which it isn't now.
+            TokenActivity saving = screen.get();
+            if (saving != null) {
+                saving.settings.setLastTokens(tokens);
+            }
             update(activity -> {
+                activity.tokens = tokens;
                 activity.showToken(tokens);
                 activity.askWallet();
             });

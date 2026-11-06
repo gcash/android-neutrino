@@ -69,8 +69,9 @@ public final class TokenChange implements Serializable {
                     change.received.remove(commitment);
                 }
             }
+            // NFTs that were swapped, or a commitment that changed, come to no NFTs more or fewer.
             int nfts = change.received.size() - change.sent.size();
-            if (change.amount != 0 || nfts != 0) {
+            if (change.amount != 0 || !change.received.isEmpty() || !change.sent.isEmpty()) {
                 list.add(new TokenChange(entry.getKey(), change.amount, nfts, change.received, change.sent));
             }
         }
@@ -139,6 +140,10 @@ public final class TokenChange implements Serializable {
      * received returns whether the wallet holds more of the category after the transaction, and
      * no less of either its fungible tokens or its NFTs.
      */
+    public boolean swapped() {
+        return amount == 0 && nfts == 0;
+    }
+
     public boolean received() {
         return amount >= 0 && nfts >= 0;
     }

@@ -202,6 +202,11 @@
     </plurals>
     <string name="nft_play">Play</string>
     <string name="nft_play_failed">The NFT couldn\'t be played.</string>
+    <plurals name="tx_details_more_nfts">
+        <item quantity="one">and %1$d more NFT</item>
+        <item quantity="other">and %1$d more NFTs</item>
+    </plurals>
+    <string name="swapped_nft">Swapped NFT</string>
     <string name="nft_description">Description</string>
     <string name="nft_attributes">Attributes</string>
     <!-- An NFT that came to the wallet, or that it sent, in a transaction's details, with its

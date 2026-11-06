@@ -290,6 +290,7 @@ public class MainActivity extends CloseActivity {
         }
         mAdapter.dismissDetails();
         mAdapter.stop();
+        pagesHandler.removeCallbacksAndMessages(null);
         super.onDestroy();
     }
 
@@ -809,11 +810,11 @@ public class MainActivity extends CloseActivity {
     // makes them load, so a hidden token costs nothing. With the setting on, it also loads the
     // icons it can.
     private void askTokenLabels(List<TokenBalance> shown) {
+        showTokenIcons();
         Wallet wallet = Wallet.getInstance();
         if (wallet == null || !wallet.isRunning() || shown.isEmpty()) {
             return;
         }
-        showTokenIcons();
         List<String> categories = new ArrayList<>();
         for (TokenBalance token : shown) {
             categories.add(token.category);

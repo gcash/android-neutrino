@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import cash.bchd.android_neutrino.tokens.TokenIcons;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
@@ -170,6 +171,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 imagesPref.setChecked(settings.getTokenImages());
                 imagesPref.setOnPreferenceChangeListener((preference, o) -> {
                     settings.setTokenImages((Boolean) o);
+                    TokenIcons.configure((Boolean) o, settings.getLoadedIcons());
                     return true;
                 });
             }

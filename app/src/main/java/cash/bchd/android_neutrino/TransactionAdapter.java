@@ -194,7 +194,8 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         boolean nftsOnly = first.amount == 0;
         holder.arrowImage.setScaleType(ImageView.ScaleType.CENTER);
         holder.arrowImage.setImageBitmap(icon(tokens));
-        holder.txDescription.setText(received ? (nftsOnly ? R.string.received_nft : R.string.received_token)
+        holder.txDescription.setText(first.swapped() ? R.string.swapped_nft
+                : received ? (nftsOnly ? R.string.received_nft : R.string.received_token)
                 : (nftsOnly ? R.string.sent_nft : R.string.sent_token));
         holder.txMemo.setEllipsize(TextUtils.TruncateAt.END);
         String what = tx.getMemo() == null || tx.getMemo().isEmpty() ? rowTitle(tokens) : tx.getMemo();

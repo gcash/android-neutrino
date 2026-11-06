@@ -232,6 +232,10 @@ public class Settings {
         return new HashSet<>(prefs.getStringSet(LOADED_ICONS_KEY, Collections.emptySet()));
     }
 
+    void clearLoadedIcons() {
+        prefs.edit().remove(LOADED_ICONS_KEY).apply();
+    }
+
     void addLoadedIcon(String category) {
         Set<String> loaded = getLoadedIcons();
         loaded.add(category);

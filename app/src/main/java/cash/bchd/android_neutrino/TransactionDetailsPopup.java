@@ -43,6 +43,9 @@ import cash.bchd.android_neutrino.wallet.Wallet;
  */
 final class TransactionDetailsPopup {
 
+    // The most NFTs that get a row.
+    private static final int MAX_NFT_ROWS = 50;
+
     private TransactionDetailsPopup() {
     }
 
@@ -78,6 +81,8 @@ final class TransactionDetailsPopup {
                 view.setImageBitmap(TokenIcons.nftBitmap(ctx, category, commitment, nftIconSize));
             }
         });
+        // A stranger's transaction can hold any number, and each row draws an image.
+        int rows = 0;
         for (TokenChange change : tx.getTokens()) {
             View row = LayoutInflater.from(ctx).inflate(R.layout.txdetails_token_row, tokens, false);
             ImageView icon = row.findViewById(R.id.txDetailsTokenIcon);
@@ -88,11 +93,18 @@ final class TransactionDetailsPopup {
             amount.setText(TokenTexts.details(ctx, change));
             tokens.addView(row);
             for (String commitment : change.nftsReceived()) {
-                addNft(ctx, tokens, change.category, commitment, true, art, artViews, draws);
+                if (rows++ < MAX_NFT_ROWS) {
+                    addNft(ctx, tokens, change.category, commitment, true, art, artViews, draws);
+                }
             }
             for (String commitment : change.nftsSent()) {
-                addNft(ctx, tokens, change.category, commitment, false, art, artViews, draws);
+                if (rows++ < MAX_NFT_ROWS) {
+                    addNft(ctx, tokens, change.category, commitment, false, art, artViews, draws);
+                }
             }
+        }
+        if (rows > MAX_NFT_ROWS) {
+            addMore(ctx, tokens, rows - MAX_NFT_ROWS);
         }
         tokens.setVisibility(tx.getTokens().isEmpty() ? View.GONE : View.VISIBLE);
 
@@ -140,6 +152,14 @@ final class TransactionDetailsPopup {
         popupWindow.setOnDismissListener(art::stop);
         showNftNames(ctx, layout, popupWindow, customView, tx, draws);
         return popupWindow;
+    }
+
+    private static void addMore(Context ctx, LinearLayout tokens, int more) {
+        View row = LayoutInflater.from(ctx).inflate(R.layout.txdetails_nft_row, tokens, false);
+        row.findViewById(R.id.txDetailsNftIcon).setVisibility(View.GONE);
+        TextView text = row.findViewById(R.id.txDetailsNftName);
+        text.setText(ctx.getResources().getQuantityString(R.plurals.tx_details_more_nfts, more, more));
+        tokens.addView(row);
     }
 
     // addNft adds the row of an NFT, and what draws it, as its name and art can come later.

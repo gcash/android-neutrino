@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.TimeZone;
 
+import cash.bchd.android_neutrino.tokens.TokenIcons;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Bip39;
 import cash.bchd.android_neutrino.wallet.Network;
@@ -178,6 +179,8 @@ public class RestoreActivity extends AppCompatActivity {
         settings.setEncryptionType(EncryptionType.UNENCRYPTED);
         settings.setLastBalance(0);
         settings.setLastTokens(Collections.emptyList());
+        settings.clearLoadedIcons();
+        TokenIcons.clear(this);
         settings.setLastAddress("");
         settings.setLastTokenAddress("");
         settings.setBackupReminder(false);

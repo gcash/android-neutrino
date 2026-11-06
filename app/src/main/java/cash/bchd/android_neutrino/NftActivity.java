@@ -8,7 +8,10 @@ import android.graphics.ImageDecoder;
 import android.graphics.Typeface;
 import android.graphics.drawable.AnimatedImageDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.AudioManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -74,6 +77,11 @@ public class NftActivity extends AppCompatActivity {
     private NftArt art;
     // Whether the art is playing, or being fetched to.
     private boolean playing;
+    // How many more times to look for what a fetch brought.
+    private int refreshesLeft;
+    private static final int FETCH_REFRESHES = 6;
+    private static final long FETCH_REFRESH_MS = 5_000;
+    private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean fetching;
 
     /**
@@ -115,19 +123,39 @@ public class NftActivity extends AppCompatActivity {
         showReceived();
         showNft(settings.getLastTokens());
 
-        // The wallet's NFTs as they are now, which the main screen may not have told since.
+        refresh();
+    }
+
+    // refresh shows the wallet's NFTs as they are now, which the main screen may not have told
+    // since, with what the wallet can say of them.
+    private void refresh() {
         Wallet wallet = Wallet.getInstance();
-        if (wallet != null && wallet.isRunning()) {
-            new Thread(() -> {
+        if (wallet == null || !wallet.isRunning()) {
+            return;
+        }
+        new Thread(() -> {
+            try {
+                List<TokenBalance> tokens = wallet.tokenBalances();
                 try {
-                    List<TokenBalance> tokens = wallet.tokenBalances();
                     TokenLabels.update(wallet.tokenMetadataAsync(Collections.singletonList(category), true).get());
-                    runOnUiThread(() -> showNft(tokens));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            }, "wallet-nfts").start();
-        }
+                runOnUiThread(() -> {
+                    if (isDestroyed()) {
+                        return;
+                    }
+                    showNft(tokens);
+                    // The wallet only starts fetching when it's asked to.
+                    if (refreshesLeft > 0) {
+                        refreshesLeft--;
+                        handler.postDelayed(this::refresh, FETCH_REFRESH_MS);
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, "wallet-nfts").start();
     }
 
     @Override
@@ -138,6 +166,7 @@ public class NftActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        handler.removeCallbacksAndMessages(null);
         art.stop();
         if (detailsPopup != null) {
             detailsPopup.dismiss();
@@ -161,7 +190,10 @@ public class NftActivity extends AppCompatActivity {
             TokenActivity.copyTokenId(this, layout, category);
             return true;
         } else if (itemId == R.id.fetchTokenMetadata) {
-            TokenActivity.fetchMetadata(this, layout, category, () -> { });
+            TokenActivity.fetchMetadata(this, layout, category, () -> {
+                refreshesLeft = FETCH_REFRESHES;
+                refresh();
+            });
             return true;
         } else if (itemId == R.id.loadTokenIcon) {
             TokenActivity.loadIcon(this, settings, layout, category, () -> {
@@ -272,9 +304,12 @@ public class NftActivity extends AppCompatActivity {
                 player.setLooping(true);
             });
             video.setOnErrorListener((player, what, extra) -> {
+                file.delete();
                 playFailed();
                 return true;
             });
+            // It plays muted, so it leaves whatever else is playing alone.
+            video.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE);
             video.setVideoPath(file.getPath());
             video.start();
             return;
@@ -293,7 +328,8 @@ public class NftActivity extends AppCompatActivity {
                         ((AnimatedImageDrawable) drawable).start();
                     }
                 });
-            } catch (IOException | RuntimeException e) {
+            } catch (IOException | RuntimeException | OutOfMemoryError e) {
+                file.delete();
                 runOnUiThread(this::playFailed);
             }
         }, "nft-animation").start();

@@ -122,7 +122,8 @@ final class TokenHistoryAdapter extends RecyclerView.Adapter<TransactionAdapter.
         Row row = rows.get(position);
         boolean received = row.change.received();
         holder.arrowImage.setImageResource(received ? R.drawable.receive_arrow : R.drawable.send_arrow);
-        holder.txDescription.setText(received ? R.string.token_received : R.string.token_sent);
+        holder.txDescription.setText(row.change.swapped() ? R.string.swapped_nft
+                : received ? R.string.token_received : R.string.token_sent);
         // In the phone's language and its 12 or 24 hour clock, with the year only if it isn't this
         // one.
         holder.txMemo.setText(DateUtils.formatDateTime(ctx, row.tx.getTimestamp() * 1000,

@@ -11,7 +11,11 @@ import android.media.MediaMetadataRetriever;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -32,6 +36,14 @@ public final class TokenIcons {
     private static final int MAX_SIDE = 4096;
     // What the videos and animations kept to play can take up.
     private static final long MAX_MOTION_SIZE = 32 << 20;
+    // The largest file it keeps as it came, as a small image can carry any amount besides.
+    private static final int MAX_KEPT_SIZE = 256 << 10;
+    // The longest commitment a file's name holds whole, and how large an animation is decoded to
+    // tell that it moves.
+    private static final int MAX_NAME_COMMITMENT = 64;
+    private static final int GIF_CHECK_SIDE = 16;
+    private static final String ICON_DIR = "token-icons";
+    private static final String MOTION_DIR = "nft-motion";
 
     private static volatile boolean showAll;
     private static volatile Set<String> chosen = Collections.emptySet();
@@ -40,7 +52,21 @@ public final class TokenIcons {
     }
 
     private static File file(Context context, String category) {
-        return new File(new File(context.getFilesDir(), "token-icons"), category);
+        return new File(new File(context.getFilesDir(), ICON_DIR), category);
+    }
+
+    // nftName returns the name of an NFT's files: its token ID and commitment, with a long
+    // commitment hashed, as a file's name can't be as long as a commitment can.
+    private static String nftName(String category, String commitment) {
+        if (commitment.length() <= MAX_NAME_COMMITMENT) {
+            return category + "-" + commitment;
+        }
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(commitment.getBytes(StandardCharsets.UTF_8));
+            return category + "-" + new BigInteger(1, digest).toString(16);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     // motionMarker returns the file that says an NFT's art moves.
@@ -50,7 +76,7 @@ public final class TokenIcons {
 
     // nftFile returns the file of an NFT's own art, under a name no token ID has.
     private static File nftFile(Context context, String category, String commitment) {
-        return file(context, category + "-" + commitment);
+        return file(context, nftName(category, commitment));
     }
 
     /**
@@ -123,7 +149,7 @@ public final class TokenIcons {
      * saveNft keeps an NFT's own art as save keeps an icon.
      */
     public static boolean saveNft(Context context, String category, String commitment, byte[] data) {
-        boolean moves = isVideo(data) || isAnimatedGif(data);
+        boolean moves = moves(data);
         boolean saved = save(nftFile(context, category, commitment), data, largestShown(context));
         if (saved && moves) {
             try {
@@ -155,19 +181,22 @@ public final class TokenIcons {
         return start.length >= 4 && start[0] == 'G' && start[1] == 'I' && start[2] == 'F' && start[3] == '8';
     }
 
-    private static boolean isVideo(byte[] data) {
+    // moves returns whether a file is a video, which no image decoder reads, or an animation. The
+    // file is a stranger's, so an image's size is checked first, and an animation is only looked at
+    // as a thumbnail.
+    private static boolean moves(byte[] data) {
         BitmapFactory.Options bounds = new BitmapFactory.Options();
         bounds.inJustDecodeBounds = true;
         BitmapFactory.decodeByteArray(data, 0, data.length, bounds);
-        return bounds.outWidth <= 0;
-    }
-
-    private static boolean isAnimatedGif(byte[] data) {
-        if (!isGif(data)) {
+        if (bounds.outWidth <= 0) {
+            return true;
+        }
+        if (!isGif(data) || !usable(bounds.outWidth, bounds.outHeight)) {
             return false;
         }
         try {
-            return ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(data)))
+            return ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(data)),
+                    (decoder, info, source) -> decoder.setTargetSize(GIF_CHECK_SIDE, GIF_CHECK_SIDE))
                     instanceof AnimatedImageDrawable;
         } catch (IOException | RuntimeException e) {
             return false;
@@ -175,11 +204,11 @@ public final class TokenIcons {
     }
 
     // videoFrame returns the first frame of a video, or null if it isn't one this device can read.
-    private static Bitmap videoFrame(byte[] data) {
+    private static Bitmap videoFrame(byte[] data, int maxSide) {
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         try {
             retriever.setDataSource(new BytesSource(data));
-            return retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+            return retriever.getScaledFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC, maxSide, maxSide);
         } catch (RuntimeException e) {
             return null;
         } finally {
@@ -222,7 +251,7 @@ public final class TokenIcons {
      * motionFile returns where a moving NFT's file is kept once it was asked to play.
      */
     public static File motionFile(Context context, String category, String commitment) {
-        return new File(new File(context.getCacheDir(), "nft-motion"), category + "-" + commitment);
+        return new File(new File(context.getCacheDir(), MOTION_DIR), nftName(category, commitment));
     }
 
     /**
@@ -235,14 +264,41 @@ public final class TokenIcons {
         if (dir == null || (!dir.isDirectory() && !dir.mkdirs())) {
             return false;
         }
-        try (FileOutputStream out = new FileOutputStream(file)) {
+        File tmp;
+        try {
+            tmp = File.createTempFile("motion", ".tmp", dir);
+        } catch (IOException e) {
+            return false;
+        }
+        try (FileOutputStream out = new FileOutputStream(tmp)) {
             out.write(data);
         } catch (IOException e) {
-            file.delete();
+            tmp.delete();
+            return false;
+        }
+        if (!tmp.renameTo(file)) {
+            tmp.delete();
             return false;
         }
         trimMotion(dir, file);
         return true;
+    }
+
+    /**
+     * clear removes all that was kept of tokens' images, as restoring another wallet does.
+     */
+    public static void clear(Context context) {
+        deleteAll(new File(context.getFilesDir(), ICON_DIR));
+        deleteAll(new File(context.getCacheDir(), MOTION_DIR));
+    }
+
+    private static void deleteAll(File dir) {
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                file.delete();
+            }
+        }
     }
 
     private static void trimMotion(File dir, File keep) {
@@ -273,7 +329,7 @@ public final class TokenIcons {
         bounds.inJustDecodeBounds = true;
         BitmapFactory.decodeByteArray(data, 0, data.length, bounds);
         if (bounds.outWidth <= 0) {
-            frame = videoFrame(data);
+            frame = videoFrame(data, maxSide);
             if (frame == null) {
                 return false;
             }
@@ -297,7 +353,7 @@ public final class TokenIcons {
                     tmp.delete();
                     return false;
                 }
-            } else if (Math.max(bounds.outWidth, bounds.outHeight) <= maxSide) {
+            } else if (Math.max(bounds.outWidth, bounds.outHeight) <= maxSide && data.length <= MAX_KEPT_SIZE) {
                 out.write(data);
             } else if (!shrink(data, bounds, maxSide, out)) {
                 tmp.delete();
@@ -307,7 +363,11 @@ public final class TokenIcons {
             tmp.delete();
             return false;
         }
-        return tmp.renameTo(file);
+        if (!tmp.renameTo(file)) {
+            tmp.delete();
+            return false;
+        }
+        return true;
     }
 
     // shrink writes the image with its largest side at maxSide, in its proportions.
@@ -325,7 +385,8 @@ public final class TokenIcons {
         float scale = Math.min(1f, (float) maxSide / Math.max(width, height));
         Bitmap small = Bitmap.createScaledBitmap(bitmap, Math.max(1, Math.round(width * scale)),
                 Math.max(1, Math.round(height * scale)), true);
-        return small.compress(Bitmap.CompressFormat.PNG, 100, out);
+        return small.hasAlpha() ? small.compress(Bitmap.CompressFormat.PNG, 100, out)
+                : small.compress(Bitmap.CompressFormat.JPEG, 90, out);
     }
 
     /**
