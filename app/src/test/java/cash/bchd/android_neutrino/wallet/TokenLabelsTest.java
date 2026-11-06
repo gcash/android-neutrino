@@ -167,4 +167,12 @@ public class TokenLabelsTest {
         update(token().setSymbol("ABCDEFGHIJKLMNOPQRSTUVWXYZ"));
         assertEquals("15 ABCDEFGHIJKLMNOP\u2026", TokenLabels.amount(CATEGORY, BigInteger.valueOf(1500)));
     }
+
+    @Test
+    public void aReservedSymbolSaysSo() {
+        update(token().setLookAlike(true).setReservedSymbol(true));
+        assertEquals(R.string.token_reserved_symbol, TokenLabels.badge(CATEGORY));
+        update(token().setLookAlike(true));
+        assertEquals(R.string.token_look_alike, TokenLabels.badge(CATEGORY));
+    }
 }

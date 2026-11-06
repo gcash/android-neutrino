@@ -167,6 +167,7 @@
     <string name="token_not_yet_verified">Not yet verified</string>
     <string name="token_registry_changed">Verified, collection still being published</string>
     <string name="token_registry_failed">Its registry can\'t be read</string>
+    <string name="token_reserved_symbol">Uses a reserved symbol</string>
     <string name="token_look_alike">Look-alike of a Known token</string>
     <string name="token_received">Received</string>
     <!-- The line of a token's screen that opens its NFTs. -->

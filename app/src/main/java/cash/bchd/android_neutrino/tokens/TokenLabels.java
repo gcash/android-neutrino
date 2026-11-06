@@ -163,7 +163,7 @@ public final class TokenLabels {
             return 0;
         }
         if (token.lookAlike) {
-            return R.string.token_look_alike;
+            return token.reservedSymbol ? R.string.token_reserved_symbol : R.string.token_look_alike;
         }
         if (token.status == TokenMeta.Status.FAILED) {
             return R.string.token_identity_not_found;

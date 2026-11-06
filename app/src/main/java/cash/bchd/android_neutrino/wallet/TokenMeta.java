@@ -74,6 +74,8 @@ public final class TokenMeta {
     public final boolean registryChanged;
     // Whether the token published a registry that nothing could be read from.
     public final boolean registryFailed;
+    // Whether a look-alike is one for its reserved symbol, not for a Known token.
+    public final boolean reservedSymbol;
     public final List<NftType> nftTypes;
     private final Map<String, NftType> nftTypesByCommitment;
 
@@ -93,6 +95,7 @@ public final class TokenMeta {
         burned = token.getBurned();
         registryChanged = token.getRegistryChanged();
         registryFailed = token.getRegistryFailed();
+        reservedSymbol = token.getReservedSymbol();
         List<NftType> types = new ArrayList<>();
         for (Api.TokenMetadataResponse.NftType type : token.getNftTypesList()) {
             types.add(new NftType(type));
@@ -118,6 +121,7 @@ public final class TokenMeta {
         burned = token.burned;
         registryChanged = token.registryChanged;
         registryFailed = token.registryFailed;
+        reservedSymbol = token.reservedSymbol;
         nftTypes = types;
         nftTypesByCommitment = byCommitment(types);
     }
@@ -229,7 +233,7 @@ public final class TokenMeta {
                 && symbol.equals(o.symbol) && decimals == o.decimals && status == o.status
                 && known == o.known && lookAlike == o.lookAlike && burned == o.burned
                 && registryChanged == o.registryChanged
-                && registryFailed == o.registryFailed && nftTypes.size() == o.nftTypes.size()
+                && registryFailed == o.registryFailed && reservedSymbol == o.reservedSymbol && nftTypes.size() == o.nftTypes.size()
                 && iconUri.equals(o.iconUri);
     }
 
