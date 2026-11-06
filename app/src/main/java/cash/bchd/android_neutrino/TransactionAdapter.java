@@ -197,7 +197,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         holder.txDescription.setText(received ? (nftsOnly ? R.string.received_nft : R.string.received_token)
                 : (nftsOnly ? R.string.sent_nft : R.string.sent_token));
         holder.txMemo.setEllipsize(TextUtils.TruncateAt.END);
-        String what = tx.getMemo() == null || tx.getMemo().isEmpty() ? TokenLabels.listTitle(first.category) : tx.getMemo();
+        String what = tx.getMemo() == null || tx.getMemo().isEmpty() ? rowTitle(tokens) : tx.getMemo();
         int more = tokens.size() - 1;
         holder.txMemo.setText(more > 0 ? ctx.getResources().getQuantityString(R.plurals.token_row_more, more, what, more) : what);
         holder.bchAmount.setText(TokenTexts.change(ctx, first));
@@ -216,6 +216,15 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             String bch = Math.abs(spendable) >= TokenBalance.FLOOR ? new Amount(spendable).withSymbol() : null;
             holder.fiatAmount.setText(bch);
         }
+    }
+
+    // rowTitle returns what to call what a row leads with: the NFT if the transaction moved just
+    // that and it has a name to trust, or else the token.
+    private static String rowTitle(List<TokenChange> tokens) {
+        TokenChange first = tokens.get(0);
+        String commitment = tokens.size() == 1 ? first.onlyNft() : null;
+        String name = commitment == null ? null : TokenLabels.listNftName(first.category, commitment);
+        return name != null ? name : TokenLabels.listTitle(first.category);
     }
 
     private void artLoaded(String category, String commitment) {

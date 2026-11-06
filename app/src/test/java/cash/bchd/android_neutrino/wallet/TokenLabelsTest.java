@@ -94,17 +94,18 @@ public class TokenLabelsTest {
     }
 
     @Test
-    public void aChangedRegistryShowsButIsNotVerified() {
+    public void aChangedRegistryOfAnIdentityFollowedToTheTipShowsEverywhere() {
         update(token().setStatus(Api.TokenMetadataResponse.Status.VERIFIED).setRegistryChanged(true));
         assertEquals("Name", TokenLabels.title(CATEGORY));
         assertEquals(R.string.token_registry_changed, TokenLabels.badge(CATEGORY));
-        assertEquals(TokenBalance.shortId(CATEGORY), TokenLabels.listTitle(CATEGORY));
+        assertEquals("Name", TokenLabels.listTitle(CATEGORY));
     }
 
     @Test
     public void aChangedRegistryOfAnIdentityNotFollowedYetIsNotYetVerified() {
         update(token().setRegistryChanged(true));
         assertEquals(R.string.token_not_yet_verified, TokenLabels.badge(CATEGORY));
+        assertEquals(TokenBalance.shortId(CATEGORY), TokenLabels.listTitle(CATEGORY));
     }
 
     @Test
@@ -137,13 +138,13 @@ public class TokenLabelsTest {
         assertEquals(null, TokenLabels.listNftName(CATEGORY, "01"));
         update(token().addNftTypes(nft()).setStatus(Api.TokenMetadataResponse.Status.VERIFIED));
         assertEquals("One", TokenLabels.listNftName(CATEGORY, "01"));
-        update(token().addNftTypes(nft()).setStatus(Api.TokenMetadataResponse.Status.VERIFIED).setRegistryChanged(true));
+        update(token().addNftTypes(nft()).setStatus(Api.TokenMetadataResponse.Status.VERIFIED).setLookAlike(true));
         assertEquals(null, TokenLabels.listNftName(CATEGORY, "01"));
     }
 
     @Test
-    public void namesFromAFileNobodyVouchesForAreNotKeptOnceItsVerified() {
-        update(token().addNftTypes(nft()).setStatus(Api.TokenMetadataResponse.Status.VERIFIED).setRegistryChanged(true));
+    public void namesFromAnIdentityNotYetFollowedAreNotKeptOnceItsVerified() {
+        update(token().addNftTypes(nft()));
         update(token().setStatus(Api.TokenMetadataResponse.Status.VERIFIED));
         assertEquals(null, TokenLabels.listNftName(CATEGORY, "01"));
         assertFalse(TokenLabels.hasNftTypes(CATEGORY));

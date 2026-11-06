@@ -135,7 +135,7 @@ public final class TokenMeta {
     public TokenMeta keepingNftTypes(TokenMeta before) {
         if (before == null || !nftTypes.isEmpty() || before.nftTypes.isEmpty() || !hasMetadata
                 || !name.equals(before.name) || !symbol.equals(before.symbol)
-                || verified() != before.verified()) {
+                || verified() != before.verified() || registryChanged != before.registryChanged) {
             return this;
         }
         return new TokenMeta(this, before.nftTypes);
@@ -166,11 +166,11 @@ public final class TokenMeta {
     }
 
     /**
-     * verified returns whether what shows is known good: from the published registry of an
-     * identity followed to the tip, or from the Known list.
+     * verified returns whether what shows is known good: from an identity followed to the tip,
+     * which a collection still being published keeps adding to, or from the Known list.
      */
     public boolean verified() {
-        return status == Status.VERIFIED && !registryChanged || known;
+        return status == Status.VERIFIED || known;
     }
 
     /**
