@@ -3,6 +3,7 @@ package cash.bchd.android_neutrino.tokens;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.ImageDecoder;
 import android.graphics.drawable.AnimatedImageDrawable;
 import android.media.MediaDataSource;
@@ -434,6 +435,27 @@ public final class TokenIcons {
         options.inJustDecodeBounds = false;
         options.inSampleSize = sampleSize(options.outWidth, options.outHeight, size);
         Bitmap decoded = BitmapFactory.decodeFile(path, options);
-        return decoded == null ? null : Bitmap.createScaledBitmap(decoded, size, size, true);
+        return decoded == null ? null : fit(decoded, size);
+    }
+
+    // fit draws an image whole, in its proportions, in the middle of a square of the size.
+    private static Bitmap fit(Bitmap image, int size) {
+        int[] fitted = fitted(image.getWidth(), image.getHeight(), size);
+        Bitmap scaled = Bitmap.createScaledBitmap(image, fitted[0], fitted[1], true);
+        if (fitted[0] == size && fitted[1] == size) {
+            return scaled;
+        }
+        Bitmap square = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        new Canvas(square).drawBitmap(scaled, (size - fitted[0]) / 2f, (size - fitted[1]) / 2f, null);
+        return square;
+    }
+
+    /**
+     * fitted returns the width and height of an image scaled to fit in a square of the size, in
+     * its proportions.
+     */
+    public static int[] fitted(int width, int height, int size) {
+        float scale = (float) size / Math.max(width, height);
+        return new int[]{Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale))};
     }
 }

@@ -39,4 +39,12 @@ public class TokenIconsTest {
         assertFalse(TokenIcons.isGif(new byte[]{'G', 'I'}));
         assertFalse(TokenIcons.isGif(new byte[]{1, 2, 3, 4}));
     }
+
+    @Test
+    public void fitsAnImageInItsProportions() {
+        assertEquals("[100, 50]", java.util.Arrays.toString(TokenIcons.fitted(400, 200, 100)));
+        assertEquals("[25, 100]", java.util.Arrays.toString(TokenIcons.fitted(100, 400, 100)));
+        assertEquals("[100, 100]", java.util.Arrays.toString(TokenIcons.fitted(300, 300, 100)));
+        assertEquals("[1, 100]", java.util.Arrays.toString(TokenIcons.fitted(1, 4000, 100)));
+    }
 }

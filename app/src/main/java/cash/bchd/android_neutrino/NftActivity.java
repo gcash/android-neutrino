@@ -332,7 +332,10 @@ public class NftActivity extends AppCompatActivity {
         new Thread(() -> {
             try {
                 Drawable drawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(file),
-                        (decoder, info, source) -> decoder.setTargetSize(size, size));
+                        (decoder, info, source) -> {
+                            int[] fitted = TokenIcons.fitted(info.getSize().getWidth(), info.getSize().getHeight(), size);
+                            decoder.setTargetSize(fitted[0], fitted[1]);
+                        });
                 runOnUiThread(() -> {
                     if (!playing) {
                         return;
