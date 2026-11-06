@@ -106,6 +106,13 @@
         app:summary="Pre-populate the memo field in the payment request with the value entered here. Typically this field describes what the payment is for." />
 
     <SwitchPreferenceCompat
+        android:defaultValue="true"
+        android:icon="@drawable/memo_icon_small"
+        android:key="tokenAutoLoad"
+        android:title="@string/token_auto_load"
+        app:summary="@string/token_auto_load_summary" />
+
+    <SwitchPreferenceCompat
         android:defaultValue="false"
         android:icon="@drawable/memo_icon_small"
         android:key="tokenImages"

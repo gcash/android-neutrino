@@ -175,6 +175,14 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                     return true;
                 });
             }
+            androidx.preference.SwitchPreferenceCompat autoLoadPref = findPreference("tokenAutoLoad");
+            if (autoLoadPref != null) {
+                autoLoadPref.setChecked(settings.getTokenAutoLoad());
+                autoLoadPref.setOnPreferenceChangeListener((preference, o) -> {
+                    settings.setTokenAutoLoad((Boolean) o);
+                    return true;
+                });
+            }
             EditTextPreference gatewaysPref = findPreference("ipfsGateways");
             if (gatewaysPref != null) {
                 gatewaysPref.setText(settings.getIpfsGatewaysText());

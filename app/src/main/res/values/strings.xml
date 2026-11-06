@@ -156,6 +156,8 @@
     <string name="token_icon_failed">The token\'s icon couldn\'t be loaded.</string>
     <string name="token_no_icon">The token has no icon.</string>
     <string name="token_icon_unavailable">This collection\'s icon isn\'t available right now.</string>
+    <string name="token_auto_load">Load token details automatically</string>
+    <string name="token_auto_load_summary">Look up the names of tokens you receive. A token\'s host can see that you asked, and someone could send you a token to learn your IP address. With this off, use a token\'s menu to load it. Takes effect the next time the wallet starts.</string>
     <string name="token_images">Token images</string>
     <string name="token_images_summary">Load the icons of your tokens. Each icon\'s host sees that you asked. You can also load one from a token\'s menu.</string>
     <string name="ipfs_gateways">IPFS gateways</string>

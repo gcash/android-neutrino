@@ -30,6 +30,7 @@ public class Settings {
     private static final String DEFAULT_LABEL_KEY = "DefaultLabel";
     private static final String IPFS_GATEWAYS_KEY = "IpfsGateways";
     private static final String TOKEN_IMAGES_KEY = "TokenImages";
+    private static final String TOKEN_AUTO_LOAD_KEY = "TokenAutoLoad";
     private static final String DEFAULT_IPFS_GATEWAYS =
             "https://gateway.pinata.cloud,https://ipfs.filebase.io,https://ipfs.io,https://dweb.link";
     private static final String DEFAULT_MEMO_KEY = "DefaultMemo";
@@ -464,6 +465,14 @@ public class Settings {
             }
         }
         return gateways.toArray(new String[0]);
+    }
+
+    boolean getTokenAutoLoad() {
+        return appPrefs.getBoolean(TOKEN_AUTO_LOAD_KEY, true);
+    }
+
+    void setTokenAutoLoad(boolean on) {
+        appPrefs.edit().putBoolean(TOKEN_AUTO_LOAD_KEY, on).apply();
     }
 
     // Whether token icons load by themselves. It's off, as a host sees who asks.

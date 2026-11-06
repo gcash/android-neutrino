@@ -63,7 +63,8 @@ final class WalletStarter {
             labelsNetwork = settings.getNetwork();
         }
         cfg.setTokenMetadata(BcmrFiles.hintsPath(context, settings.getNetwork()),
-                BcmrFiles.knownPath(context, settings.getNetwork()), settings.getIpfsGateways());
+                BcmrFiles.knownPath(context, settings.getNetwork()), settings.getIpfsGateways(),
+                settings.getTokenAutoLoad());
         Wallet wallet = new Wallet(context, cfg);
         wallet.start();
         return wallet;

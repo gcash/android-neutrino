@@ -61,6 +61,7 @@ public class Config {
     private String bcmrHints = "";
     private String bcmrKnown = "";
     private String[] bcmrGateways = new String[0];
+    private boolean bcmrAutoLoad = true;
 
     // The port of the wallet's gRPC server on 127.0.0.1. A random one is
     // picked for each start, so that the wallet still starts, and the app does
@@ -103,10 +104,11 @@ public class Config {
     /**
      * setTokenMetadata gives the wallet what it reads token metadata with.
      */
-    public void setTokenMetadata(String hints, String known, String[] gateways) {
+    public void setTokenMetadata(String hints, String known, String[] gateways, boolean autoLoad) {
         this.bcmrHints = hints;
         this.bcmrKnown = known;
         this.bcmrGateways = gateways;
+        this.bcmrAutoLoad = autoLoad;
     }
 
     /**
@@ -155,6 +157,9 @@ public class Config {
         }
         if (!this.bcmrKnown.equals("")) {
             configFileContents += "bcmrknown=" + this.bcmrKnown + "\n";
+        }
+        if (!this.bcmrAutoLoad) {
+            configFileContents += "bcmrnoautoload=1\n";
         }
         for (String gateway : this.bcmrGateways) {
             configFileContents += "bcmrgateway=" + gateway + "\n";
