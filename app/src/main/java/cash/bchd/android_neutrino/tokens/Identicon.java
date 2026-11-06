@@ -1,19 +1,17 @@
 package cash.bchd.android_neutrino.tokens;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapShader;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Shader;
 
 /**
  * Identicon is the image Cashonize draws for a token from its token ID, so that a token looks
  * the same in both wallets: a 12 by 12 grid, mirrored left to right, of a background color, a
  * pattern color and black spots, all picked by a random number generator seeded with the token
- * ID, drawn in a circle. It ports Cashonize's src/utils/icons/blockies.ts, called as its
- * TokenIcon.vue calls it (see THIRD_PARTY_NOTICES.md).
+ * ID. It ports Cashonize's src/utils/icons/blockies.ts, called as its
+ * TokenIcon.vue calls it (see THIRD_PARTY_NOTICES.md), but square, as the app's images are, where
+ * Cashonize draws it in a circle.
  */
 public final class Identicon {
 
@@ -60,7 +58,7 @@ public final class Identicon {
     }
 
     /**
-     * bitmap draws the identicon in a circle sizePx across, as Cashonize scales a grid of whole
+     * bitmap draws the identicon sizePx across, as Cashonize scales a grid of whole
      * pixels per cell down to the icon's size.
      */
     public Bitmap bitmap(int sizePx) {
@@ -80,16 +78,7 @@ public final class Identicon {
             canvas.drawRect(left, top, left + cell, top + cell, paint);
         }
 
-        Bitmap icon = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888);
-        BitmapShader shader = new BitmapShader(grid, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
-        Matrix scale = new Matrix();
-        scale.setScale((float) sizePx / grid.getWidth(), (float) sizePx / grid.getHeight());
-        shader.setLocalMatrix(scale);
-        Paint circle = new Paint(Paint.ANTI_ALIAS_FLAG);
-        circle.setShader(shader);
-        float radius = sizePx / 2f;
-        new Canvas(icon).drawCircle(radius, radius, radius, circle);
-        return icon;
+        return Bitmap.createScaledBitmap(grid, sizePx, sizePx, true);
     }
 
     /**
