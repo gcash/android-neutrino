@@ -18,9 +18,11 @@
         android:layout_marginEnd="10dp"
         android:contentDescription="@string/arrow_image" />
 
+    <!-- Takes what the amount leaves, as the amount has to show whole. -->
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:orientation="vertical">
 
         <TextView
@@ -33,24 +35,26 @@
 
         <TextView
             android:id="@+id/txMemo"
-            android:layout_width="180dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:singleLine="true"/>
     </LinearLayout>
 
     <LinearLayout
-        android:layout_width="fill_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="end"
         android:orientation="vertical"
-        android:paddingStart="0dp"
+        android:paddingStart="10dp"
         android:paddingEnd="20dp">
 
         <TextView
             android:id="@+id/bchAmount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:gravity="end"
+            android:maxWidth="@dimen/tx_row_amount"
             android:textSize="15sp"
             android:textStyle="bold"/>
 

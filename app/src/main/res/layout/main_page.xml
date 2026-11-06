@@ -8,6 +8,8 @@
         android:id="@+id/pageList"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/page_list_bottom"
         android:scrollbars="vertical" />
 
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

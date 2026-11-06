@@ -1,5 +1,8 @@
 package cash.bchd.android_neutrino.tokens;
 
+import android.graphics.Typeface;
+import android.widget.TextView;
+
 import androidx.annotation.StringRes;
 
 import java.math.BigInteger;
@@ -79,6 +82,16 @@ public final class TokenLabels {
         TokenMeta token = TOKENS.get(category);
         return token != null && token.hasMetadata && token.verified() && !token.lookAlike
                 ? token.name : TokenBalance.shortId(category);
+    }
+
+    /**
+     * showTitle shows what to call a token: a name in the screen's font, or a short ID in monospace,
+     * as its digits are all there is to tell it by. A bold one stays bold.
+     */
+    public static void showTitle(TextView view, String category, String title, boolean bold) {
+        boolean shortId = title.equals(TokenBalance.shortId(category));
+        view.setTypeface(shortId ? Typeface.MONOSPACE : Typeface.DEFAULT, bold ? Typeface.BOLD : Typeface.NORMAL);
+        view.setText(title);
     }
 
     /**

@@ -22,7 +22,6 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:fontFamily="monospace"
         android:textSize="15sp" />
 
     <TextView
@@ -31,5 +30,6 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
         android:gravity="end"
+        android:maxWidth="@dimen/tx_details_token_change"
         android:textSize="15sp" />
 </LinearLayout>

@@ -37,11 +37,6 @@ final class TransactionDetailsPopup {
      */
     static PopupWindow show(Context ctx, ViewGroup layout, TransactionData tx, int blockHeight, Network network) {
         View customView = LayoutInflater.from(ctx).inflate(R.layout.txdetailspopup, layout, false);
-        PopupWindow popupWindow = new PopupWindow(customView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
-        popupWindow.showAtLocation(layout, Gravity.CENTER, 0, 0);
-        popupWindow.setOutsideTouchable(true);
-        popupWindow.setFocusable(true);
-        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
         ImageView arrow = customView.findViewById(R.id.txDetailsArrow);
         if (tx.getIncoming()) {
@@ -64,7 +59,7 @@ final class TransactionDetailsPopup {
             ImageView icon = row.findViewById(R.id.txDetailsTokenIcon);
             icon.setImageBitmap(Identicon.of(change.category).bitmap(iconSize));
             TextView id = row.findViewById(R.id.txDetailsTokenId);
-            id.setText(TokenLabels.listTitle(change.category));
+            TokenLabels.showTitle(id, change.category, TokenLabels.listTitle(change.category), false);
             TextView amount = row.findViewById(R.id.txDetailsTokenChange);
             amount.setText(TokenTexts.details(ctx, change));
             tokens.addView(row);
@@ -111,6 +106,22 @@ final class TransactionDetailsPopup {
 
         TextView link = customView.findViewById(R.id.txDetailsLink);
         link.setText(network.explorerUrl(tx.getTxid()));
+        return open(ctx, layout, customView);
+    }
+
+    // open shows the details in the middle of the layout, as wide as a phone allows, and as tall
+    // as they are up to what fits, where they scroll.
+    private static PopupWindow open(Context ctx, ViewGroup layout, View details) {
+        int margin = ctx.getResources().getDimensionPixelSize(R.dimen.tx_details_margin);
+        int width = Math.min(ctx.getResources().getDimensionPixelSize(R.dimen.tx_details_width),
+                layout.getWidth() - 2 * margin);
+        details.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        int height = Math.min(details.getMeasuredHeight(), layout.getHeight() - 2 * margin);
+        PopupWindow popupWindow = new PopupWindow(details, width, height, true);
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        popupWindow.showAtLocation(layout, Gravity.CENTER, 0, 0);
         return popupWindow;
     }
 

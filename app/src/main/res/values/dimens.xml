@@ -12,4 +12,13 @@
     <dimen name="token_row_icon">32dp</dimen>
     <dimen name="token_screen_icon">64dp</dimen>
     <dimen name="token_details_icon">24dp</dimen>
+    <!-- The widest the popup of a transaction's details gets, and the room it leaves. -->
+    <dimen name="tx_details_width">370dp</dimen>
+    <dimen name="tx_details_margin">16dp</dimen>
+    <dimen name="tx_details_label">72dp</dimen>
+    <dimen name="tx_details_token_change">190dp</dimen>
+    <!-- The widest the amount of a transaction's row gets before it wraps. -->
+    <dimen name="tx_row_amount">220dp</dimen>
+    <!-- What the last row of a main page clears the floating button by. -->
+    <dimen name="page_list_bottom">88dp</dimen>
 </resources>

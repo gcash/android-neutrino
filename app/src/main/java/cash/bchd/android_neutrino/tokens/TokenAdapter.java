@@ -116,7 +116,7 @@ public final class TokenAdapter extends RecyclerView.Adapter<TokenAdapter.Row> {
     public void onBindViewHolder(@NonNull Row row, int position) {
         TokenBalance token = tokens.get(position);
         row.icon.setImageBitmap(icon(token.category));
-        row.id.setText(TokenLabels.title(token.category));
+        TokenLabels.showTitle(row.id, token.category, TokenLabels.title(token.category), true);
         int badge = TokenLabels.badge(token.category);
         row.badge.setVisibility(badge == 0 ? View.GONE : View.VISIBLE);
         if (badge != 0) {

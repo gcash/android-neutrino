@@ -1,21 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Scrolls when the details are taller than the screen, as on a tablet held sideways. -->
+<!-- Scrolls when the details are taller than the screen, as a transaction with many NFTs can be.
+     The card has no vertical gravity, as a ScrollView would cut off the top of a tall one. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/gradient"
     android:padding="10dp"
-    android:layout_margin="50dp"
     android:id="@+id/txDetailsLayout">
 
     <LinearLayout
-        android:layout_width="350dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="#FFF"
-        android:layout_gravity="center">
+        android:background="#FFF">
 
         <ImageView
             android:id="@+id/txDetailsArrow"
@@ -61,31 +60,24 @@
             android:layout_marginBottom="10dp"/>
 
         <LinearLayout
-            android:layout_width="400dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_gravity="center">
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp">
 
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="@dimen/tx_details_label"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="65dp"
                 android:text="@string/tx_details_date" />
 
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
 
             <TextView
                 android:id="@+id/txDetailsDate"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_gravity="end"
-                android:layout_marginEnd="20dp"
                 android:text="" />
         </LinearLayout>
 
@@ -98,23 +90,18 @@
             android:layout_marginTop="10dp"/>
 
         <LinearLayout
-            android:layout_width="400dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_gravity="center">
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp">
 
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="@dimen/tx_details_label"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="65dp"
                 android:text="@string/tx_details_status" />
 
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
 
             <ImageView
                 android:id="@+id/confirmationCircle"
@@ -122,17 +109,15 @@
                 android:layout_width="10dp"
                 android:layout_height="10dp"
                 app:srcCompat="@drawable/red_circle"
-                android:layout_gravity="center"
+                android:layout_gravity="center_vertical"
                 android:layout_marginTop="1dp"
                 android:layout_marginEnd="8dp"/>
 
             <TextView
                 android:id="@+id/txDetailsStatus"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_gravity="end"
-                android:layout_marginEnd="-5dp"
                 android:text="" />
         </LinearLayout>
 
@@ -146,31 +131,24 @@
 
         <LinearLayout
             android:id="@+id/txDetailsToRow"
-            android:layout_width="400dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_gravity="center">
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp">
 
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="@dimen/tx_details_label"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="65dp"
                 android:text="@string/tx_details_to" />
 
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
 
             <TextView
                 android:id="@+id/txDetailsTo"
-                android:layout_width="200dp"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_gravity="end"
-                android:layout_marginEnd="60dp"
                 android:textIsSelectable="true" />
         </LinearLayout>
 
@@ -183,31 +161,24 @@
             android:layout_marginTop="10dp"/>
 
         <LinearLayout
-            android:layout_width="400dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_gravity="center">
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp">
 
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="@dimen/tx_details_label"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="65dp"
                 android:text="@string/tx_details_id" />
 
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
 
             <TextView
                 android:id="@+id/txDetailsTxid"
-                android:layout_width="200dp"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_gravity="end"
-                android:layout_marginEnd="60dp"
                 android:ellipsize="end"
                 tools:text="cb92d348d9e2af41425409c02aff4f8c79047d1f21a9e56803a8a84b890fa05d" />
         </LinearLayout>
@@ -221,31 +192,24 @@
             android:layout_marginTop="10dp"/>
 
         <LinearLayout
-            android:layout_width="400dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_gravity="center">
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp">
 
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="@dimen/tx_details_label"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="65dp"
                 android:text="@string/tx_details_memo" />
 
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
 
             <TextView
                 android:id="@+id/txDetailsMemo"
-                android:layout_width="200dp"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_gravity="end"
-                android:layout_marginEnd="60dp"
                 android:ellipsize="end" />
         </LinearLayout>
 
@@ -258,32 +222,25 @@
             android:layout_marginTop="10dp"/>
 
         <LinearLayout
-            android:layout_width="400dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_gravity="center"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
             android:layout_marginBottom="10dp">
 
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="@dimen/tx_details_label"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="65dp"
                 android:text="@string/tx_details_explorer" />
 
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
 
             <TextView
                 android:id="@+id/txDetailsLink"
-                android:layout_width="200dp"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_gravity="end"
-                android:layout_marginEnd="55dp"
                 android:autoLink="web"/>
         </LinearLayout>
 

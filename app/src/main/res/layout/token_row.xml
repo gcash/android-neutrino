@@ -15,9 +15,11 @@
         android:layout_marginEnd="14dp"
         android:importantForAccessibility="no" />
 
+    <!-- Takes what the amount leaves, as the amount has to show whole. -->
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:orientation="vertical">
 
         <TextView
@@ -25,9 +27,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:ellipsize="end"
-            android:fontFamily="monospace"
             android:maxLines="1"
-            android:maxWidth="180dp"
             android:textSize="15sp"
             android:textStyle="bold" />
 
@@ -42,14 +42,14 @@
 
     <TextView
         android:id="@+id/tokenAmount"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
         android:layout_marginEnd="20dp"
-        android:layout_weight="1"
         android:ellipsize="end"
         android:gravity="end"
-        android:maxLines="1"
+        android:maxLines="2"
+        android:maxWidth="@dimen/tx_row_amount"
         android:textSize="15sp"
         android:textStyle="bold" />
 </LinearLayout>
