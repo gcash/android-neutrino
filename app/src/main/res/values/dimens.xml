@@ -9,7 +9,9 @@
     <!-- The fiat balance's line on the main screen, which is shorter while the tabs show below
          it. -->
     <dimen name="fiat_balance_height">58dp</dimen>
-    <dimen name="token_row_icon">32dp</dimen>
+    <!-- All lists have rows of this height, with icons as wide as a transaction's arrow. -->
+    <dimen name="list_row">72dp</dimen>
+    <dimen name="token_row_icon">40dp</dimen>
     <dimen name="token_screen_icon">64dp</dimen>
     <dimen name="nft_screen_icon">128dp</dimen>
     <dimen name="token_details_icon">24dp</dimen>

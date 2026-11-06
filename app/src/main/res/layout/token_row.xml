@@ -3,7 +3,7 @@
      identicon's center lines up with the arrow of a transaction's row. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="56dp"
+    android:layout_height="@dimen/list_row"
     android:gravity="center_vertical"
     android:orientation="horizontal">
 
@@ -11,8 +11,8 @@
         android:id="@+id/tokenIcon"
         android:layout_width="@dimen/token_row_icon"
         android:layout_height="@dimen/token_row_icon"
-        android:layout_marginStart="19dp"
-        android:layout_marginEnd="14dp"
+        android:layout_marginStart="15dp"
+        android:layout_marginEnd="10dp"
         android:importantForAccessibility="no" />
 
     <!-- Takes what the amount leaves, as the amount has to show whole. -->

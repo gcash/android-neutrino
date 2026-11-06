@@ -71,8 +71,6 @@ public class TokenLabelsTest {
         assertEquals(R.string.token_identity_not_found, TokenLabels.badge(CATEGORY));
         update(token().setKnown(true));
         assertEquals(R.string.token_known, TokenLabels.badge(CATEGORY));
-        update(token().setStatus(Api.TokenMetadataResponse.Status.VERIFIED).setPublicationStale(true));
-        assertEquals(R.string.token_may_be_out_of_date, TokenLabels.badge(CATEGORY));
     }
 
     @Test
@@ -90,10 +88,9 @@ public class TokenLabelsTest {
     }
 
     @Test
-    public void aRowCallsATokenThatMayBeOutOfDateVerified() {
+    public void aTokenThatMovedOnWithoutPublishingIsVerified() {
         update(token().setStatus(Api.TokenMetadataResponse.Status.VERIFIED).setPublicationStale(true));
-        assertEquals(R.string.token_may_be_out_of_date, TokenLabels.badge(CATEGORY));
-        assertEquals(R.string.token_verified, TokenLabels.rowBadge(CATEGORY));
+        assertEquals(R.string.token_verified, TokenLabels.badge(CATEGORY));
     }
 
     @Test
@@ -101,8 +98,13 @@ public class TokenLabelsTest {
         update(token().setStatus(Api.TokenMetadataResponse.Status.VERIFIED).setRegistryChanged(true));
         assertEquals("Name", TokenLabels.title(CATEGORY));
         assertEquals(R.string.token_registry_changed, TokenLabels.badge(CATEGORY));
-        assertEquals(R.string.token_registry_changed, TokenLabels.rowBadge(CATEGORY));
         assertEquals(TokenBalance.shortId(CATEGORY), TokenLabels.listTitle(CATEGORY));
+    }
+
+    @Test
+    public void aChangedRegistryOfAnIdentityNotFollowedYetIsNotYetVerified() {
+        update(token().setRegistryChanged(true));
+        assertEquals(R.string.token_not_yet_verified, TokenLabels.badge(CATEGORY));
     }
 
     @Test

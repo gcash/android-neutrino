@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.TextUtils;
+import android.text.method.ScrollingMovementMethod;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -76,6 +78,10 @@ public class TokenActivity extends AppCompatActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
     // Whether the user asked for the token's metadata on this screen.
     private boolean fetched;
+    // Whether the description shows in full.
+    private boolean descriptionOpen;
+    private static final int DESCRIPTION_LINES = 3;
+    private static final int DESCRIPTION_OPEN_LINES = 10;
     private static final long ASK_INTERVAL_MS = 5_000;
 
     /**
@@ -161,6 +167,7 @@ public class TokenActivity extends AppCompatActivity {
 
         showIcon();
         showTokenId(this, findViewById(R.id.tokenId), layout, category);
+        findViewById(R.id.tokenDescription).setOnClickListener(v -> toggleDescription((TextView) v));
 
         RecyclerView list = findViewById(R.id.tokenHistory);
         list.setLayoutManager(new LinearLayoutManager(this));
@@ -225,6 +232,21 @@ public class TokenActivity extends AppCompatActivity {
                 }, MoreExecutors.directExecutor());
     }
 
+    // toggleDescription shows all of the description, which scrolls in place if it's long, as the
+    // screen's list still has to show, or goes back to its first lines.
+    private void toggleDescription(TextView description) {
+        descriptionOpen = !descriptionOpen;
+        description.setMaxLines(descriptionOpen ? DESCRIPTION_OPEN_LINES : DESCRIPTION_LINES);
+        description.setEllipsize(descriptionOpen ? null : TextUtils.TruncateAt.END);
+        description.setMovementMethod(descriptionOpen ? ScrollingMovementMethod.getInstance() : null);
+        description.scrollTo(0, 0);
+        if (!descriptionOpen) {
+            // Clearing the movement leaves the view unclickable, and text that can't ellipsize.
+            description.setClickable(true);
+            description.setText(description.getText().toString());
+        }
+    }
+
     // showLabels shows the token's name, how far to trust it, and its description, which are
     // only there once the wallet has them.
     private void showLabels() {
@@ -240,8 +262,7 @@ public class TokenActivity extends AppCompatActivity {
         int text = TokenLabels.badge(category);
         badge.setVisibility(text == 0 ? View.GONE : View.VISIBLE);
         if (text != 0) {
-            badge.setText(has && token.burned
-                    ? getString(R.string.token_badge_and_burned, getString(text)) : getString(text));
+            badge.setText(text);
         }
     }
 

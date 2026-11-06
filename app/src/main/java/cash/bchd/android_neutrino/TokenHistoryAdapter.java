@@ -127,7 +127,7 @@ final class TokenHistoryAdapter extends RecyclerView.Adapter<TransactionAdapter.
         // one.
         holder.txMemo.setText(DateUtils.formatDateTime(ctx, row.tx.getTimestamp() * 1000,
                 DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME | DateUtils.FORMAT_ABBREV_MONTH));
-        holder.bchAmount.setText(TokenTexts.change(ctx, row.change));
+        holder.bchAmount.setText(TokenTexts.changeOnTokenScreen(ctx, row.change));
         holder.bchAmount.setTextColor(ContextCompat.getColor(ctx, received ? R.color.darkGreen : R.color.neonPurple));
 
         // The status shows a dot before it until the transaction has ten confirmations.

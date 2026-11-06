@@ -78,6 +78,15 @@ public final class TokenLabels {
     }
 
     /**
+     * number shows a number of the token's smallest units with its decimals, but not its symbol,
+     * for where the token is plain, as on its own screen.
+     */
+    public static String number(String category, BigInteger amount) {
+        TokenMeta token = TOKENS.get(category);
+        return TokenMeta.formatUnits(amount, token != null && token.hasMetadata ? token.decimals : 0);
+    }
+
+    /**
      * listTitle returns what to call a token where no badge shows, as in a transaction's row:
      * the name only if it can be trusted, as a look-alike's name is made to mislead.
      */
@@ -124,16 +133,6 @@ public final class TokenLabels {
     }
 
     /**
-     * rowBadge returns the badge of a token's row, where a token that may be out of date is only
-     * verified, as most tokens move on without publishing again, and its screen says the rest.
-     */
-    @StringRes
-    public static int rowBadge(String category) {
-        int badge = badge(category);
-        return badge == R.string.token_may_be_out_of_date ? R.string.token_verified : badge;
-    }
-
-    /**
      * badge returns the string that says how far to trust what shows of a token, or 0 for none:
      * a look-alike comes first, as it's the warning that matters, then what went wrong.
      */
@@ -161,11 +160,8 @@ public final class TokenLabels {
         if (token.known) {
             return R.string.token_known;
         }
-        if (token.registryChanged) {
+        if (token.registryChanged && token.status == TokenMeta.Status.VERIFIED) {
             return R.string.token_registry_changed;
-        }
-        if (token.stale && token.status == TokenMeta.Status.VERIFIED) {
-            return R.string.token_may_be_out_of_date;
         }
         return token.verified() ? R.string.token_verified : R.string.token_not_yet_verified;
     }

@@ -63,8 +63,6 @@ public final class TokenMeta {
     public final boolean loadsByItself;
     public final boolean lookAlike;
     public final boolean burned;
-    // Whether the publication isn't on the head, so the metadata may be out of date.
-    public final boolean stale;
     // Whether the metadata is from a file other than the published one, so nothing vouches for it.
     public final boolean registryChanged;
     // Whether the token published a registry that nothing could be read from.
@@ -86,7 +84,6 @@ public final class TokenMeta {
         loadsByItself = token.getLoadsByItself();
         lookAlike = token.getLookAlike();
         burned = token.getBurned();
-        stale = token.getPublicationStale();
         registryChanged = token.getRegistryChanged();
         registryFailed = token.getRegistryFailed();
         List<NftType> types = new ArrayList<>();
@@ -112,7 +109,6 @@ public final class TokenMeta {
         loadsByItself = token.loadsByItself;
         lookAlike = token.lookAlike;
         burned = token.burned;
-        stale = token.stale;
         registryChanged = token.registryChanged;
         registryFailed = token.registryFailed;
         nftTypes = types;
@@ -217,7 +213,7 @@ public final class TokenMeta {
         return category.equals(o.category) && hasMetadata == o.hasMetadata && name.equals(o.name)
                 && symbol.equals(o.symbol) && decimals == o.decimals && status == o.status
                 && known == o.known && lookAlike == o.lookAlike && burned == o.burned
-                && stale == o.stale && registryChanged == o.registryChanged
+                && registryChanged == o.registryChanged
                 && registryFailed == o.registryFailed && nftTypes.size() == o.nftTypes.size()
                 && iconUri.equals(o.iconUri);
     }

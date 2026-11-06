@@ -37,6 +37,20 @@ final class TokenTexts {
     }
 
     /**
+     * changeOnTokenScreen says the same where the token's symbol is plain, on the token's own
+     * screen, which leaves room for the row's date.
+     */
+    static String changeOnTokenScreen(Context ctx, TokenChange change) {
+        String amount = change.amount == 0 ? null
+                : (change.amount > 0 ? "+" : "") + TokenLabels.number(change.category, BigInteger.valueOf(change.amount));
+        String nfts = change.nfts == 0 ? null : nfts(ctx, change.nfts);
+        if (amount == null) {
+            return nfts;
+        }
+        return nfts == null ? amount : ctx.getString(R.string.token_amount_and_nfts, amount, nfts);
+    }
+
+    /**
      * details says, a line for each, how the transaction changed the token: its fungible amount,
      * and each NFT that came or went, by name or commitment.
      */
