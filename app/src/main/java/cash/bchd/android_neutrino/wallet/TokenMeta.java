@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
 import walletrpc.Api;
 
@@ -40,12 +41,15 @@ public final class TokenMeta {
         public final String name;
         public final String description;
         public final String iconUri;
+        // Its traits, by name, in the order of their names.
+        public final Map<String, String> attributes;
 
         NftType(Api.TokenMetadataResponse.NftType type) {
             commitment = type.getCommitment();
             name = type.getName();
             description = type.getDescription();
             iconUri = type.getIconUri();
+            attributes = Collections.unmodifiableMap(new TreeMap<>(type.getAttributesMap()));
         }
     }
 

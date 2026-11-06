@@ -7,10 +7,12 @@ import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.format.DateUtils;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
@@ -23,6 +25,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import cash.bchd.android_neutrino.tokens.NftArt;
 import cash.bchd.android_neutrino.tokens.TokenIcons;
@@ -185,6 +188,7 @@ public class NftActivity extends AppCompatActivity {
         if (badge != 0) {
             badgeView.setText(badge);
         }
+        showDetails(meta, nft.commitment);
         TextView kind = findViewById(R.id.nftKind);
         TextView explained = findViewById(R.id.nftKindExplained);
         switch (nft.capability) {
@@ -217,6 +221,31 @@ public class NftActivity extends AppCompatActivity {
             commitment.setText(nft.commitment);
             commitment.setOnClickListener(v -> copyCommitment(nft.commitment));
         }
+    }
+
+    // showDetails shows the NFT's description, or else its token's, and its attributes.
+    private void showDetails(TokenMeta meta, String commitment) {
+        TokenMeta.NftType type = meta == null ? null : meta.nftType(commitment);
+        String text = type != null && !type.description.isEmpty() ? type.description
+                : meta != null && meta.hasMetadata ? meta.description : "";
+        TextView description = findViewById(R.id.nftDescription);
+        description.setText(text);
+        int shown = text.isEmpty() ? View.GONE : View.VISIBLE;
+        description.setVisibility(shown);
+        findViewById(R.id.nftDescriptionLabel).setVisibility(shown);
+
+        LinearLayout attributes = findViewById(R.id.nftAttributes);
+        attributes.removeAllViews();
+        Map<String, String> traits = type == null ? Collections.emptyMap() : type.attributes;
+        for (Map.Entry<String, String> trait : traits.entrySet()) {
+            View row = LayoutInflater.from(this).inflate(R.layout.nft_attribute_row, attributes, false);
+            ((TextView) row.findViewById(R.id.nftAttributeName)).setText(trait.getKey());
+            ((TextView) row.findViewById(R.id.nftAttributeValue)).setText(trait.getValue());
+            attributes.addView(row);
+        }
+        shown = traits.isEmpty() ? View.GONE : View.VISIBLE;
+        attributes.setVisibility(shown);
+        findViewById(R.id.nftAttributesLabel).setVisibility(shown);
     }
 
     // showReceived shows when the NFT came, which opens the transaction it came in, if the main

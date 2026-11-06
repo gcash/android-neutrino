@@ -88,4 +88,12 @@ public class TokenMetaTest {
         assertEquals("One", tokens.get(0).nftType("01").name);
         assertNull(tokens.get(0).nftType("02"));
     }
+
+    @Test
+    public void attributesComeInTheOrderOfTheirNames() {
+        TokenMeta token = new TokenMeta(Api.TokenMetadataResponse.Token.newBuilder().setCategory("c").setHasMetadata(true)
+                .addNftTypes(Api.TokenMetadataResponse.NftType.newBuilder().setCommitment("01")
+                        .putAttributes("Eyes", "Red").putAttributes("Background", "Blue")).build());
+        assertEquals("[Background, Eyes]", token.nftType("01").attributes.keySet().toString());
+    }
 }
