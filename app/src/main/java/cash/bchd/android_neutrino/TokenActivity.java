@@ -80,6 +80,9 @@ public class TokenActivity extends AppCompatActivity {
     private boolean fetched;
     // Whether the description shows in full.
     private boolean descriptionOpen;
+    // Whether the collection's NFTs can show, as they sort by the names the wallet says, and
+    // shouldn't jump to their places once it has.
+    private boolean nftsReady;
     private static final int DESCRIPTION_LINES = 3;
     private static final int DESCRIPTION_OPEN_LINES = 10;
     private static final long ASK_INTERVAL_MS = 5_000;
@@ -176,6 +179,8 @@ public class TokenActivity extends AppCompatActivity {
         if (collection) {
             nfts = new NftAdapter(this, category, nft -> NftActivity.open(this, category, nft));
             list.setAdapter(nfts);
+            list.setItemAnimator(null);
+            nftsReady = TokenLabels.hasNftTypes(category);
         } else {
             history = new TokenHistoryAdapter(this, category, tx ->
                     detailsPopup = TransactionDetailsPopup.show(this, layout, tx, blockHeight, network));
@@ -202,6 +207,7 @@ public class TokenActivity extends AppCompatActivity {
         Wallet wallet = Wallet.getInstance();
         if (wallet == null || !wallet.isRunning()) {
             showLabels();
+            showNftsAnyway();
             return;
         }
         Futures.addCallback(wallet.tokenMetadataAsync(Collections.singletonList(category), true),
@@ -211,6 +217,7 @@ public class TokenActivity extends AppCompatActivity {
                         TokenLabels.update(tokens);
                         runOnUiThread(() -> {
                             showLabels();
+                            nftsReady = true;
                             showToken(settings.getLastTokens());
                             if (nfts != null) {
                                 nfts.labelsChanged();
@@ -225,8 +232,17 @@ public class TokenActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(Throwable t) {
                         t.printStackTrace();
+                        runOnUiThread(TokenActivity.this::showNftsAnyway);
                     }
                 }, MoreExecutors.directExecutor());
+    }
+
+    // showNftsAnyway shows the NFTs without waiting for names that aren't coming.
+    private void showNftsAnyway() {
+        if (!nftsReady) {
+            nftsReady = true;
+            showToken(settings.getLastTokens());
+        }
     }
 
     // toggleDescription shows all of the description, which scrolls in place if it's long, as the
@@ -305,6 +321,7 @@ public class TokenActivity extends AppCompatActivity {
             settings.addLoadedIcon(category);
         }
         if (art && token.iconUri.isEmpty()) {
+            Snackbar.make(layout, R.string.token_no_icon, Snackbar.LENGTH_LONG).show();
             done.run();
             return;
         }
@@ -312,6 +329,8 @@ public class TokenActivity extends AppCompatActivity {
             Snackbar.make(layout, R.string.token_no_icon, Snackbar.LENGTH_LONG).show();
             return;
         }
+        // A collection still has its NFTs' art, so its icon missing is no failure of what was asked.
+        int failed = art ? R.string.token_icon_unavailable : R.string.token_icon_failed;
         Futures.addCallback(wallet.tokenIconAsync(token.iconUri), new FutureCallback<byte[]>() {
             @Override
             public void onSuccess(byte[] data) {
@@ -321,7 +340,7 @@ public class TokenActivity extends AppCompatActivity {
                         settings.addLoadedIcon(category);
                         done.run();
                     } else {
-                        Snackbar.make(layout, R.string.token_icon_failed, Snackbar.LENGTH_LONG).show();
+                        Snackbar.make(layout, failed, Snackbar.LENGTH_LONG).show();
                         if (art) {
                             done.run();
                         }
@@ -332,7 +351,7 @@ public class TokenActivity extends AppCompatActivity {
             @Override
             public void onFailure(Throwable t) {
                 screen.runOnUiThread(() -> {
-                    Snackbar.make(layout, R.string.token_icon_failed, Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(layout, failed, Snackbar.LENGTH_LONG).show();
                     if (art) {
                         done.run();
                     }
@@ -431,7 +450,9 @@ public class TokenActivity extends AppCompatActivity {
             amount.setText(nftText);
             nftLine.setVisibility(View.GONE);
             bch.setVisibility(View.GONE);
-            nfts.setNfts(token.collection);
+            if (nftsReady) {
+                nfts.setNfts(token.collection);
+            }
             return;
         }
         if (token.amount == 0 && token.nfts > 0) {
