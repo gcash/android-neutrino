@@ -1175,7 +1175,7 @@ public class MainActivity extends CloseActivity {
                                     String formattedFiat = "";
                                     if (mainActivity2.exchangeRates != null) {
                                         try {
-                                            formattedFiat = mainActivity2.exchangeRates.getFormattedAmountInFiat(new Amount(tx.getAmount()), Currency.getInstance(fiatCurrency));
+                                            formattedFiat = mainActivity2.exchangeRates.getFormattedAmountInFiat(new Amount(tx.shownAmount()), Currency.getInstance(fiatCurrency));
                                         } catch (Exception e) {
                                             e.printStackTrace();
                                         }

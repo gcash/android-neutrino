@@ -123,6 +123,22 @@ public class TransactionData implements Serializable, Comparable<TransactionData
         return this.spendableAmount;
     }
 
+    /**
+     * shownAmount returns how much the transaction changed the balance by, as its details show it:
+     * what's spendable, as in its row, if it moved tokens.
+     */
+    public long shownAmount() {
+        return getTokens().isEmpty() ? this.amount : this.spendableAmount;
+    }
+
+    /**
+     * tokenAmount returns the satoshis that came to the outputs that hold tokens, or left them if
+     * it's negative, which is how a transaction's total differs from what it shows.
+     */
+    public long tokenAmount() {
+        return this.amount - shownAmount();
+    }
+
     public void setSpendableAmount(long spendableAmount) {
         this.spendableAmount = spendableAmount;
     }

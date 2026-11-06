@@ -207,6 +207,8 @@
         <item quantity="one">and %1$d more NFT</item>
         <item quantity="other">and %1$d more NFTs</item>
     </plurals>
+    <string name="tx_details_bch_stays">%1$s BCH stays with the token</string>
+    <string name="tx_details_bch_left">%1$s BCH left with the token</string>
     <string name="swapped_nft">Swapped NFT</string>
     <string name="nft_description">Description</string>
     <string name="nft_attributes">Attributes</string>

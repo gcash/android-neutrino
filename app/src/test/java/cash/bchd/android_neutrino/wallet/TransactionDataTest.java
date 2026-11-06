@@ -99,4 +99,18 @@ public class TransactionDataTest {
         tx.setFiatAmount("");
         assertEquals("", tx.getFiatAmount());
     }
+
+    @Test
+    public void detailsShowWhatsSpendableOfATokenTransaction() {
+        TransactionData plain = new TransactionData("", false, "", -5000, "", "USD", 0, "", 0);
+        plain.setSpendableAmount(-5000);
+        assertEquals(-5000, plain.shownAmount());
+        assertEquals(0, plain.tokenAmount());
+
+        TransactionData nft = new TransactionData("", false, "", -5001000, "", "USD", 0, "", 0);
+        nft.setTokens(Collections.singletonList(new TokenChange("c", 0, 1)));
+        nft.setSpendableAmount(-5002000);
+        assertEquals(-5002000, nft.shownAmount());
+        assertEquals(1000, nft.tokenAmount());
+    }
 }
