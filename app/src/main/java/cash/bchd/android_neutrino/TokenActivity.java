@@ -174,10 +174,7 @@ public class TokenActivity extends AppCompatActivity {
         // With the application's context, as the main screen's lists have.
         list.addItemDecoration(new DividerItemDecoration(getApplicationContext(), DividerItemDecoration.VERTICAL));
         if (collection) {
-            nfts = new NftAdapter(this, category, nft -> NftActivity.open(this, category, nft), uri -> {
-                Wallet wallet = Wallet.getInstance();
-                return wallet != null && wallet.isRunning() ? wallet.tokenIconAsync(uri) : null;
-            });
+            nfts = new NftAdapter(this, category, nft -> NftActivity.open(this, category, nft));
             list.setAdapter(nfts);
         } else {
             history = new TokenHistoryAdapter(this, category, tx ->

@@ -19,6 +19,7 @@
     <dimen name="tx_details_width">370dp</dimen>
     <dimen name="tx_details_margin">16dp</dimen>
     <dimen name="tx_details_label">72dp</dimen>
+    <dimen name="tx_details_nft_icon">32dp</dimen>
     <dimen name="tx_details_token_change">190dp</dimen>
     <!-- The widest the amount of a transaction's row gets before it wraps. -->
     <dimen name="tx_row_amount">220dp</dimen>

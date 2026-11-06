@@ -18,15 +18,25 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.List;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.MoreExecutors;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import cash.bchd.android_neutrino.tokens.NftArt;
 import cash.bchd.android_neutrino.tokens.TokenIcons;
 import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
 import cash.bchd.android_neutrino.wallet.TokenChange;
+import cash.bchd.android_neutrino.wallet.TokenMeta;
 import cash.bchd.android_neutrino.wallet.TransactionData;
+import cash.bchd.android_neutrino.wallet.Wallet;
 
 public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.TxViewHolder> {
 
@@ -41,7 +51,10 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     // The popup with a transaction's details, and the transaction, while it shows.
     private PopupWindow detailsPopup;
     private TransactionData detailsTx;
-    // The icons of the tokens that rows lead with, by token ID.
+    // The art of the NFTs that rows lead with, and the tokens whose NFTs were asked about.
+    private final NftArt art;
+    private final Set<String> askedTypes = new HashSet<>();
+    // The icons that rows lead with, by token ID, with the commitment for an NFT's.
     private final LruCache<String, Bitmap> icons = new LruCache<>(64);
 
     // Provide a reference to the views for each data item
@@ -73,6 +86,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         blockHeight = height;
         this.network = network;
         shownRows = TransactionRows.of(myDataset, height);
+        art = new NftArt(context, this::artLoaded);
     }
 
     /**
@@ -179,7 +193,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         boolean received = first.received();
         boolean nftsOnly = first.amount == 0;
         holder.arrowImage.setScaleType(ImageView.ScaleType.CENTER);
-        holder.arrowImage.setImageBitmap(icon(first.category));
+        holder.arrowImage.setImageBitmap(icon(tokens));
         holder.txDescription.setText(received ? (nftsOnly ? R.string.received_nft : R.string.received_token)
                 : (nftsOnly ? R.string.sent_nft : R.string.sent_token));
         holder.txMemo.setEllipsize(TextUtils.TruncateAt.END);
@@ -204,13 +218,81 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         }
     }
 
-    private Bitmap icon(String category) {
-        Bitmap icon = icons.get(category);
+    private void artLoaded(String category, String commitment) {
+        icons.remove(category + "-" + commitment);
+        for (int i = 0; i < mDataset.size(); i++) {
+            List<TokenChange> tokens = mDataset.get(i).getTokens();
+            if (tokens.size() == 1 && tokens.get(0).category.equals(category)
+                    && commitment.equals(tokens.get(0).onlyNft())) {
+                notifyItemChanged(i);
+            }
+        }
+    }
+
+    // icon returns what a row leads with: the art of the NFT if the transaction moved just that,
+    // or else the token's icon.
+    private Bitmap icon(List<TokenChange> tokens) {
+        TokenChange change = tokens.get(0);
+        String category = change.category;
+        String commitment = tokens.size() == 1 ? change.onlyNft() : null;
+        if (commitment != null) {
+            loadArt(category, commitment);
+        }
+        String key = commitment == null ? category : category + "-" + commitment;
+        Bitmap icon = icons.get(key);
         if (icon == null) {
-            icon = TokenIcons.bitmap(ctx, category, ctx.getResources().getDimensionPixelSize(R.dimen.token_row_icon));
-            icons.put(category, icon);
+            int size = ctx.getResources().getDimensionPixelSize(R.dimen.token_row_icon);
+            icon = commitment == null ? TokenIcons.bitmap(ctx, category, size)
+                    : TokenIcons.nftBitmap(ctx, category, commitment, size);
+            icons.put(key, icon);
         }
         return icon;
+    }
+
+    // loadArt has the art of an NFT load, asking the wallet what its token's NFTs are first, as it
+    // only says for a few tokens at a time.
+    private void loadArt(String category, String commitment) {
+        if (!TokenIcons.showing(category)) {
+            return;
+        }
+        if (TokenLabels.hasNftTypes(category)) {
+            art.request(category, commitment);
+            return;
+        }
+        Wallet wallet = Wallet.getInstance();
+        if (wallet == null || !wallet.isRunning() || !askedTypes.add(category)) {
+            return;
+        }
+        Futures.addCallback(wallet.tokenMetadataAsync(Collections.singletonList(category), true),
+                new FutureCallback<List<TokenMeta>>() {
+                    @Override
+                    public void onSuccess(List<TokenMeta> tokens) {
+                        TokenLabels.update(tokens);
+                        cLayout.post(() -> notifyItemRangeChanged(0, getItemCount()));
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        t.printStackTrace();
+                        cLayout.post(() -> askedTypes.remove(category));
+                    }
+                }, MoreExecutors.directExecutor());
+    }
+
+    /**
+     * labelsChanged has the rows ask again what their tokens' NFTs are, as the wallet may only now
+     * have them.
+     */
+    void labelsChanged() {
+        askedTypes.clear();
+        notifyItemRangeChanged(0, getItemCount());
+    }
+
+    /**
+     * stop ends the loading of art, as the screen is going.
+     */
+    void stop() {
+        art.stop();
     }
 
     /**

@@ -51,30 +51,34 @@ final class TokenTexts {
     }
 
     /**
-     * details says, a line for each, how the transaction changed the token: its fungible amount,
-     * and each NFT that came or went, by name or commitment.
+     * details says how the transaction changed the token apart from the NFTs that have rows of their
+     * own: its fungible amount, or how many NFTs for a change saved before the app kept which.
      */
     static String details(Context ctx, TokenChange change) {
         List<String> lines = new ArrayList<>();
         if (change.amount != 0) {
             lines.add(signed(change.category, change.amount));
         }
-        for (String commitment : change.nftsReceived()) {
-            lines.add(nftLine(ctx, change.category, commitment, R.string.nft_in, R.string.nft_in_with,
-                    R.string.nft_in_named));
-        }
-        for (String commitment : change.nftsSent()) {
-            lines.add(nftLine(ctx, change.category, commitment, R.string.nft_out, R.string.nft_out_with,
-                    R.string.nft_out_named));
-        }
-        // A change saved before the app kept the NFTs' commitments has how many only.
         if (change.nfts != 0 && change.nftsReceived().isEmpty() && change.nftsSent().isEmpty()) {
             lines.add(nfts(ctx, change.nfts));
         }
         return TextUtils.join("\n", lines);
     }
 
-    // nftLine says an NFT came or went, by its name if it has one to trust, or else its commitment.
+    /**
+     * nftIn says an NFT came, by its name if it has one to trust, or else its commitment.
+     */
+    static String nftIn(Context ctx, String category, String commitment) {
+        return nftLine(ctx, category, commitment, R.string.nft_in, R.string.nft_in_with, R.string.nft_in_named);
+    }
+
+    /**
+     * nftOut says an NFT went, as nftIn says one came.
+     */
+    static String nftOut(Context ctx, String category, String commitment) {
+        return nftLine(ctx, category, commitment, R.string.nft_out, R.string.nft_out_with, R.string.nft_out_named);
+    }
+
     private static String nftLine(Context ctx, String category, String commitment, @StringRes int bare,
                                   @StringRes int withCommitment, @StringRes int named) {
         String name = TokenLabels.listNftName(category, commitment);

@@ -289,6 +289,7 @@ public class MainActivity extends CloseActivity {
             qrPopup.dismiss();
         }
         mAdapter.dismissDetails();
+        mAdapter.stop();
         super.onDestroy();
     }
 
@@ -826,7 +827,7 @@ public class MainActivity extends CloseActivity {
                     if (TokenLabels.update(tokens)) {
                         runOnUiThread(() -> {
                             tokenAdapter.labelsChanged();
-                            mAdapter.notifyItemRangeChanged(0, mAdapter.getItemCount());
+                            mAdapter.labelsChanged();
                         });
                     }
                     if (settings.getTokenImages()) {

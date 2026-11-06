@@ -11,6 +11,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import cash.bchd.android_neutrino.R;
+
 /**
  * TokenIcons keeps the icons the user chose to load, as files in the app's data. An icon is a file
  * from a stranger, so it's decoded with its size checked first, and scaled down as it's read. A
@@ -99,17 +101,23 @@ public final class TokenIcons {
      * save keeps an icon if it's an image this device can show, and returns whether it did.
      */
     public static boolean save(Context context, String category, byte[] data) {
-        return save(file(context, category), data);
+        return save(file(context, category), data, largestShown(context));
     }
 
     /**
      * saveNft keeps an NFT's own art as save keeps an icon.
      */
     public static boolean saveNft(Context context, String category, String commitment, byte[] data) {
-        return save(nftFile(context, category, commitment), data);
+        return save(nftFile(context, category, commitment), data, largestShown(context));
     }
 
-    private static boolean save(File file, byte[] data) {
+    // largestShown returns the largest side any screen shows an image at on this device, which is
+    // all that's worth keeping, as a collection's art can be megabytes each.
+    private static int largestShown(Context context) {
+        return context.getResources().getDimensionPixelSize(R.dimen.nft_screen_icon);
+    }
+
+    private static boolean save(File file, byte[] data, int maxSide) {
         BitmapFactory.Options bounds = new BitmapFactory.Options();
         bounds.inJustDecodeBounds = true;
         BitmapFactory.decodeByteArray(data, 0, data.length, bounds);
@@ -120,13 +128,41 @@ public final class TokenIcons {
         if (dir == null || (!dir.isDirectory() && !dir.mkdirs())) {
             return false;
         }
-        File tmp = new File(dir, file.getName() + ".tmp");
-        try (FileOutputStream out = new FileOutputStream(tmp)) {
-            out.write(data);
+        // Its own file, as two screens can load the same image at once.
+        File tmp;
+        try {
+            tmp = File.createTempFile("icon", ".tmp", dir);
         } catch (IOException e) {
             return false;
         }
+        try (FileOutputStream out = new FileOutputStream(tmp)) {
+            if (Math.max(bounds.outWidth, bounds.outHeight) <= maxSide) {
+                out.write(data);
+            } else if (!shrink(data, bounds, maxSide, out)) {
+                tmp.delete();
+                return false;
+            }
+        } catch (IOException e) {
+            tmp.delete();
+            return false;
+        }
         return tmp.renameTo(file);
+    }
+
+    // shrink writes the image with its largest side at maxSide, in its proportions.
+    private static boolean shrink(byte[] data, BitmapFactory.Options bounds, int maxSide, FileOutputStream out) {
+        int width = bounds.outWidth;
+        int height = bounds.outHeight;
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inSampleSize = sampleSize(width, height, maxSide);
+        Bitmap decoded = BitmapFactory.decodeByteArray(data, 0, data.length, options);
+        if (decoded == null) {
+            return false;
+        }
+        float scale = (float) maxSide / Math.max(width, height);
+        Bitmap small = Bitmap.createScaledBitmap(decoded, Math.max(1, Math.round(width * scale)),
+                Math.max(1, Math.round(height * scale)), true);
+        return small.compress(Bitmap.CompressFormat.PNG, 100, out);
     }
 
     /**

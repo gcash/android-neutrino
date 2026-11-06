@@ -3,8 +3,6 @@ package cash.bchd.android_neutrino.tokens;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Typeface;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,29 +14,18 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
-
 import java.math.BigInteger;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Deque;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import cash.bchd.android_neutrino.R;
-import cash.bchd.android_neutrino.wallet.TokenMeta;
 import cash.bchd.android_neutrino.wallet.TokenNft;
 
 /**
  * NftAdapter lists the NFTs of a token's collection, a row for each: its art, its name or its
  * commitment, shortened when it's long, and what it can do, Minting or Mutable, which an immutable
- * NFT shows nothing for. With the token's images on, it loads the art of the rows that show, the
- * ones shown last first, a few at a time, as a collection's art is often on a public gateway.
+ * NFT shows nothing for. With the token's images on, it loads the art of the rows that show.
  */
 public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
 
@@ -49,29 +36,13 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
         void onClick(TokenNft nft);
     }
 
-    /**
-     * ArtLoader reads the image at a URI, or gives null if it can't now.
-     */
-    public interface ArtLoader {
-        ListenableFuture<byte[]> load(String uri);
-    }
-
-    // How many images load at once.
-    private static final int MAX_LOADING = 3;
-
     private final Context context;
     private final OnClick onClick;
-    private final ArtLoader loader;
     private final String category;
     private final int iconSize;
-    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final NftArt loader;
     // The art drawn so far, by commitment.
     private final LruCache<String, Bitmap> art = new LruCache<>(64);
-    // The commitments asked for, which aren't asked for again, and those waiting their turn.
-    private final Set<String> asked = new HashSet<>();
-    private final Deque<String> waiting = new ArrayDeque<>();
-    private int loading;
-    private boolean stopped;
     private List<TokenNft> nfts = Collections.emptyList();
 
     public static final class Row extends RecyclerView.ViewHolder {
@@ -87,11 +58,11 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
         }
     }
 
-    public NftAdapter(Context context, String category, OnClick onClick, ArtLoader loader) {
+    public NftAdapter(Context context, String category, OnClick onClick) {
         this.category = category;
         this.context = context;
         this.onClick = onClick;
-        this.loader = loader;
+        loader = new NftArt(context, (loadedCategory, commitment) -> artLoaded(commitment));
         iconSize = context.getResources().getDimensionPixelSize(R.dimen.token_row_icon);
     }
 
@@ -100,7 +71,7 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
      */
     public void iconsChanged() {
         art.evictAll();
-        asked.clear();
+        loader.retry();
         notifyItemRangeChanged(0, nfts.size());
     }
 
@@ -108,9 +79,7 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
      * stop ends the loading of art, as the screen is going.
      */
     public void stop() {
-        stopped = true;
-        waiting.clear();
-        handler.removeCallbacksAndMessages(null);
+        loader.stop();
     }
 
     private Bitmap art(String commitment) {
@@ -122,58 +91,13 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
         return bitmap;
     }
 
-    // loadArt has the art of a row that shows load, if it's to show and isn't there yet.
-    private void loadArt(String commitment) {
-        if (!TokenIcons.showing(category) || artUri(commitment) == null || !asked.add(commitment)
-                || TokenIcons.hasNft(context, category, commitment)) {
-            return;
-        }
-        waiting.addFirst(commitment);
-        loadNext();
-    }
-
-    private String artUri(String commitment) {
-        TokenMeta token = TokenLabels.get(category);
-        TokenMeta.NftType type = token == null ? null : token.nftType(commitment);
-        return type == null || type.iconUri.isEmpty() ? null : type.iconUri;
-    }
-
-    private void loadNext() {
-        while (!stopped && loading < MAX_LOADING && !waiting.isEmpty()) {
-            String commitment = waiting.pollFirst();
-            // What was waiting may no longer be wanted, or known.
-            String uri = artUri(commitment);
-            ListenableFuture<byte[]> data = uri == null || !TokenIcons.showing(category) ? null : loader.load(uri);
-            if (data == null) {
-                continue;
-            }
-            loading++;
-            Futures.addCallback(data, new FutureCallback<byte[]>() {
-                @Override
-                public void onSuccess(byte[] image) {
-                    boolean saved = TokenIcons.saveNft(context, category, commitment, image);
-                    handler.post(() -> loaded(commitment, saved));
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    handler.post(() -> loaded(commitment, false));
-                }
-            }, MoreExecutors.directExecutor());
-        }
-    }
-
-    private void loaded(String commitment, boolean saved) {
-        loading--;
-        if (saved) {
-            art.remove(commitment);
-            for (int i = 0; i < nfts.size(); i++) {
-                if (nfts.get(i).commitment.equals(commitment)) {
-                    notifyItemChanged(i);
-                }
+    private void artLoaded(String commitment) {
+        art.remove(commitment);
+        for (int i = 0; i < nfts.size(); i++) {
+            if (nfts.get(i).commitment.equals(commitment)) {
+                notifyItemChanged(i);
             }
         }
-        loadNext();
     }
 
     /**
@@ -280,7 +204,7 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
     public void onBindViewHolder(@NonNull Row row, int position) {
         TokenNft nft = nfts.get(position);
         row.icon.setImageBitmap(art(nft.commitment));
-        loadArt(nft.commitment);
+        loader.request(category, nft.commitment);
         String name = TokenLabels.nftName(category, nft.commitment);
         if (name != null) {
             row.commitment.setTypeface(Typeface.DEFAULT);

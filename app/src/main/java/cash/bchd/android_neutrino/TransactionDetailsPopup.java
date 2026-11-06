@@ -18,12 +18,14 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import cash.bchd.android_neutrino.tokens.NftArt;
 import cash.bchd.android_neutrino.tokens.TokenIcons;
 import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.Amount;
@@ -64,10 +66,18 @@ final class TransactionDetailsPopup {
         TextView fiatAmount = customView.findViewById(R.id.txDetailsFiatAmount);
         fiatAmount.setText(tx.getFiatAmount());
 
-        // A row for each token the transaction moved: its icon and what to call it, and how much.
+        // A row for each token the transaction moved: its icon, what to call it and how much, then
+        // a row for each of its NFTs with its art.
         LinearLayout tokens = customView.findViewById(R.id.txDetailsTokens);
         int iconSize = ctx.getResources().getDimensionPixelSize(R.dimen.token_details_icon);
-        Map<TokenChange, TextView> amounts = new HashMap<>();
+        int nftIconSize = ctx.getResources().getDimensionPixelSize(R.dimen.tx_details_nft_icon);
+        List<Runnable> draws = new ArrayList<>();
+        Map<String, List<ImageView>> artViews = new HashMap<>();
+        NftArt art = new NftArt(ctx, (category, commitment) -> {
+            for (ImageView view : artViews.getOrDefault(category + "-" + commitment, Collections.emptyList())) {
+                view.setImageBitmap(TokenIcons.nftBitmap(ctx, category, commitment, nftIconSize));
+            }
+        });
         for (TokenChange change : tx.getTokens()) {
             View row = LayoutInflater.from(ctx).inflate(R.layout.txdetails_token_row, tokens, false);
             ImageView icon = row.findViewById(R.id.txDetailsTokenIcon);
@@ -76,8 +86,13 @@ final class TransactionDetailsPopup {
             TokenLabels.showTitle(id, change.category, TokenLabels.listTitle(change.category), false);
             TextView amount = row.findViewById(R.id.txDetailsTokenChange);
             amount.setText(TokenTexts.details(ctx, change));
-            amounts.put(change, amount);
             tokens.addView(row);
+            for (String commitment : change.nftsReceived()) {
+                addNft(ctx, tokens, change.category, commitment, true, art, artViews, draws);
+            }
+            for (String commitment : change.nftsSent()) {
+                addNft(ctx, tokens, change.category, commitment, false, art, artViews, draws);
+            }
         }
         tokens.setVisibility(tx.getTokens().isEmpty() ? View.GONE : View.VISIBLE);
 
@@ -122,16 +137,35 @@ final class TransactionDetailsPopup {
         TextView link = customView.findViewById(R.id.txDetailsLink);
         link.setText(network.explorerUrl(tx.getTxid()));
         PopupWindow popupWindow = open(ctx, layout, customView);
-        showNftNames(ctx, layout, popupWindow, customView, amounts);
+        popupWindow.setOnDismissListener(art::stop);
+        showNftNames(ctx, layout, popupWindow, customView, tx, draws);
         return popupWindow;
     }
 
-    // showNftNames asks the wallet what the NFTs are called, if it hasn't said, as it only says for
-    // a few tokens at a time, and has the details say so.
+    // addNft adds the row of an NFT, and what draws it, as its name and art can come later.
+    private static void addNft(Context ctx, LinearLayout tokens, String category, String commitment, boolean in,
+                               NftArt art, Map<String, List<ImageView>> artViews, List<Runnable> draws) {
+        View row = LayoutInflater.from(ctx).inflate(R.layout.txdetails_nft_row, tokens, false);
+        ImageView icon = row.findViewById(R.id.txDetailsNftIcon);
+        TextView name = row.findViewById(R.id.txDetailsNftName);
+        int size = ctx.getResources().getDimensionPixelSize(R.dimen.tx_details_nft_icon);
+        artViews.computeIfAbsent(category + "-" + commitment, key -> new ArrayList<>()).add(icon);
+        Runnable draw = () -> {
+            icon.setImageBitmap(TokenIcons.nftBitmap(ctx, category, commitment, size));
+            name.setText(in ? TokenTexts.nftIn(ctx, category, commitment) : TokenTexts.nftOut(ctx, category, commitment));
+            art.request(category, commitment);
+        };
+        draw.run();
+        draws.add(draw);
+        tokens.addView(row);
+    }
+
+    // showNftNames asks the wallet what the NFTs are called and where their art is, if it hasn't
+    // said, as it only says for a few tokens at a time, and has the details show it.
     private static void showNftNames(Context ctx, ViewGroup layout, PopupWindow popupWindow, View details,
-                                     Map<TokenChange, TextView> amounts) {
+                                     TransactionData tx, List<Runnable> draws) {
         Set<String> categories = new HashSet<>();
-        for (TokenChange change : amounts.keySet()) {
+        for (TokenChange change : tx.getTokens()) {
             boolean nfts = !change.nftsReceived().isEmpty() || !change.nftsSent().isEmpty();
             if (nfts && !TokenLabels.hasNftTypes(change.category)) {
                 categories.add(change.category);
@@ -150,8 +184,8 @@ final class TransactionDetailsPopup {
                             if (!popupWindow.isShowing()) {
                                 return;
                             }
-                            for (Map.Entry<TokenChange, TextView> amount : amounts.entrySet()) {
-                                amount.getValue().setText(TokenTexts.details(ctx, amount.getKey()));
+                            for (Runnable draw : draws) {
+                                draw.run();
                             }
                             popupWindow.update(popupWindow.getWidth(), fit(ctx, layout, details, popupWindow.getWidth()));
                         });

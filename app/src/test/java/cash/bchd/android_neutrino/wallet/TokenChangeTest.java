@@ -120,4 +120,14 @@ public class TokenChangeTest {
         assertEquals(2000, data.getAmount());
         assertEquals(1000, data.getSpendableAmount());
     }
+
+    @Test
+    public void onlyNftIsTheOneNftAChangeIsAllAbout() {
+        List<String> none = Collections.emptyList();
+        assertEquals("01", new TokenChange("c", 0, 1, Collections.singletonList("01"), none).onlyNft());
+        assertEquals("02", new TokenChange("c", 0, -1, none, Collections.singletonList("02")).onlyNft());
+        assertEquals(null, new TokenChange("c", 5, 1, Collections.singletonList("01"), none).onlyNft());
+        assertEquals(null, new TokenChange("c", 0, 2, Arrays.asList("01", "02"), none).onlyNft());
+        assertEquals(null, new TokenChange("c", 0, 1).onlyNft());
+    }
 }

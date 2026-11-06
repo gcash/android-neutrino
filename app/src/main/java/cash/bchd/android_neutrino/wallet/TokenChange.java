@@ -109,6 +109,19 @@ public final class TokenChange implements Serializable {
     }
 
     /**
+     * onlyNft returns the commitment of the one NFT the change is all about, or null if it's about
+     * anything else.
+     */
+    public String onlyNft() {
+        List<String> received = nftsReceived();
+        List<String> sent = nftsSent();
+        if (amount != 0 || received.size() + sent.size() != 1) {
+            return null;
+        }
+        return received.isEmpty() ? sent.get(0) : received.get(0);
+    }
+
+    /**
      * nftsReceived returns the commitments, in hex, of the NFTs that came to the wallet.
      */
     public List<String> nftsReceived() {

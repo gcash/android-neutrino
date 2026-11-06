@@ -24,10 +24,7 @@ import com.google.android.material.snackbar.Snackbar;
 import java.util.Collections;
 import java.util.List;
 
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.MoreExecutors;
-
+import cash.bchd.android_neutrino.tokens.NftArt;
 import cash.bchd.android_neutrino.tokens.TokenIcons;
 import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.Amount;
@@ -60,6 +57,7 @@ public class NftActivity extends AppCompatActivity {
     private PopupWindow detailsPopup;
     // The NFT's commitment, once it's known.
     private String commitment;
+    private NftArt art;
 
     /**
      * open opens the screen of one of the token's NFTs.
@@ -84,6 +82,7 @@ public class NftActivity extends AppCompatActivity {
         network = settings.getNetwork();
         Networks.showBadge(this, network);
         layout = findViewById(R.id.nftLayout);
+        art = new NftArt(this, (loadedCategory, loadedCommitment) -> showIcon());
 
         Toolbar toolbar = findViewById(R.id.nftToolbar);
         setSupportActionBar(toolbar);
@@ -115,6 +114,7 @@ public class NftActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        art.stop();
         if (detailsPopup != null) {
             detailsPopup.dismiss();
         }
@@ -142,7 +142,8 @@ public class NftActivity extends AppCompatActivity {
         } else if (itemId == R.id.loadTokenIcon) {
             TokenActivity.loadIcon(this, settings, layout, category, () -> {
                 showIcon();
-                loadArt();
+                art.retry();
+                art.request(category, commitment);
             });
             return true;
         } else if (itemId == R.id.hideToken) {
@@ -161,31 +162,6 @@ public class NftActivity extends AppCompatActivity {
                 : TokenIcons.nftBitmap(this, category, commitment, size));
     }
 
-    // loadArt loads the NFT's art, if the token's images are to show and it isn't there yet.
-    private void loadArt() {
-        TokenMeta token = TokenLabels.get(category);
-        TokenMeta.NftType type = token == null || commitment == null ? null : token.nftType(commitment);
-        Wallet wallet = Wallet.getInstance();
-        if (type == null || type.iconUri.isEmpty() || !TokenIcons.showing(category)
-                || TokenIcons.hasNft(this, category, commitment) || wallet == null || !wallet.isRunning()) {
-            return;
-        }
-        String shown = commitment;
-        Futures.addCallback(wallet.tokenIconAsync(type.iconUri), new FutureCallback<byte[]>() {
-            @Override
-            public void onSuccess(byte[] data) {
-                if (TokenIcons.saveNft(NftActivity.this, category, shown, data)) {
-                    runOnUiThread(NftActivity.this::showIcon);
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                t.printStackTrace();
-            }
-        }, MoreExecutors.directExecutor());
-    }
-
     // showNft shows the NFT, among the token balances, or keeps what it shows if they don't have
     // it, as when it has moved since.
     private void showNft(List<TokenBalance> tokens) {
@@ -196,7 +172,7 @@ public class NftActivity extends AppCompatActivity {
         }
         commitment = nft.commitment;
         showIcon();
-        loadArt();
+        art.request(category, commitment);
         TextView nameView = findViewById(R.id.nftName);
         String name = TokenLabels.nftName(category, nft.commitment);
         TokenMeta meta = TokenLabels.get(category);
