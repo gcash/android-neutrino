@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -72,6 +73,8 @@ public class Wallet implements Serializable {
     private String lastBlockHash;
 
     private static boolean running = false;
+    // Those to tell when a wallet has loaded.
+    private static final Set<Runnable> READY_LISTENERS = new CopyOnWriteArraySet<>();
 
     // Set once stop was called, so that loadWallet does not report the
     // shutdown as an error.
@@ -120,6 +123,28 @@ public class Wallet implements Serializable {
 
         File directory = new File(config.getDataDir()+File.separator+config.getNetwork().id);
         directory.mkdirs();
+    }
+
+    /**
+     * addReadyListener has the listener told, on no particular thread, each time a wallet has
+     * loaded, as one does some time after the app comes back to a screen that needs it. That's
+     * once the wallet tells its main listener, so the screen can take that over.
+     */
+    public static void addReadyListener(Runnable listener) {
+        READY_LISTENERS.add(listener);
+    }
+
+    /**
+     * removeReadyListener stops telling the listener.
+     */
+    public static void removeReadyListener(Runnable listener) {
+        READY_LISTENERS.remove(listener);
+    }
+
+    static void tellReady() {
+        for (Runnable listener : READY_LISTENERS) {
+            listener.run();
+        }
     }
 
     public static Wallet getInstance() {
@@ -181,6 +206,7 @@ public class Wallet implements Serializable {
                 tellBalances(listener);
                 getTransactions(listener);
                 listenTransactions(listener);
+                tellReady();
             } catch (Exception e) {
                 if (!stopped) {
                     listener.onWalletError(describe(e));

@@ -82,6 +82,8 @@ public class NftActivity extends AppCompatActivity {
     private static final int FETCH_REFRESHES = 6;
     private static final long FETCH_REFRESH_MS = 5_000;
     private final Handler handler = new Handler(Looper.getMainLooper());
+    // The wallet stops while the app is away, and takes a moment when it comes back to this screen.
+    private final Runnable walletReady = this::refresh;
     private boolean fetching;
 
     /**
@@ -156,6 +158,18 @@ public class NftActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }, "wallet-nfts").start();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Wallet.addReadyListener(walletReady);
+    }
+
+    @Override
+    protected void onStop() {
+        Wallet.removeReadyListener(walletReady);
+        super.onStop();
     }
 
     @Override

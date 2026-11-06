@@ -109,4 +109,15 @@ public class WalletTest {
         assertFalse(Wallet.isWrongPassphrase(Status.INVALID_ARGUMENT.asRuntimeException()));
         assertFalse(Wallet.isWrongPassphrase(new IllegalStateException("invalid passphrase for master private key")));
     }
+
+    @Test
+    public void tellsReadyListenersUntilTheyLeave() {
+        int[] told = {0};
+        Runnable listener = () -> told[0]++;
+        Wallet.addReadyListener(listener);
+        Wallet.tellReady();
+        Wallet.removeReadyListener(listener);
+        Wallet.tellReady();
+        org.junit.Assert.assertEquals(1, told[0]);
+    }
 }

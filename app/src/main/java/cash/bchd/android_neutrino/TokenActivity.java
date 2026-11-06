@@ -21,6 +21,7 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.lifecycle.Lifecycle;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -86,6 +87,13 @@ public class TokenActivity extends AppCompatActivity {
     // The wallet's tokens as last told, which saved ones can be behind of.
     private List<TokenBalance> tokens;
     private final Runnable askAgain = this::askWallet;
+    // The wallet stops while the app is away, and takes a moment when it comes back to this screen.
+    private final Runnable walletReady = () -> runOnUiThread(() -> {
+        if (getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED)) {
+            attach();
+            askWallet();
+        }
+    });
     private static final int DESCRIPTION_LINES = 3;
     private static final int DESCRIPTION_OPEN_LINES = 10;
     private static final long ASK_INTERVAL_MS = 5_000;
@@ -384,8 +392,19 @@ public class TokenActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        // The wallet tells this screen what changes while it's in front, and tells it again now
-        // what it may have missed.
+        Wallet.addReadyListener(walletReady);
+        attach();
+    }
+
+    @Override
+    protected void onStop() {
+        Wallet.removeReadyListener(walletReady);
+        super.onStop();
+    }
+
+    // attach has the wallet tell this screen what changes while it's in front, and tell it again
+    // now what it may have missed. A wallet that's still loading does so once it's ready.
+    private void attach() {
         Wallet wallet = Wallet.getInstance();
         if (wallet != null && wallet.isRunning()) {
             wallet.setMainListener(listener);
