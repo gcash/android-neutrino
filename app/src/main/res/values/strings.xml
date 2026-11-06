@@ -200,6 +200,8 @@
         <item quantity="one">%1$s +%2$d more</item>
         <item quantity="other">%1$s +%2$d more</item>
     </plurals>
+    <string name="nft_play">Play</string>
+    <string name="nft_play_failed">The NFT couldn\'t be played.</string>
     <string name="nft_description">Description</string>
     <string name="nft_attributes">Attributes</string>
     <!-- An NFT that came to the wallet, or that it sent, in a transaction's details, with its

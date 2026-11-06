@@ -25,4 +25,18 @@ public class TokenIconsTest {
         assertEquals(2, TokenIcons.sampleSize(128, 128, 64));
         assertEquals(8, TokenIcons.sampleSize(1024, 512, 64));
     }
+
+    @Test
+    public void tellsArtThatMovesByItsUri() {
+        assertTrue(TokenIcons.movingUri("ipfs://cid/18.mp4"));
+        assertTrue(TokenIcons.movingUri("ipfs://cid/18.GIF"));
+        assertFalse(TokenIcons.movingUri("ipfs://cid/18.png"));
+    }
+
+    @Test
+    public void tellsAGifByItsStart() {
+        assertTrue(TokenIcons.isGif(new byte[]{'G', 'I', 'F', '8', '9'}));
+        assertFalse(TokenIcons.isGif(new byte[]{'G', 'I'}));
+        assertFalse(TokenIcons.isGif(new byte[]{1, 2, 3, 4}));
+    }
 }

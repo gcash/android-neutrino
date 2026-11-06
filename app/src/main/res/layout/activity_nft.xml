@@ -33,13 +33,45 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
 
-            <ImageView
-                android:id="@+id/nftIcon"
+            <!-- The NFT's art, which a tap plays when it moves. -->
+            <FrameLayout
+                android:id="@+id/nftArt"
                 android:layout_width="@dimen/nft_screen_icon"
                 android:layout_height="@dimen/nft_screen_icon"
                 android:layout_marginTop="8dp"
-                android:layout_marginBottom="8dp"
-                android:importantForAccessibility="no" />
+                android:layout_marginBottom="8dp">
+
+                <ImageView
+                    android:id="@+id/nftIcon"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:importantForAccessibility="no" />
+
+                <VideoView
+                    android:id="@+id/nftVideo"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:visibility="gone" />
+
+                <ImageView
+                    android:id="@+id/nftPlay"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    android:background="#80000000"
+                    android:contentDescription="@string/nft_play"
+                    android:scaleType="center"
+                    android:src="@android:drawable/ic_media_play"
+                    android:visibility="gone" />
+
+                <ProgressBar
+                    android:id="@+id/nftLoading"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    android:visibility="gone" />
+            </FrameLayout>
 
             <TextView
                 android:id="@+id/nftName"
