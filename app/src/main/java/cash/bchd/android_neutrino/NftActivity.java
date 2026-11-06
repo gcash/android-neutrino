@@ -165,6 +165,10 @@ public class NftActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         Wallet.addReadyListener(walletReady);
+        if (Wallet.getInstance() == null && settings.getWalletInitialized()) {
+            // Android brought this screen back without the main screen that starts the wallet.
+            WalletStarter.restart(this);
+        }
     }
 
     @Override

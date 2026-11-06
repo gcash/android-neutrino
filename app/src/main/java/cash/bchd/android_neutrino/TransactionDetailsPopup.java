@@ -43,7 +43,7 @@ import cash.bchd.android_neutrino.wallet.Wallet;
  */
 final class TransactionDetailsPopup {
 
-    // The most NFTs that get a row.
+    // The most tokens and NFTs that get a row.
     private static final int MAX_NFT_ROWS = 50;
 
     private TransactionDetailsPopup() {
@@ -90,6 +90,11 @@ final class TransactionDetailsPopup {
         // A stranger's transaction can hold any number, and each row draws an image.
         int rows = 0;
         for (TokenChange change : tx.getTokens()) {
+            if (rows >= MAX_NFT_ROWS) {
+                rows += 1 + change.nftsReceived().size() + change.nftsSent().size();
+                continue;
+            }
+            rows++;
             View row = LayoutInflater.from(ctx).inflate(R.layout.txdetails_token_row, tokens, false);
             ImageView icon = row.findViewById(R.id.txDetailsTokenIcon);
             icon.setImageBitmap(TokenIcons.listBitmap(ctx, change.category, iconSize));
@@ -179,7 +184,9 @@ final class TransactionDetailsPopup {
         Runnable draw = () -> {
             icon.setImageBitmap(TokenIcons.listNftBitmap(ctx, category, commitment, size));
             name.setText(in ? TokenTexts.nftIn(ctx, category, commitment) : TokenTexts.nftOut(ctx, category, commitment));
-            art.request(category, commitment);
+            if (!Settings.get(ctx).getHiddenTokens().contains(category)) {
+                art.request(category, commitment);
+            }
         };
         draw.run();
         draws.add(draw);

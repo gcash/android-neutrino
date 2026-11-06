@@ -23,6 +23,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import cash.bchd.android_neutrino.R;
 
@@ -45,6 +46,9 @@ public final class TokenIcons {
     private static final int GIF_CHECK_SIDE = 16;
     private static final String ICON_DIR = "token-icons";
     private static final String MOTION_DIR = "nft-motion";
+
+    // Counts what was saved, for a screen to tell that it drew older images.
+    private static final AtomicLong VERSION = new AtomicLong();
 
     private static volatile boolean showAll;
     private static volatile Set<String> chosen = Collections.emptySet();
@@ -384,7 +388,15 @@ public final class TokenIcons {
             tmp.delete();
             return false;
         }
+        VERSION.incrementAndGet();
         return true;
+    }
+
+    /**
+     * version returns what changes when an image is saved, whichever screen loaded it.
+     */
+    public static long version() {
+        return VERSION.get();
     }
 
     // shrink writes the image with its largest side at maxSide, in its proportions.

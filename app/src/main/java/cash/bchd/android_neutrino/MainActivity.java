@@ -68,7 +68,6 @@ import java.util.Currency;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Executors;
@@ -76,6 +75,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import cash.bchd.android_neutrino.tokens.TokenAdapter;
+import cash.bchd.android_neutrino.tokens.NftArt;
 import cash.bchd.android_neutrino.tokens.TokenIcons;
 import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.AddressListener;
@@ -127,7 +127,9 @@ public class MainActivity extends CloseActivity {
     private static final long TOKEN_LABELS_INTERVAL_MS = 10_000;
     private final Handler pagesHandler = new Handler(Looper.getMainLooper());
     private final AtomicBoolean labelsAskPending = new AtomicBoolean();
-    private final Set<String> iconsTried = ConcurrentHashMap.newKeySet();
+    private NftArt iconLoader;
+    // The labels the rows were drawn with, to tell when another screen learned more.
+    private long drawnLabels;
     // The Activity and Tokens pages, and the tabs between them, which show while the wallet
     // holds tokens.
     MainPages mainPages;
@@ -209,6 +211,7 @@ public class MainActivity extends CloseActivity {
         mAdapter = new TransactionAdapter(TransactionList.withoutHidden(txs, settings.getHiddenTokens()), this,
                 mCLayout, settings.getLastBlockHeight(), network);
         tokenAdapter = new TokenAdapter(this, this::openToken);
+        iconLoader = new NftArt(this, (category, commitment) -> redrawTokenIcons());
         mainPages = new MainPages(mAdapter, tokenAdapter, this::refresh, savedInstanceState);
         pages = findViewById(R.id.pages);
         pages.setAdapter(mainPages);
@@ -292,6 +295,7 @@ public class MainActivity extends CloseActivity {
         }
         mAdapter.dismissDetails();
         mAdapter.stop();
+        iconLoader.stop();
         pagesHandler.removeCallbacksAndMessages(null);
         super.onDestroy();
     }
@@ -409,6 +413,9 @@ public class MainActivity extends CloseActivity {
             showTokens(settings.getLastTokens());
             mAdapter.setNewData(TransactionList.withoutHidden(txStore.getData(), settings.getHiddenTokens()));
             showBchPlease();
+            redrawLabels();
+            mAdapter.retryArt();
+            iconLoader.retry();
             // Start the wallet if it stopped while the app was in the background, or listen to
             // the one that WalletCloser started again while another screen was in front.
             createWallet();
@@ -828,14 +835,10 @@ public class MainActivity extends CloseActivity {
             Futures.addCallback(wallet.tokenMetadataAsync(part, false), new FutureCallback<List<TokenMeta>>() {
                 @Override
                 public void onSuccess(List<TokenMeta> tokens) {
-                    if (TokenLabels.update(tokens)) {
-                        runOnUiThread(() -> {
-                            tokenAdapter.labelsChanged();
-                            mAdapter.labelsChanged();
-                        });
-                    }
+                    TokenLabels.update(tokens);
+                    runOnUiThread(MainActivity.this::redrawLabels);
                     if (settings.getTokenImages()) {
-                        loadTokenIcons(wallet, tokens);
+                        loadTokenIcons(tokens);
                     }
                     if (searching(tokens)) {
                         askTokenLabelsSoon();
@@ -867,9 +870,8 @@ public class MainActivity extends CloseActivity {
             Futures.addCallback(wallet.peekTokenMetadataAsync(part, false), new FutureCallback<List<TokenMeta>>() {
                 @Override
                 public void onSuccess(List<TokenMeta> tokens) {
-                    if (TokenLabels.update(tokens)) {
-                        runOnUiThread(() -> mAdapter.labelsChanged());
-                    }
+                    TokenLabels.update(tokens);
+                    runOnUiThread(MainActivity.this::redrawLabels);
                 }
 
                 @Override
@@ -900,13 +902,23 @@ public class MainActivity extends CloseActivity {
         }
     }
 
+    // redrawLabels redraws the rows if the labels changed since they were drawn, on any screen.
+    private void redrawLabels() {
+        long version = TokenLabels.version();
+        if (version != drawnLabels) {
+            drawnLabels = version;
+            tokenAdapter.labelsChanged();
+            mAdapter.labelsChanged();
+        }
+    }
+
     // showTokenIcons says which icons to show, and redraws the rows if that changed, as when the
     // user loaded one from a token's screen.
     private void showTokenIcons() {
         boolean all = settings.getTokenImages();
         Set<String> loaded = settings.getLoadedIcons();
         TokenIcons.configure(all, loaded);
-        String shown = all + " " + new TreeSet<>(loaded);
+        String shown = all + " " + new TreeSet<>(loaded) + " " + TokenIcons.version();
         if (!shown.equals(shownTokenIcons)) {
             shownTokenIcons = shown;
             runOnUiThread(this::redrawTokenIcons);
@@ -919,25 +931,11 @@ public class MainActivity extends CloseActivity {
     }
 
     // loadTokenIcons loads the icons of the tokens that don't have theirs yet.
-    private void loadTokenIcons(Wallet wallet, List<TokenMeta> tokens) {
+    private void loadTokenIcons(List<TokenMeta> tokens) {
         for (TokenMeta token : tokens) {
-            if (token.iconUri.isEmpty() || TokenIcons.has(this, token.category)
-                    || !iconsTried.add(token.category)) {
-                continue;
+            if (!token.iconUri.isEmpty() && !token.lookAlike) {
+                runOnUiThread(() -> iconLoader.requestIcon(token.category, token.iconUri));
             }
-            Futures.addCallback(wallet.tokenIconAsync(token.iconUri), new FutureCallback<byte[]>() {
-                @Override
-                public void onSuccess(byte[] data) {
-                    if (TokenIcons.save(MainActivity.this, token.category, data)) {
-                        runOnUiThread(MainActivity.this::redrawTokenIcons);
-                    }
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    // It's tried again the next time the app starts.
-                }
-            }, MoreExecutors.directExecutor());
         }
     }
 

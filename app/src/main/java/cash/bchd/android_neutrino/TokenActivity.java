@@ -82,6 +82,9 @@ public class TokenActivity extends AppCompatActivity {
     private boolean nftsReady;
     // The wallet's tokens as last told, which saved ones can be behind of.
     private List<TokenBalance> tokens;
+    // The labels and images drawn, to tell when another screen learned more.
+    private long drawnLabels;
+    private long drawnIcons = TokenIcons.version();
     private final Runnable askAgain = this::askWallet;
     // The wallet stops while the app is away, and takes a moment when it comes back to this screen.
     private final Runnable walletReady = () -> runOnUiThread(() -> {
@@ -220,7 +223,7 @@ public class TokenActivity extends AppCompatActivity {
                 new FutureCallback<List<TokenMeta>>() {
                     @Override
                     public void onSuccess(List<TokenMeta> metadata) {
-                        boolean changed = TokenLabels.update(metadata);
+                        TokenLabels.update(metadata);
                         runOnUiThread(() -> {
                             if (isDestroyed()) {
                                 return;
@@ -228,9 +231,7 @@ public class TokenActivity extends AppCompatActivity {
                             showLabels();
                             nftsReady = true;
                             showToken(tokens);
-                            if (changed && history != null) {
-                                history.notifyItemRangeChanged(0, history.getItemCount());
-                            }
+                            redrawLabels();
                             if (nfts != null) {
                                 nfts.labelsChanged();
                             }
@@ -373,6 +374,27 @@ public class TokenActivity extends AppCompatActivity {
         super.onStart();
         Wallet.addReadyListener(walletReady);
         attach();
+        // Another screen may have learned more of the token, or loaded its images.
+        redrawLabels();
+        if (TokenIcons.version() != drawnIcons) {
+            drawnIcons = TokenIcons.version();
+            showIcon();
+            if (nfts != null) {
+                nfts.iconsChanged();
+            }
+        }
+    }
+
+    // redrawLabels redraws the rows if the labels changed since they were drawn, on any screen.
+    private void redrawLabels() {
+        long version = TokenLabels.version();
+        if (version != drawnLabels) {
+            drawnLabels = version;
+            showLabels();
+            if (history != null) {
+                history.notifyItemRangeChanged(0, history.getItemCount());
+            }
+        }
     }
 
     @Override
@@ -385,6 +407,10 @@ public class TokenActivity extends AppCompatActivity {
     // now what it may have missed. A wallet that's still loading does so once it's ready.
     private void attach() {
         Wallet wallet = Wallet.getInstance();
+        if (wallet == null && settings.getWalletInitialized()) {
+            // Android brought this screen back without the main screen that starts the wallet.
+            WalletStarter.restart(this);
+        }
         if (wallet != null && wallet.isRunning()) {
             wallet.setMainListener(listener);
             new Thread(() -> {

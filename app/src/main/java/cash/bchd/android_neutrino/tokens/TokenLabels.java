@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import cash.bchd.android_neutrino.R;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
@@ -23,6 +24,8 @@ import cash.bchd.android_neutrino.wallet.TokenMeta;
 public final class TokenLabels {
 
     private static final Map<String, TokenMeta> TOKENS = new ConcurrentHashMap<>();
+    // Counts the changes, for a screen to tell that it drew older labels.
+    private static final AtomicLong VERSION = new AtomicLong();
 
     private TokenLabels() {
     }
@@ -37,11 +40,19 @@ public final class TokenLabels {
                 TokenMeta now = token.keepingNftTypes(before);
                 if (!now.equals(before)) {
                     changed.set(true);
+                    VERSION.incrementAndGet();
                 }
                 return now;
             });
         }
         return changed.get();
+    }
+
+    /**
+     * version returns what changes when the labels do, whichever screen asked.
+     */
+    public static long version() {
+        return VERSION.get();
     }
 
     /**

@@ -17,12 +17,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.math.BigInteger;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import cash.bchd.android_neutrino.tokens.Identicon;
+import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
 
 /**
@@ -99,7 +99,7 @@ public class HiddenTokensActivity extends AppCompatActivity {
             return nfts;
         }
         // The amount is a uint64, as the API has it.
-        String amount = NumberFormat.getIntegerInstance().format(new BigInteger(Long.toUnsignedString(token.amount)));
+        String amount = TokenLabels.number(token.category, new BigInteger(Long.toUnsignedString(token.amount)));
         return nfts == null ? amount : getString(R.string.token_amount_and_nfts, amount, nfts);
     }
 

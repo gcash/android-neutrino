@@ -262,7 +262,8 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     // loadArt has the art of an NFT load, asking the wallet what its token's NFTs are first, as it
     // only says for a few tokens at a time.
     private void loadArt(String category, String commitment) {
-        if (!TokenIcons.showing(category)) {
+        // A hidden token's row can stay for the BCH it moved, but its token costs nothing.
+        if (!TokenIcons.showing(category) || Settings.get(ctx).getHiddenTokens().contains(category)) {
             return;
         }
         if (TokenLabels.hasNftTypes(category)) {
@@ -298,6 +299,13 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         // Icons drawn before the labels came may be of look-alikes.
         icons.evictAll();
         notifyItemRangeChanged(0, getItemCount());
+    }
+
+    /**
+     * retryArt has what failed load again, as when the wallet stopped under it.
+     */
+    void retryArt() {
+        art.retry();
     }
 
     /**

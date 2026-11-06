@@ -11,9 +11,11 @@ import com.google.common.util.concurrent.MoreExecutors;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import cash.bchd.android_neutrino.wallet.TokenMeta;
@@ -61,12 +63,24 @@ public final class NftArt {
      * request has the art of an NFT that shows load, if it's to show and isn't there yet.
      */
     public void request(String category, String commitment) {
-        if (!TokenIcons.showing(category) || uri(category, commitment) == null
-                || TokenIcons.hasNft(context, category, commitment)
-                || !asked.add(category + "-" + commitment)) {
+        // A look-alike's art wouldn't show, so nothing should reach its host.
+        if (!TokenIcons.showing(category) || TokenLabels.isLookAlike(category)
+                || uri(category, commitment) == null || TokenIcons.hasNft(context, category, commitment)
+                || !asked.add(key(category, commitment))) {
             return;
         }
-        waiting.addFirst(new String[]{category, commitment});
+        waiting.addFirst(new String[]{category, commitment, null});
+        loadNext();
+    }
+
+    /**
+     * requestIcon has a token's own icon load, in the same turns as NFTs' art.
+     */
+    public void requestIcon(String category, String uri) {
+        if (TokenIcons.has(context, category) || !asked.add(category)) {
+            return;
+        }
+        waiting.addFirst(new String[]{category, null, uri});
         loadNext();
     }
 
@@ -87,6 +101,10 @@ public final class NftArt {
         ACTIVE.remove(this);
     }
 
+    private static String key(String category, String commitment) {
+        return commitment == null ? category : category + "-" + commitment;
+    }
+
     private static String uri(String category, String commitment) {
         TokenMeta token = TokenLabels.get(category);
         TokenMeta.NftType type = token == null ? null : token.nftType(commitment);
@@ -96,13 +114,18 @@ public final class NftArt {
     private void loadNext() {
         Wallet wallet = Wallet.getInstance();
         while (!stopped && loading < MAX_LOADING && !waiting.isEmpty()) {
-            String[] nft = waiting.pollFirst();
-            // What was waiting may no longer be wanted, or known.
-            String uri = uri(nft[0], nft[1]);
-            if (uri == null || !TokenIcons.showing(nft[0]) || wallet == null || !wallet.isRunning()) {
+            String[] next = waiting.pollFirst();
+            String category = next[0];
+            String commitment = next[1];
+            // What was waiting may no longer be wanted, or known, or already be there. What can't
+            // load now can be asked for again.
+            String uri = commitment == null ? next[2] : uri(category, commitment);
+            boolean there = commitment != null && TokenIcons.hasNft(context, category, commitment);
+            if (uri == null || !TokenIcons.showing(category) || there || wallet == null || !wallet.isRunning()) {
+                asked.remove(key(category, commitment));
                 continue;
             }
-            load(wallet.tokenIconAsync(uri), nft[0], nft[1]);
+            load(wallet.tokenIconAsync(uri), category, commitment);
         }
     }
 
@@ -114,7 +137,8 @@ public final class NftArt {
                 // Whatever a stranger's file does, its turn has to end.
                 boolean saved = false;
                 try {
-                    saved = TokenIcons.saveNft(context, category, commitment, image);
+                    saved = commitment == null ? TokenIcons.save(context, category, image)
+                            : TokenIcons.saveNft(context, category, commitment, image);
                 } catch (RuntimeException | OutOfMemoryError e) {
                     e.printStackTrace();
                 }
@@ -135,10 +159,13 @@ public final class NftArt {
             if (saved) {
                 done.loaded(category, commitment);
             } else {
-                failed.add(category + "-" + commitment);
+                failed.add(key(category, commitment));
             }
         }
-        for (NftArt art : new ArrayList<>(ACTIVE)) {
+        // The newest first, as that's the screen in front.
+        List<NftArt> screens = new ArrayList<>(ACTIVE);
+        Collections.reverse(screens);
+        for (NftArt art : screens) {
             art.loadNext();
         }
     }

@@ -186,6 +186,9 @@ public class Settings {
         return prefs.getLong(LAST_BALANCE_KEY, 0);
     }
 
+    private String parsedTokensJson;
+    private List<TokenBalance> parsedTokens;
+
     // The wallet's token balances when it last told them, which the main screen shows when it
     // opens, until the wallet tells them again.
     void setLastTokens(List<TokenBalance> tokens) {
@@ -193,7 +196,13 @@ public class Settings {
     }
 
     List<TokenBalance> getLastTokens() {
-        return TokenBalance.fromJson(prefs.getString(LAST_TOKENS_KEY, "[]"));
+        // Read for every block, and a large wallet's are long.
+        String json = prefs.getString(LAST_TOKENS_KEY, "[]");
+        if (!json.equals(parsedTokensJson)) {
+            parsedTokens = TokenBalance.fromJson(json);
+            parsedTokensJson = json;
+        }
+        return parsedTokens;
     }
 
     void setFiatCurrency(String currency) {

@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.TimeZone;
 
 import cash.bchd.android_neutrino.tokens.TokenIcons;
+import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Bip39;
 import cash.bchd.android_neutrino.wallet.Network;
@@ -180,7 +181,7 @@ public class RestoreActivity extends AppCompatActivity {
         settings.setLastBalance(0);
         settings.setLastTokens(Collections.emptyList());
         settings.clearLoadedIcons();
-        TokenIcons.clear(this);
+        TokenLabels.clear();
         settings.setLastAddress("");
         settings.setLastTokenAddress("");
         settings.setBackupReminder(false);
@@ -194,7 +195,10 @@ public class RestoreActivity extends AppCompatActivity {
             wallet.stop();
         }
         File walletDir = new File(getDataDir(), network.id);
-        Wallet.runAfterStop(() -> deleteRecursive(walletDir));
+        Wallet.runAfterStop(() -> {
+            deleteRecursive(walletDir);
+            TokenIcons.clear(this);
+        });
 
         Vibrations.buzz(getApplicationContext());
 
