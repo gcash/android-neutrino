@@ -32,7 +32,7 @@ public class Settings {
     private static final String TOKEN_IMAGES_KEY = "TokenImages";
     private static final String TOKEN_AUTO_LOAD_KEY = "TokenAutoLoad";
     private static final String DEFAULT_IPFS_GATEWAYS =
-            "https://ipfs.filebase.io,https://ipfs.orbitor.dev,https://gateway.pinata.cloud,https://ipfs.io,https://dweb.link";
+            "ipfs.filebase.io, ipfs.orbitor.dev, gateway.pinata.cloud, ipfs.io, dweb.link";
     private static final String DEFAULT_MEMO_KEY = "DefaultMemo";
     private static final String LAST_NOTIFICATION_KEY = "LastNotification";
     private static final String REPO_VERSION_KEY = "RepoVersion";
