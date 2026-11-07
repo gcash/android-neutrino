@@ -565,18 +565,8 @@ public class TokenActivity extends AppCompatActivity {
                 return;
             }
             // The main screen saves them while it listens, which it isn't now, and an NFT's screen
-            // reads them. This isn't the UI thread, and the file can be large.
-            List<TransactionData> saved;
-            synchronized (TransactionStore.LOCK) {
-                TransactionStore store = new TransactionStore(screen, screen.network);
-                saved = TransactionList.rebuild(store.getData(), txs);
-                store.setData(saved);
-                try {
-                    store.save(screen);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
+            // reads them.
+            List<TransactionData> saved = TransactionStore.merge(screen, screen.network, txs).getData();
             update(activity -> {
                 if (activity.history != null) {
                     activity.transactions = saved;

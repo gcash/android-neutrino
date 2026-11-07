@@ -1201,48 +1201,44 @@ public class MainActivity extends CloseActivity {
                         if (mainActivity == null) {
                             return;
                         }
-                        if (mainActivity.getApplicationContext() != null) {
-                            mainActivity.runOnUiThread(() -> {
-                                MainActivity mainActivity2 = mainActivityRef.get();
-                                if (mainActivity2 == null) {
-                                    return;
-                                }
-                                String fiatCurrency = mainActivity2.settings.getFiatCurrency();
-                                for (TransactionData tx : txs) {
-                                    tx.setFiatCurrency(fiatCurrency);
-                                    String formattedFiat = "";
-                                    if (mainActivity2.exchangeRates != null) {
-                                        try {
-                                            formattedFiat = mainActivity2.exchangeRates.getFormattedAmountInFiat(new Amount(tx.shownAmount()), Currency.getInstance(fiatCurrency));
-                                        } catch (Exception e) {
-                                            e.printStackTrace();
-                                        }
-                                    }
-                                    tx.setFiatAmount(formattedFiat);
-                                }
-                                // Show the transactions the wallet has, which drops the ones it no
-                                // longer has, such as one a double spend replaced. The screen keeps
-                                // all of them, and the list leaves out those of hidden tokens.
-                                List<TransactionData> list = TransactionList.rebuild(mainActivity2.txStore.getData(), txs);
-                                // A transaction added at the top goes above the first row shown, so
-                                // the list scrolls to show it when it showed the newest before.
-                                LinearLayoutManager rows = mainActivity2.mainPages.rows(MainPages.ACTIVITY);
-                                boolean atTop = rows == null || rows.findFirstVisibleItemPosition() <= 0;
-                                mainActivity2.mAdapter.setNewData(TransactionList.withoutHidden(list,
-                                        mainActivity2.settings.getHiddenTokens()));
-                                mainActivity2.showTokens(mainActivity2.settings.getLastTokens());
-                                if (atTop && rows != null) {
-                                    rows.scrollToPosition(0);
-                                }
-                                mainActivity2.showBchPlease();
-                                mainActivity2.txStore.setData(list);
+                        // This isn't the UI thread, and the file can be large: a rescan's replies
+                        // would each hold up the screen.
+                        String fiatCurrency = mainActivity.settings.getFiatCurrency();
+                        for (TransactionData tx : txs) {
+                            tx.setFiatCurrency(fiatCurrency);
+                            String formattedFiat = "";
+                            if (mainActivity.exchangeRates != null) {
                                 try {
-                                    mainActivity2.txStore.save(mainActivity2.getApplicationContext());
+                                    formattedFiat = mainActivity.exchangeRates.getFormattedAmountInFiat(new Amount(tx.shownAmount()), Currency.getInstance(fiatCurrency));
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
-                            });
+                            }
+                            tx.setFiatAmount(formattedFiat);
                         }
+                        // The wallet's transactions, which drops the ones it no longer has, such as
+                        // one a double spend replaced. The store keeps all of them, and the list
+                        // leaves out those of hidden tokens.
+                        TransactionStore store = TransactionStore.merge(mainActivity.getApplicationContext(),
+                                mainActivity.settings.getNetwork(), txs);
+                        mainActivity.runOnUiThread(() -> {
+                            MainActivity mainActivity2 = mainActivityRef.get();
+                            if (mainActivity2 == null) {
+                                return;
+                            }
+                            mainActivity2.txStore = store;
+                            // A transaction added at the top goes above the first row shown, so
+                            // the list scrolls to show it when it showed the newest before.
+                            LinearLayoutManager rows = mainActivity2.mainPages.rows(MainPages.ACTIVITY);
+                            boolean atTop = rows == null || rows.findFirstVisibleItemPosition() <= 0;
+                            mainActivity2.mAdapter.setNewData(TransactionList.withoutHidden(store.getData(),
+                                    mainActivity2.settings.getHiddenTokens()));
+                            mainActivity2.showTokens(mainActivity2.settings.getLastTokens());
+                            if (atTop && rows != null) {
+                                rows.scrollToPosition(0);
+                            }
+                            mainActivity2.showBchPlease();
+                        });
                     }
 
                     @Override

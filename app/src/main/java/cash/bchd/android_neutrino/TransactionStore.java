@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TransactionData;
+import cash.bchd.android_neutrino.wallet.TransactionList;
 
 public class TransactionStore {
 
@@ -90,6 +91,24 @@ public class TransactionStore {
                     tmp.delete();
                 }
             }
+        }
+    }
+
+    /**
+     * merge saves what the wallet told, over what's in the file, and returns the store. It reads
+     * and writes the whole file, so it's not for the UI thread, and it takes the file as it is, as
+     * another screen can have saved what only it was told, such as a memo.
+     */
+    static TransactionStore merge(Context context, Network network, List<TransactionData> wallet) {
+        synchronized (LOCK) {
+            TransactionStore store = new TransactionStore(context, network);
+            store.setData(TransactionList.rebuild(store.getData(), wallet));
+            try {
+                store.save(context);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return store;
         }
     }
 
