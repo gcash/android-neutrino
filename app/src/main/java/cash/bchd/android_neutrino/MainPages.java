@@ -10,6 +10,7 @@ import androidx.core.os.BundleCompat;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.SimpleItemAnimator;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 /**
@@ -83,6 +84,11 @@ final class MainPages extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         refresher.setOnRefreshListener(onRefresh);
         RecyclerView list = refresher.findViewById(R.id.pageList);
         list.setHasFixedSize(true);
+        // Rows that come and go animate, while one that changes, as when its art arrives, just
+        // updates, as a cross-fade flashes while scrolling.
+        if (page == ACTIVITY && list.getItemAnimator() instanceof SimpleItemAnimator) {
+            ((SimpleItemAnimator) list.getItemAnimator()).setSupportsChangeAnimations(false);
+        }
         // With the application's context, as the screen's list had before it had pages, whose
         // theme draws the dividers lighter than the screen's.
         list.addItemDecoration(new DividerItemDecoration(parent.getContext().getApplicationContext(),
