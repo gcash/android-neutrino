@@ -10,22 +10,19 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 import cash.bchd.android_neutrino.wallet.TokenMeta;
 import cash.bchd.android_neutrino.wallet.Wallet;
 
 /**
- * NftArt loads the art of NFTs that a screen shows, the ones shown last first, a few at a time
- * across all screens, as a collection's art is often on a public gateway and can be megabytes. Only
- * a token whose images are to show has any loaded, as the art's host sees who asks. It's for the
- * main thread, and tells it what it loaded. A screen has to stop its own when it goes.
+ * NftArt loads the art of NFTs that a screen shows, the ones shown last first, asking the wallet
+ * for all of it at once, as the wallet's lines take turns at each gateway. Only a token whose
+ * images are to show has any loaded, as the art's host sees who asks. It's for the main thread,
+ * and tells it what it loaded. A screen stops it when it goes, which only stops the telling: what
+ * was asked for still loads and is saved.
  */
 public final class NftArt {
 
@@ -36,14 +33,7 @@ public final class NftArt {
         void loaded(String category, String commitment);
     }
 
-    // How many images load at once.
-    private static final int MAX_LOADING = 3;
-
     private static final Handler HANDLER = new Handler(Looper.getMainLooper());
-    // The screens' loaders, and how many images are loading for all of them.
-    private static final Set<NftArt> ACTIVE = new LinkedHashSet<>();
-    private static int loading;
-
     private final Context context;
     private final Loaded done;
     // What was asked for, which isn't asked for again, what failed of that, and what's waiting its
@@ -56,7 +46,6 @@ public final class NftArt {
     public NftArt(Context context, Loaded done) {
         this.context = context;
         this.done = done;
-        ACTIVE.add(this);
     }
 
     /**
@@ -93,12 +82,11 @@ public final class NftArt {
     }
 
     /**
-     * stop ends the loading, as the screen is going.
+     * stop stops telling the screen, as it's going. What it asked for still loads and is saved.
      */
     public void stop() {
         stopped = true;
         waiting.clear();
-        ACTIVE.remove(this);
     }
 
     private static String key(String category, String commitment) {
@@ -118,7 +106,9 @@ public final class NftArt {
 
     private void loadNext() {
         Wallet wallet = Wallet.getInstance();
-        while (!stopped && loading < MAX_LOADING && !waiting.isEmpty()) {
+        // All at once: the wallet's lines take turns at each gateway, and put what the user
+        // asked for first.
+        while (!stopped && !waiting.isEmpty()) {
             String[] next = waiting.pollFirst();
             String category = next[0];
             String commitment = next[1];
@@ -135,7 +125,6 @@ public final class NftArt {
     }
 
     private void load(ListenableFuture<byte[]> data, String category, String commitment, String uri) {
-        loading++;
         Futures.addCallback(data, new FutureCallback<byte[]>() {
             @Override
             public void onSuccess(byte[] image) {
@@ -159,19 +148,12 @@ public final class NftArt {
     }
 
     private void finished(String category, String commitment, boolean saved) {
-        loading--;
         if (!stopped) {
             if (saved) {
                 done.loaded(category, commitment);
             } else {
                 failed.add(key(category, commitment));
             }
-        }
-        // The newest first, as that's the screen in front.
-        List<NftArt> screens = new ArrayList<>(ACTIVE);
-        Collections.reverse(screens);
-        for (NftArt art : screens) {
-            art.loadNext();
         }
     }
 }
