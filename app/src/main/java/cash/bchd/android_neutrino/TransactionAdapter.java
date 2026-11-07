@@ -278,8 +278,11 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
                 new FutureCallback<List<TokenMeta>>() {
                     @Override
                     public void onSuccess(List<TokenMeta> tokens) {
-                        TokenLabels.update(tokens);
-                        cLayout.post(() -> notifyItemRangeChanged(0, getItemCount()));
+                        // Nothing to draw again if it said nothing new, and a wallet with many
+                        // tokens asks this as the screen opens.
+                        if (TokenLabels.update(tokens)) {
+                            cLayout.post(() -> notifyItemRangeChanged(0, getItemCount()));
+                        }
                     }
 
                     @Override
