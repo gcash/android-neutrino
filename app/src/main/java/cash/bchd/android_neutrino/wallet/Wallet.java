@@ -661,11 +661,12 @@ public class Wallet implements Serializable {
     }
 
     /**
-     * tokenIconAsync reads the image at an icon's URI, or fails within a minute.
+     * tokenIconAsync reads the image at an icon's URI. It has no deadline, as the wallet limits
+     * downloads itself, by when they stall, and not by time spent waiting for a gateway.
      */
     public ListenableFuture<byte[]> tokenIconAsync(String uri) {
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel)
-                .withCallCredentials(this.creds).withDeadlineAfter(60, TimeUnit.SECONDS);
+                .withCallCredentials(this.creds);
         return Futures.transform(stub.tokenIcon(Api.TokenIconRequest.newBuilder().setUri(uri).build()),
                 reply -> reply.getData().toByteArray(), MoreExecutors.directExecutor());
     }
