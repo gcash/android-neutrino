@@ -205,7 +205,8 @@
         <item quantity="other">%1$s +%2$d more</item>
     </plurals>
     <string name="nft_play">Play</string>
-    <string name="nft_play_failed">The NFT couldn\'t be played.</string>
+    <string name="nft_play_failed">The NFT\'s art couldn\'t be shown.</string>
+    <string name="nft_art_close">Close</string>
     <plurals name="tx_details_more_nfts">
         <item quantity="one">and %1$d more</item>
         <item quantity="other">and %1$d more</item>

@@ -4,11 +4,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.ImageDecoder;
 import android.graphics.Typeface;
-import android.graphics.drawable.AnimatedImageDrawable;
-import android.graphics.drawable.Drawable;
-import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -21,7 +17,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
-import android.widget.VideoView;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
@@ -30,13 +25,6 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout;
 
 import com.google.android.material.snackbar.Snackbar;
 
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.MoreExecutors;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -75,8 +63,6 @@ public class NftActivity extends AppCompatActivity {
     // The NFT's commitment, once it's known.
     private String commitment;
     private NftArt art;
-    // Whether the art is playing, or being fetched to.
-    private boolean playing;
     // How many more times to look for what a fetch brought.
     private int refreshesLeft;
     private static final int FETCH_REFRESHES = 6;
@@ -84,7 +70,7 @@ public class NftActivity extends AppCompatActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
     // The wallet stops while the app is away, and takes a moment when it comes back to this screen.
     private final Runnable walletReady = this::refresh;
-    private boolean fetching;
+    private PopupWindow artPopup;
 
     /**
      * open opens the screen of one of the token's NFTs.
@@ -110,7 +96,7 @@ public class NftActivity extends AppCompatActivity {
         Networks.showBadge(this, network);
         layout = findViewById(R.id.nftLayout);
         art = new NftArt(this, (loadedCategory, loadedCommitment) -> showIcon());
-        findViewById(R.id.nftArt).setOnClickListener(v -> togglePlaying());
+        findViewById(R.id.nftArt).setOnClickListener(v -> openArt());
         DescriptionToggle.attach(findViewById(R.id.nftDescription), false);
 
         Toolbar toolbar = findViewById(R.id.nftToolbar);
@@ -174,19 +160,19 @@ public class NftActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         Wallet.removeReadyListener(walletReady);
+        if (artPopup != null) {
+            artPopup.dismiss();
+        }
         super.onStop();
-    }
-
-    @Override
-    protected void onPause() {
-        stopPlaying();
-        super.onPause();
     }
 
     @Override
     protected void onDestroy() {
         handler.removeCallbacksAndMessages(null);
         art.stop();
+        if (artPopup != null) {
+            artPopup.dismiss();
+        }
         if (detailsPopup != null) {
             detailsPopup.dismiss();
         }
@@ -230,151 +216,37 @@ public class NftActivity extends AppCompatActivity {
 
     // showIcon shows the NFT's art, or its token's icon, which is its identicon until one is loaded.
     private void showIcon() {
-        if (playing) {
-            return;
-        }
         TokenIcons.configure(settings.getTokenImages(), settings.getLoadedIcons());
         ImageView icon = findViewById(R.id.nftIcon);
         int size = getResources().getDimensionPixelSize(R.dimen.nft_screen_icon);
         icon.setImageBitmap(commitment == null ? TokenIcons.bitmap(this, category, size)
                 : TokenIcons.nftBitmap(this, category, commitment, size));
-        findViewById(R.id.nftPlay).setVisibility(movingUri() != null && !fetching ? View.VISIBLE : View.GONE);
+        String uri = artUri();
+        boolean moves = uri != null && TokenIcons.moves(this, category, commitment, uri);
+        findViewById(R.id.nftPlay).setVisibility(moves ? View.VISIBLE : View.GONE);
     }
 
-    // movingUri returns the URI of the NFT's art if it's there to show, and moves, or else null.
-    private String movingUri() {
+    // artUri returns the URI of the art to show large, if the NFT's art is there to show: what
+    // moves, or else the full image, or else the icon.
+    private String artUri() {
         TokenMeta token = TokenLabels.get(category);
         TokenMeta.NftType type = token == null || commitment == null ? null : token.nftType(commitment);
-        boolean moves = type != null && TokenIcons.showing(category) && TokenIcons.hasNft(this, category, commitment)
-                && TokenIcons.moves(this, category, commitment, type.iconUri);
-        return moves ? type.iconUri : null;
+        if (type == null || !TokenIcons.showing(category) || TokenLabels.isLookAlike(category)
+                || !TokenIcons.hasNft(this, category, commitment)) {
+            return null;
+        }
+        if (type.imageUri.isEmpty() || TokenIcons.moves(this, category, commitment, type.iconUri)) {
+            return type.iconUri.isEmpty() ? null : type.iconUri;
+        }
+        return type.imageUri;
     }
 
-    // togglePlaying plays the art if it moves, fetching it first, as only a tap is worth the data,
-    // or stops it.
-    private void togglePlaying() {
-        if (playing) {
-            stopPlaying();
-            return;
+    // openArt shows the art large, if it's there to show.
+    private void openArt() {
+        String uri = artUri();
+        if (uri != null) {
+            artPopup = NftArtPopup.show(this, layout, category, commitment, uri);
         }
-        String uri = movingUri();
-        Wallet wallet = Wallet.getInstance();
-        if (uri == null || fetching) {
-            return;
-        }
-        File file = TokenIcons.motionFile(this, category, commitment);
-        if (file.exists()) {
-            play(file);
-            return;
-        }
-        if (wallet == null || !wallet.isRunning()) {
-            playFailed();
-            return;
-        }
-        showFetching(true);
-        String shown = commitment;
-        Futures.addCallback(wallet.tokenIconAsync(uri), new FutureCallback<byte[]>() {
-            @Override
-            public void onSuccess(byte[] data) {
-                boolean saved = TokenIcons.saveMotion(NftActivity.this, category, shown, data);
-                runOnUiThread(() -> {
-                    showFetching(false);
-                    if (saved) {
-                        play(file);
-                    } else {
-                        playFailed();
-                    }
-                });
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                runOnUiThread(() -> {
-                    showFetching(false);
-                    playFailed();
-                });
-            }
-        }, MoreExecutors.directExecutor());
-    }
-
-    private void showFetching(boolean on) {
-        fetching = on;
-        findViewById(R.id.nftLoading).setVisibility(on ? View.VISIBLE : View.GONE);
-        findViewById(R.id.nftPlay).setVisibility(on ? View.GONE : View.VISIBLE);
-    }
-
-    private void playFailed() {
-        stopPlaying();
-        Snackbar.make(layout, R.string.nft_play_failed, Snackbar.LENGTH_LONG).show();
-    }
-
-    // play plays a video, muted and over and over, or an animation.
-    private void play(File file) {
-        if (isDestroyed()) {
-            return;
-        }
-        playing = true;
-        findViewById(R.id.nftPlay).setVisibility(View.GONE);
-        if (!isGif(file)) {
-            VideoView video = findViewById(R.id.nftVideo);
-            video.setVisibility(View.VISIBLE);
-            video.setOnPreparedListener(player -> {
-                player.setVolume(0, 0);
-                player.setLooping(true);
-            });
-            video.setOnErrorListener((player, what, extra) -> {
-                file.delete();
-                playFailed();
-                return true;
-            });
-            // It plays muted, so it leaves whatever else is playing alone.
-            video.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE);
-            video.setVideoPath(file.getPath());
-            video.start();
-            return;
-        }
-        int size = getResources().getDimensionPixelSize(R.dimen.nft_screen_icon);
-        new Thread(() -> {
-            try {
-                Drawable drawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(file),
-                        (decoder, info, source) -> {
-                            int[] fitted = TokenIcons.fitted(info.getSize().getWidth(), info.getSize().getHeight(), size);
-                            decoder.setTargetSize(fitted[0], fitted[1]);
-                        });
-                runOnUiThread(() -> {
-                    if (!playing) {
-                        return;
-                    }
-                    ((ImageView) findViewById(R.id.nftIcon)).setImageDrawable(drawable);
-                    if (drawable instanceof AnimatedImageDrawable) {
-                        ((AnimatedImageDrawable) drawable).start();
-                    }
-                });
-            } catch (IOException | RuntimeException | OutOfMemoryError e) {
-                file.delete();
-                runOnUiThread(this::playFailed);
-            }
-        }, "nft-animation").start();
-    }
-
-    private static boolean isGif(File file) {
-        byte[] start = new byte[4];
-        try (FileInputStream in = new FileInputStream(file)) {
-            return in.read(start) == start.length && TokenIcons.isGif(start);
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
-    private void stopPlaying() {
-        if (!playing) {
-            return;
-        }
-        playing = false;
-        VideoView video = findViewById(R.id.nftVideo);
-        video.stopPlayback();
-        video.setVisibility(View.GONE);
-        showIcon();
     }
 
     // showNft shows the NFT, among the token balances, or keeps what it shows if they don't have

@@ -44,6 +44,8 @@ public final class TokenMeta {
         public final String name;
         public final String description;
         public final String iconUri;
+        // Its art in full, if the registry gives it.
+        public final String imageUri;
         // Its traits, by name, in the order of their names.
         public final Map<String, String> attributes;
 
@@ -52,6 +54,7 @@ public final class TokenMeta {
             name = type.getName();
             description = type.getDescription();
             iconUri = type.getIconUri();
+            imageUri = type.getImageUri();
             attributes = Collections.unmodifiableMap(new TreeMap<>(type.getAttributesMap()));
         }
     }

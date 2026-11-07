@@ -8,6 +8,7 @@ import android.graphics.ImageDecoder;
 import android.graphics.drawable.AnimatedImageDrawable;
 import android.media.MediaDataSource;
 import android.media.MediaMetadataRetriever;
+import android.os.Build;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -269,20 +270,29 @@ public final class TokenIcons {
     }
 
     /**
-     * motionFile returns where a moving NFT's file is kept once it was asked to play.
+     * fullFile returns where an NFT's art in full is kept once it was opened, by its URI too, as a
+     * registry can come to name other art.
      */
-    public static File motionFile(Context context, String category, String commitment) {
-        return new File(new File(context.getCacheDir(), MOTION_DIR), nftName(category, commitment));
+    public static File fullFile(Context context, String category, String commitment, String uri) {
+        String name = nftName(category, commitment) + "-" + Integer.toHexString(uri.hashCode());
+        return new File(new File(context.getCacheDir(), MOTION_DIR), name);
     }
 
     /**
-     * saveMotion keeps a moving NFT's file to play, and the newest such files up to a limit, as
-     * only the user's taps bring them here.
+     * saveFull keeps an NFT's art in full to show large, and the newest such files up to a limit,
+     * as only the user's taps bring them here. An image that's larger than the screen is kept at
+     * the side of the screen, which is all it can show.
      */
-    public static boolean saveMotion(Context context, String category, String commitment, byte[] data) {
-        File file = motionFile(context, category, commitment);
+    public static boolean saveFull(File file, byte[] data, int maxSide) {
         File dir = file.getParentFile();
         if (dir == null || (!dir.isDirectory() && !dir.mkdirs())) {
+            return false;
+        }
+        BitmapFactory.Options bounds = new BitmapFactory.Options();
+        bounds.inJustDecodeBounds = true;
+        BitmapFactory.decodeByteArray(data, 0, data.length, bounds);
+        boolean image = bounds.outWidth > 0 && !isGif(data);
+        if (bounds.outWidth > 0 && !usable(bounds.outWidth, bounds.outHeight)) {
             return false;
         }
         File tmp;
@@ -292,7 +302,12 @@ public final class TokenIcons {
             return false;
         }
         try (FileOutputStream out = new FileOutputStream(tmp)) {
-            out.write(data);
+            if (!image || Math.max(bounds.outWidth, bounds.outHeight) <= maxSide) {
+                out.write(data);
+            } else if (!shrink(data, bounds, maxSide, out)) {
+                tmp.delete();
+                return false;
+            }
         } catch (IOException e) {
             tmp.delete();
             return false;
@@ -303,6 +318,16 @@ public final class TokenIcons {
         }
         trimMotion(dir, file);
         return true;
+    }
+
+    /**
+     * isVideo returns whether a file kept by saveFull is one that images can't read.
+     */
+    public static boolean isVideo(File file) {
+        BitmapFactory.Options bounds = new BitmapFactory.Options();
+        bounds.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(file.getPath(), bounds);
+        return bounds.outWidth <= 0;
     }
 
     /**
@@ -370,7 +395,7 @@ public final class TokenIcons {
         }
         try (FileOutputStream out = new FileOutputStream(tmp)) {
             if (frame != null) {
-                if (!write(frame, maxSide, out)) {
+                if (!write(frame, maxSide, Bitmap.CompressFormat.JPEG, out)) {
                     tmp.delete();
                     return false;
                 }
@@ -404,18 +429,31 @@ public final class TokenIcons {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight, maxSide);
         Bitmap decoded = BitmapFactory.decodeByteArray(data, 0, data.length, options);
-        return decoded != null && write(decoded, maxSide, out);
+        return decoded != null && write(decoded, maxSide, formatOf(bounds.outMimeType), out);
     }
 
     // write writes a bitmap with its largest side at most maxSide, in its proportions.
-    private static boolean write(Bitmap bitmap, int maxSide, FileOutputStream out) {
+    private static boolean write(Bitmap bitmap, int maxSide, Bitmap.CompressFormat format, FileOutputStream out) {
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
         float scale = Math.min(1f, (float) maxSide / Math.max(width, height));
         Bitmap small = Bitmap.createScaledBitmap(bitmap, Math.max(1, Math.round(width * scale)),
                 Math.max(1, Math.round(height * scale)), true);
-        return small.hasAlpha() ? small.compress(Bitmap.CompressFormat.PNG, 100, out)
-                : small.compress(Bitmap.CompressFormat.JPEG, 90, out);
+        return small.compress(format, 90, out);
+    }
+
+    // formatOf returns the format to keep an image in: its own, as turning sharp art into a JPEG
+    // blurs it. A format this device can't write is kept as a PNG, which loses nothing.
+    @SuppressWarnings("deprecation")
+    private static Bitmap.CompressFormat formatOf(String mimeType) {
+        if ("image/jpeg".equals(mimeType)) {
+            return Bitmap.CompressFormat.JPEG;
+        }
+        if ("image/webp".equals(mimeType)) {
+            return Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                    ? Bitmap.CompressFormat.WEBP_LOSSY : Bitmap.CompressFormat.WEBP;
+        }
+        return Bitmap.CompressFormat.PNG;
     }
 
     /**
