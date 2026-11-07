@@ -232,6 +232,8 @@ public class MainActivity extends CloseActivity {
                 tab.setText(position == MainPages.TOKENS ? R.string.tab_tokens : R.string.tab_activity)).attach();
         // The tokens the wallet held when it last told them, until it tells them again.
         TokenLabelFile.open(this, network);
+        // The rows are yet to draw, so they draw with these.
+        drawnLabels = TokenLabels.version();
         showTokens(settings.getLastTokens());
         showBchPlease();
         fab.setOnClickListener(view -> toggleFABMenu());
