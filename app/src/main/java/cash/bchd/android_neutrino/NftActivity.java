@@ -183,6 +183,8 @@ public class NftActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.token, menu);
+        // Hiding is of the whole token, which on this screen could read as only this NFT.
+        menu.findItem(R.id.hideToken).setTitle(R.string.hide_collection);
         return true;
     }
 
