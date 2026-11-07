@@ -20,6 +20,16 @@ public class TransactionRowsTest {
         return new TransactionData(txid, true, "", 1000, "$0.01", "usd", 1600000000L, "", height);
     }
 
+    @Test
+    public void tellsWhenAnotherTransactionIsAtTheTop() {
+        List<TransactionData> shown = Arrays.asList(tx("b", 2), tx("a", 1));
+        assertEquals(false, TransactionRows.newTop(shown, Arrays.asList(tx("b", 2), tx("a", 1))));
+        assertEquals(false, TransactionRows.newTop(shown, Arrays.asList(tx("b", 3))));
+        assertEquals(true, TransactionRows.newTop(shown, Arrays.asList(tx("c", 3), tx("b", 2), tx("a", 1))));
+        assertEquals(true, TransactionRows.newTop(Collections.emptyList(), Arrays.asList(tx("a", 1))));
+        assertEquals(false, TransactionRows.newTop(shown, Collections.emptyList()));
+    }
+
     // The changes that a diff dispatches to the list.
     private static List<String> changes(List<TransactionRows.Row> shown, List<TransactionRows.Row> rows) {
         List<String> changes = new ArrayList<>();

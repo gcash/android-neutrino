@@ -1230,13 +1230,17 @@ public class MainActivity extends CloseActivity {
                             }
                             mainActivity2.txStore = store;
                             // A transaction added at the top goes above the first row shown, so
-                            // the list scrolls to show it when it showed the newest before.
+                            // the list scrolls to show it when it showed the newest before. With
+                            // nothing added it stays put, as the user can be scrolling.
                             LinearLayoutManager rows = mainActivity2.mainPages.rows(MainPages.ACTIVITY);
                             boolean atTop = rows == null || rows.findFirstVisibleItemPosition() <= 0;
-                            mainActivity2.mAdapter.setNewData(TransactionList.withoutHidden(store.getData(),
-                                    mainActivity2.settings.getHiddenTokens()));
+                            List<TransactionData> shown = mainActivity2.mAdapter.getData();
+                            List<TransactionData> list = TransactionList.withoutHidden(store.getData(),
+                                    mainActivity2.settings.getHiddenTokens());
+                            boolean newTop = TransactionRows.newTop(shown, list);
+                            mainActivity2.mAdapter.setNewData(list);
                             mainActivity2.showTokens(mainActivity2.settings.getLastTokens());
-                            if (atTop && rows != null) {
+                            if (atTop && newTop && rows != null) {
                                 rows.scrollToPosition(0);
                             }
                             mainActivity2.showBchPlease();

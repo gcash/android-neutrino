@@ -53,6 +53,16 @@ final class TransactionRows {
     }
 
     /**
+     * newTop returns whether the transaction at the top is another one than was shown.
+     */
+    static boolean newTop(List<TransactionData> shown, List<TransactionData> txs) {
+        if (txs.isEmpty()) {
+            return false;
+        }
+        return shown.isEmpty() || !shown.get(0).getTxid().equals(txs.get(0).getTxid());
+    }
+
+    /**
      * diff returns how the rows changed from the ones shown, for the list to add, remove, move
      * and redraw only those.
      */
