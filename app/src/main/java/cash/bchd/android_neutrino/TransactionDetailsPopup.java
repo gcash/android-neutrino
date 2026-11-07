@@ -77,15 +77,6 @@ final class TransactionDetailsPopup {
         TextView fiatAmount = customView.findViewById(R.id.txDetailsFiatAmount);
         fiatAmount.setText(tx.getFiatAmount());
 
-        // The BCH that stays with tokens, which the amount above leaves out.
-        long tokenAmount = tx.tokenAmount();
-        if (tokenAmount != 0) {
-            TextView tokenBch = customView.findViewById(R.id.txDetailsTokenBch);
-            tokenBch.setText(ctx.getString(tokenAmount > 0 ? R.string.tx_details_bch_stays : R.string.tx_details_bch_left,
-                    new Amount(Math.abs(tokenAmount)).toString()));
-            tokenBch.setVisibility(View.VISIBLE);
-        }
-
         // A row for each token the transaction moved: its icon, what to call it and how much, then
         // a row for each of its NFTs with its art.
         LinearLayout tokens = customView.findViewById(R.id.txDetailsTokens);

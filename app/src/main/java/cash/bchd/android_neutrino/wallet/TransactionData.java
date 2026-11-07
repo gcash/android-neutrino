@@ -147,14 +147,6 @@ public class TransactionData implements Serializable, Comparable<TransactionData
         return getTokens().isEmpty() ? this.amount : this.spendableAmount;
     }
 
-    /**
-     * tokenAmount returns the satoshis that came to the outputs that hold tokens, or left them if
-     * it's negative, which is how a transaction's total differs from what it shows.
-     */
-    public long tokenAmount() {
-        return this.amount - shownAmount();
-    }
-
     public void setSpendableAmount(long spendableAmount) {
         this.spendableAmount = spendableAmount;
     }

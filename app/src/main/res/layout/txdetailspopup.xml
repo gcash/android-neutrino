@@ -42,16 +42,6 @@
             android:textSize="15sp"
             android:text="" />
 
-        <!-- The BCH that stays with the transaction's tokens, if any. -->
-        <TextView
-            android:id="@+id/txDetailsTokenBch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="4dp"
-            android:textSize="13sp"
-            android:visibility="gone" />
-
         <Space
             android:layout_width="match_parent"
             android:layout_height="20dp" />
