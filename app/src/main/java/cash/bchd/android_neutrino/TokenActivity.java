@@ -23,6 +23,7 @@ import androidx.lifecycle.Lifecycle;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.SimpleItemAnimator;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -196,6 +197,10 @@ public class TokenActivity extends AppCompatActivity {
                     detailsPopup = TransactionDetailsPopup.show(this, layout, tx, blockHeight, network,
                             TokenChange.find(tx.getTokens(), category)));
             list.setAdapter(history);
+            // As the main screen's lists, rows that change just update.
+            if (list.getItemAnimator() instanceof SimpleItemAnimator) {
+                ((SimpleItemAnimator) list.getItemAnimator()).setSupportsChangeAnimations(false);
+            }
             transactions = new TransactionStore(this, network).getData();
             Collections.sort(transactions, Collections.reverseOrder());
             blockHeight = settings.getLastBlockHeight();
