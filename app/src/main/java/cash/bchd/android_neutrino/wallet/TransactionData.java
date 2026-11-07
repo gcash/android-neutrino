@@ -147,6 +147,14 @@ public class TransactionData implements Serializable, Comparable<TransactionData
         return getTokens().isEmpty() ? this.amount : this.spendableAmount;
     }
 
+    /**
+     * showsBch returns whether the details show a BCH amount, which a transaction that moved tokens
+     * and left the spendable balance as it was doesn't, as its tokens say what it did.
+     */
+    public boolean showsBch() {
+        return getTokens().isEmpty() || this.spendableAmount != 0;
+    }
+
     public void setSpendableAmount(long spendableAmount) {
         this.spendableAmount = spendableAmount;
     }

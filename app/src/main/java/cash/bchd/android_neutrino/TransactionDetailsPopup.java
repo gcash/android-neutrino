@@ -76,6 +76,10 @@ final class TransactionDetailsPopup {
 
         TextView fiatAmount = customView.findViewById(R.id.txDetailsFiatAmount);
         fiatAmount.setText(tx.getFiatAmount());
+        if (!tx.showsBch()) {
+            bchAmount.setVisibility(View.GONE);
+            fiatAmount.setVisibility(View.GONE);
+        }
 
         // A row for each token the transaction moved: its icon, what to call it and how much, then
         // a row for each of its NFTs with its art.

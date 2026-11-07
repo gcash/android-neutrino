@@ -113,6 +113,26 @@ public class TransactionDataTest {
     }
 
     @Test
+    public void detailsShowBchUnlessOnlyTokensMoved() {
+        TransactionData received = new TransactionData("", true, "", 1000, "", "USD", 0, "", 0);
+        received.setTokens(Collections.singletonList(new TokenChange("c", 5, 0)));
+        assertFalse(received.showsBch());
+
+        TransactionData sent = new TransactionData("", false, "", -1398, "", "USD", 0, "", 0);
+        sent.setTokens(Collections.singletonList(new TokenChange("c", 0, 1)));
+        sent.setSpendableAmount(-398);
+        assertTrue(sent.showsBch());
+
+        TransactionData plain = new TransactionData("", false, "", -5000, "", "USD", 0, "", 0);
+        plain.setSpendableAmount(-5000);
+        assertTrue(plain.showsBch());
+
+        // Saved before the app read tokens, with no spendable amount.
+        TransactionData old = new TransactionData("", true, "", 5000, "", "USD", 0, "", 0);
+        assertTrue(old.showsBch());
+    }
+
+    @Test
     public void aTokenTransactionShowsTheDirectionOfItsRow() {
         TransactionData plain = new TransactionData("", true, "", 5000, "", "USD", 0, "", 0);
         assertTrue(plain.shownIncoming());
