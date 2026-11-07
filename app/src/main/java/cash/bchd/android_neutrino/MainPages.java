@@ -86,7 +86,7 @@ final class MainPages extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         list.setHasFixedSize(true);
         // Rows that come and go animate, while one that changes, as when its art arrives, just
         // updates, as a cross-fade flashes while scrolling.
-        if (page == ACTIVITY && list.getItemAnimator() instanceof SimpleItemAnimator) {
+        if (list.getItemAnimator() instanceof SimpleItemAnimator) {
             ((SimpleItemAnimator) list.getItemAnimator()).setSupportsChangeAnimations(false);
         }
         // With the application's context, as the screen's list had before it had pages, whose
