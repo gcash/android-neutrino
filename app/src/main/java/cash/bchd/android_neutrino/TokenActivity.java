@@ -40,6 +40,7 @@ import cash.bchd.android_neutrino.tokens.NftAdapter;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
+import cash.bchd.android_neutrino.wallet.TokenChange;
 import cash.bchd.android_neutrino.wallet.TokenMeta;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 import cash.bchd.android_neutrino.wallet.TransactionList;
@@ -192,7 +193,8 @@ public class TokenActivity extends AppCompatActivity {
             nftsReady = TokenLabels.hasNftTypes(category);
         } else {
             history = new TokenHistoryAdapter(this, category, tx ->
-                    detailsPopup = TransactionDetailsPopup.show(this, layout, tx, blockHeight, network));
+                    detailsPopup = TransactionDetailsPopup.show(this, layout, tx, blockHeight, network,
+                            TokenChange.find(tx.getTokens(), category)));
             list.setAdapter(history);
             transactions = new TransactionStore(this, network).getData();
             Collections.sort(transactions, Collections.reverseOrder());
@@ -527,6 +529,7 @@ public class TokenActivity extends AppCompatActivity {
         @Override
         public void onBlock(int blockHeight, String blockHash) {
             update(activity -> {
+                activity.settings.setLastBlockHeight(blockHeight);
                 activity.blockHeight = blockHeight;
                 if (activity.history != null) {
                     activity.history.setBlockHeight(blockHeight);
@@ -551,8 +554,18 @@ public class TokenActivity extends AppCompatActivity {
         @Override
         public void onGetTransactions(List<TransactionData> txs, int blockHeight) {
             update(activity -> {
+                // The main screen saves them while it listens, which it isn't now, and an NFT's
+                // screen reads them.
+                TransactionStore store = new TransactionStore(activity, activity.network);
+                List<TransactionData> saved = TransactionList.rebuild(store.getData(), txs);
+                store.setData(saved);
+                try {
+                    store.save(activity);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 if (activity.history != null) {
-                    activity.transactions = TransactionList.rebuild(activity.transactions, txs);
+                    activity.transactions = saved;
                     activity.history.setTransactions(activity.transactions, activity.blockHeight);
                 }
             });

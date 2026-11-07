@@ -3,6 +3,7 @@ package cash.bchd.android_neutrino;
 import android.content.Context;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
@@ -122,6 +123,8 @@ final class TokenHistoryAdapter extends RecyclerView.Adapter<TransactionAdapter.
         Row row = rows.get(position);
         boolean received = row.change.received();
         holder.arrowImage.setImageResource(received ? R.drawable.receive_arrow : R.drawable.send_arrow);
+        // A swap has no direction.
+        holder.arrowImage.setVisibility(row.change.swapped() ? View.INVISIBLE : View.VISIBLE);
         holder.txDescription.setText(row.change.swapped() ? R.string.swapped_nft
                 : received ? R.string.token_received : R.string.token_sent);
         // In the phone's language and its 12 or 24 hour clock, with the year only if it isn't this

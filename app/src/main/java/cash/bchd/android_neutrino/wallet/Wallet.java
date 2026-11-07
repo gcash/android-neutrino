@@ -759,7 +759,23 @@ public class Wallet implements Serializable {
         }, MoreExecutors.directExecutor());
     }
 
-    public void listenRescan(WalletEventListener listener) {
+    /**
+     * stopListening stops telling a listener of listenBlockchain about blocks.
+     */
+    public void stopListening(WalletEventListener listener) {
+        blockchainListeners.remove(listener);
+    }
+
+    /**
+     * listenRescan tells the listener how a rescan goes, until what it returns is run.
+     */
+    public Runnable listenRescan(WalletEventListener listener) {
+        io.grpc.Context.CancellableContext context = io.grpc.Context.current().withCancellation();
+        context.run(() -> subscribeRescan(listener));
+        return () -> context.cancel(null);
+    }
+
+    private void subscribeRescan(WalletEventListener listener) {
         WalletServiceGrpc.WalletServiceStub stub = WalletServiceGrpc.newStub(channel).withCallCredentials(creds);
         Api.RescanNotificationsRequest request = Api.RescanNotificationsRequest.newBuilder().build();
         stub.rescanNotifications(request, new StreamObserver<Api.RescanNotificationsResponse>() {

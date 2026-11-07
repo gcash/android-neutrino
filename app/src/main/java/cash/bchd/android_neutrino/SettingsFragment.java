@@ -44,11 +44,28 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
     }
 
+    // What tells this screen of blocks and rescans, which ends with it, as the wallet outlives it.
+    private WalletEventListener blockchainListener;
+    private Runnable stopRescanListener;
+
+    @Override
+    public void onDestroy() {
+        Wallet wallet = Wallet.getInstance();
+        if (wallet != null && blockchainListener != null) {
+            wallet.stopListening(blockchainListener);
+        }
+        if (stopRescanListener != null) {
+            stopRescanListener.run();
+        }
+        super.onDestroy();
+    }
+
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
 
-        settings = Settings.getInstance();
+        // Android can bring back any of these screens in a new process.
+        settings = Settings.get(requireContext());
         // The wallet that runs now, as the one that ran when the screen opened may have stopped
         // since, and started again.
         Wallet wallet = Wallet.getInstance();
@@ -166,32 +183,6 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 }
             });
 
-            androidx.preference.SwitchPreferenceCompat imagesPref = findPreference("tokenImages");
-            if (imagesPref != null) {
-                imagesPref.setChecked(settings.getTokenImages());
-                imagesPref.setOnPreferenceChangeListener((preference, o) -> {
-                    settings.setTokenImages((Boolean) o);
-                    TokenIcons.configure((Boolean) o, settings.getLoadedIcons());
-                    return true;
-                });
-            }
-            androidx.preference.SwitchPreferenceCompat autoLoadPref = findPreference("tokenAutoLoad");
-            if (autoLoadPref != null) {
-                autoLoadPref.setChecked(settings.getTokenAutoLoad());
-                autoLoadPref.setOnPreferenceChangeListener((preference, o) -> {
-                    settings.setTokenAutoLoad((Boolean) o);
-                    return true;
-                });
-            }
-            EditTextPreference gatewaysPref = findPreference("ipfsGateways");
-            if (gatewaysPref != null) {
-                gatewaysPref.setText(settings.getIpfsGatewaysText());
-                gatewaysPref.setOnPreferenceChangeListener((preference, o) -> {
-                    settings.setIpfsGateways(o.toString());
-                    return true;
-                });
-            }
-
             EditTextPreference peersPref = (EditTextPreference) findPreference("peers");
             String peers = settings.getPeers();
             peersPref.setText(peers);
@@ -291,8 +282,36 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             };
 
             if (wallet != null) {
-                wallet.listenRescan(listener);
+                stopRescanListener = wallet.listenRescan(listener);
                 wallet.listenBlockchain(listener);
+                blockchainListener = listener;
+            }
+        } else if (rootKey.equals("tokenSettings")) {
+            activeScreen = "tokenSettings";
+            androidx.preference.SwitchPreferenceCompat imagesPref = findPreference("tokenImages");
+            if (imagesPref != null) {
+                imagesPref.setChecked(settings.getTokenImages());
+                imagesPref.setOnPreferenceChangeListener((preference, o) -> {
+                    settings.setTokenImages((Boolean) o);
+                    TokenIcons.configure((Boolean) o, settings.getLoadedIcons());
+                    return true;
+                });
+            }
+            androidx.preference.SwitchPreferenceCompat autoLoadPref = findPreference("tokenAutoLoad");
+            if (autoLoadPref != null) {
+                autoLoadPref.setChecked(settings.getTokenAutoLoad());
+                autoLoadPref.setOnPreferenceChangeListener((preference, o) -> {
+                    settings.setTokenAutoLoad((Boolean) o);
+                    return true;
+                });
+            }
+            EditTextPreference gatewaysPref = findPreference("ipfsGateways");
+            if (gatewaysPref != null) {
+                gatewaysPref.setText(settings.getIpfsGatewaysText());
+                gatewaysPref.setOnPreferenceChangeListener((preference, o) -> {
+                    settings.setIpfsGateways(o.toString());
+                    return true;
+                });
             }
         } else if (rootKey.equals("bchd")) {
             activeScreen = "bchd";

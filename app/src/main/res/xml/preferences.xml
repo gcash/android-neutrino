@@ -105,25 +105,33 @@
         android:title="Default Memo"
         app:summary="Pre-populate the memo field in the payment request with the value entered here. Typically this field describes what the payment is for." />
 
-    <SwitchPreferenceCompat
-        android:defaultValue="true"
+    <PreferenceScreen
         android:icon="@drawable/token_icon_small"
-        android:key="tokenAutoLoad"
-        android:title="@string/token_auto_load"
-        app:summary="@string/token_auto_load_summary" />
+        android:key="tokenSettings"
+        android:persistent="false"
+        android:title="@string/token_settings"
+        app:summary="@string/token_settings_summary">
 
-    <SwitchPreferenceCompat
-        android:defaultValue="false"
-        android:icon="@drawable/token_icon_small"
-        android:key="tokenImages"
-        android:title="@string/token_images"
-        app:summary="@string/token_images_summary" />
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:icon="@drawable/token_icon_small"
+            android:key="tokenAutoLoad"
+            android:title="@string/token_auto_load"
+            app:summary="@string/token_auto_load_summary" />
 
-    <EditTextPreference
-        android:icon="@drawable/ip_icon_small"
-        android:key="ipfsGateways"
-        android:title="@string/ipfs_gateways"
-        app:summary="@string/ipfs_gateways_summary" />
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:icon="@drawable/token_icon_small"
+            android:key="tokenImages"
+            android:title="@string/token_images"
+            app:summary="@string/token_images_summary" />
+
+        <EditTextPreference
+            android:icon="@drawable/ip_icon_small"
+            android:key="ipfsGateways"
+            android:title="@string/ipfs_gateways"
+            app:summary="@string/ipfs_gateways_summary" />
+    </PreferenceScreen>
 
     <Preference
         android:icon="@drawable/tor_icon_small"
