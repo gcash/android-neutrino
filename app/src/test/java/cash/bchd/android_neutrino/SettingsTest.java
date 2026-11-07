@@ -141,8 +141,9 @@ public class SettingsTest {
     }
 
     @Test
-    public void theGatewaysTheAppComesWithAllParse() {
-        org.junit.Assert.assertEquals(4, Settings.parseGateways(
-                "https://gateway.pinata.cloud,https://ipfs.filebase.io,https://ipfs.io,https://dweb.link").length);
+    public void theGatewaysTheAppComesWithStartWithTheFastest() {
+        Settings settings = new Settings(new InMemoryPreferences(), new InMemoryPreferences(), Network.MAINNET);
+        org.junit.Assert.assertArrayEquals(new String[]{"https://ipfs.filebase.io", "https://ipfs.orbitor.dev",
+                "https://gateway.pinata.cloud", "https://ipfs.io", "https://dweb.link"}, settings.getIpfsGateways());
     }
 }
