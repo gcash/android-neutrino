@@ -210,8 +210,7 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
             row.commitment.setTypeface(Typeface.DEFAULT);
             row.commitment.setText(name);
         } else if (nft.commitment.isEmpty()) {
-            row.commitment.setTypeface(Typeface.DEFAULT);
-            row.commitment.setText(R.string.nft_no_commitment);
+            row.commitment.setText(null);
         } else {
             row.commitment.setTypeface(Typeface.MONOSPACE);
             row.commitment.setText(shortCommitment(nft.commitment));
