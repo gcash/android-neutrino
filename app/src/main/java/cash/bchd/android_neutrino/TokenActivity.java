@@ -337,7 +337,7 @@ public class TokenActivity extends AppCompatActivity {
         }
         // A collection still has its NFTs' art, so its icon missing is no failure of what was asked.
         int failed = art ? R.string.token_icon_unavailable : R.string.token_icon_failed;
-        Futures.addCallback(wallet.tokenIconAsync(token.iconUri), new FutureCallback<byte[]>() {
+        Futures.addCallback(wallet.tokenIconAsync(token.iconUri, true), new FutureCallback<byte[]>() {
             @Override
             public void onSuccess(byte[] data) {
                 boolean saved = false;
@@ -362,8 +362,9 @@ public class TokenActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Throwable t) {
+                int message = Wallet.gatewaysBusy(t) ? R.string.gateways_busy : failed;
                 screen.runOnUiThread(() -> {
-                    Snackbar.make(layout, failed, Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(layout, message, Snackbar.LENGTH_LONG).show();
                     if (art) {
                         done.run();
                     }

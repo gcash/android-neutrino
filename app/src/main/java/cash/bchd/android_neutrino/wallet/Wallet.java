@@ -665,10 +665,27 @@ public class Wallet implements Serializable {
      * downloads itself, by when they stall, and not by time spent waiting for a gateway.
      */
     public ListenableFuture<byte[]> tokenIconAsync(String uri) {
+        return tokenIconAsync(uri, false);
+    }
+
+    /**
+     * tokenIconAsync reads the image at an icon's URI, ahead of what loads by itself if the user
+     * asked for it. If every gateway is busy then, it fails with RESOURCE_EXHAUSTED, which
+     * gatewaysBusy tells.
+     */
+    public ListenableFuture<byte[]> tokenIconAsync(String uri, boolean userAction) {
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel)
                 .withCallCredentials(this.creds);
-        return Futures.transform(stub.tokenIcon(Api.TokenIconRequest.newBuilder().setUri(uri).build()),
+        Api.TokenIconRequest request = Api.TokenIconRequest.newBuilder().setUri(uri).setUserAction(userAction).build();
+        return Futures.transform(stub.tokenIcon(request),
                 reply -> reply.getData().toByteArray(), MoreExecutors.directExecutor());
+    }
+
+    /**
+     * gatewaysBusy returns whether an icon the user asked for failed as every gateway was busy.
+     */
+    public static boolean gatewaysBusy(Throwable t) {
+        return io.grpc.Status.fromThrowable(t).getCode() == io.grpc.Status.Code.RESOURCE_EXHAUSTED;
     }
 
     /**

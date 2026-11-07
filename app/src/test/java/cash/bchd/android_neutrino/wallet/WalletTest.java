@@ -120,4 +120,11 @@ public class WalletTest {
         Wallet.tellReady();
         org.junit.Assert.assertEquals(1, told[0]);
     }
+
+    @Test
+    public void tellsGatewaysBusyFromOtherFailures() {
+        org.junit.Assert.assertTrue(Wallet.gatewaysBusy(io.grpc.Status.RESOURCE_EXHAUSTED.asRuntimeException()));
+        org.junit.Assert.assertFalse(Wallet.gatewaysBusy(io.grpc.Status.UNAVAILABLE.asRuntimeException()));
+        org.junit.Assert.assertFalse(Wallet.gatewaysBusy(new RuntimeException("not gRPC")));
+    }
 }

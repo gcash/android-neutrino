@@ -82,7 +82,7 @@ final class NftArtPopup {
         loading.setVisibility(View.VISIBLE);
         int side = Math.min(screen.getResources().getDisplayMetrics().widthPixels,
                 screen.getResources().getDisplayMetrics().heightPixels);
-        Futures.addCallback(wallet.tokenIconAsync(uri), new FutureCallback<byte[]>() {
+        Futures.addCallback(wallet.tokenIconAsync(uri, true), new FutureCallback<byte[]>() {
             @Override
             public void onSuccess(byte[] data) {
                 boolean saved = false;
@@ -105,9 +105,12 @@ final class NftArtPopup {
             @Override
             public void onFailure(Throwable t) {
                 // What's saved of the art stays, which is the art at a smaller size.
+                boolean busy = Wallet.gatewaysBusy(t);
                 view.post(() -> {
                     loading.setVisibility(View.GONE);
-                    if (moves) {
+                    if (busy && popup.isShowing()) {
+                        Snackbar.make(layout, R.string.gateways_busy, Snackbar.LENGTH_LONG).show();
+                    } else if (moves) {
                         failed(screen, layout, view, popup);
                     }
                 });
