@@ -335,9 +335,15 @@ public class TokenActivity extends AppCompatActivity {
         Futures.addCallback(wallet.tokenIconAsync(token.iconUri), new FutureCallback<byte[]>() {
             @Override
             public void onSuccess(byte[] data) {
-                boolean saved = TokenIcons.save(screen, category, data);
+                boolean saved = false;
+                try {
+                    saved = TokenIcons.save(screen, category, data);
+                } catch (RuntimeException | OutOfMemoryError e) {
+                    e.printStackTrace();
+                }
+                boolean kept = saved;
                 screen.runOnUiThread(() -> {
-                    if (saved) {
+                    if (kept) {
                         settings.addLoadedIcon(category);
                         done.run();
                     } else {
@@ -364,7 +370,7 @@ public class TokenActivity extends AppCompatActivity {
     // hasNftArt returns whether the token's NFTs have art of their own.
     private static boolean hasNftArt(TokenMeta token) {
         for (TokenMeta.NftType type : token.nftTypes) {
-            if (!type.iconUri.isEmpty()) {
+            if (!type.iconUri.isEmpty() || !type.imageUri.isEmpty()) {
                 return true;
             }
         }
@@ -530,6 +536,7 @@ public class TokenActivity extends AppCompatActivity {
         public void onBlock(int blockHeight, String blockHash) {
             update(activity -> {
                 activity.settings.setLastBlockHeight(blockHeight);
+                activity.settings.setLastBlockHash(blockHash);
                 activity.blockHeight = blockHeight;
                 if (activity.history != null) {
                     activity.history.setBlockHeight(blockHeight);

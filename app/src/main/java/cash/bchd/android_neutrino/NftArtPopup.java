@@ -61,16 +61,21 @@ final class NftArtPopup {
             if (file.exists()) {
                 showFull(screen, layout, view, popup, file, size);
             } else {
-                fetch(screen, layout, view, popup, category, commitment, uri, file, size);
+                // Art that moves has nothing to show for it but a still, which needs saying.
+                boolean moves = TokenIcons.moves(screen, category, commitment, uri);
+                fetch(screen, layout, view, popup, moves, uri, file, size);
             }
         }
         return popup;
     }
 
-    private static void fetch(Activity screen, ViewGroup layout, View view, PopupWindow popup, String category,
-                              String commitment, String uri, File file, int size) {
+    private static void fetch(Activity screen, ViewGroup layout, View view, PopupWindow popup, boolean moves,
+                              String uri, File file, int size) {
         Wallet wallet = Wallet.getInstance();
         if (wallet == null || !wallet.isRunning()) {
+            if (moves) {
+                failed(screen, layout, view, popup);
+            }
             return;
         }
         View loading = view.findViewById(R.id.nftArtLoading);
@@ -91,6 +96,8 @@ final class NftArtPopup {
                     loading.setVisibility(View.GONE);
                     if (done && popup.isShowing()) {
                         showFull(screen, layout, view, popup, file, size);
+                    } else if (moves) {
+                        failed(screen, layout, view, popup);
                     }
                 });
             }
@@ -98,7 +105,12 @@ final class NftArtPopup {
             @Override
             public void onFailure(Throwable t) {
                 // What's saved of the art stays, which is the art at a smaller size.
-                view.post(() -> loading.setVisibility(View.GONE));
+                view.post(() -> {
+                    loading.setVisibility(View.GONE);
+                    if (moves) {
+                        failed(screen, layout, view, popup);
+                    }
+                });
             }
         }, MoreExecutors.directExecutor());
     }

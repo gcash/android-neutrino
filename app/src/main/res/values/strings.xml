@@ -207,6 +207,7 @@
     <string name="nft_play">Play</string>
     <string name="nft_play_failed">The NFT\'s art couldn\'t be shown.</string>
     <string name="nft_art_close">Close</string>
+    <string name="nft_art_open">Show the art</string>
     <plurals name="tx_details_more_nfts">
         <item quantity="one">and %1$d more</item>
         <item quantity="other">and %1$d more</item>

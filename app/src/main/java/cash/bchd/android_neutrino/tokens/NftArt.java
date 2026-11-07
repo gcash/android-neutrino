@@ -108,7 +108,12 @@ public final class NftArt {
     private static String uri(String category, String commitment) {
         TokenMeta token = TokenLabels.get(category);
         TokenMeta.NftType type = token == null ? null : token.nftType(commitment);
-        return type == null || type.iconUri.isEmpty() ? null : type.iconUri;
+        if (type == null) {
+            return null;
+        }
+        // Some NFTs have only a full image.
+        String art = type.iconUri.isEmpty() ? type.imageUri : type.iconUri;
+        return art.isEmpty() ? null : art;
     }
 
     private void loadNext() {

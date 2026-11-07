@@ -35,6 +35,7 @@ import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
+import cash.bchd.android_neutrino.wallet.TokenChange;
 import cash.bchd.android_neutrino.wallet.TokenMeta;
 import cash.bchd.android_neutrino.wallet.TokenNft;
 import cash.bchd.android_neutrino.wallet.TransactionData;
@@ -224,10 +225,14 @@ public class NftActivity extends AppCompatActivity {
         String uri = artUri();
         boolean moves = uri != null && TokenIcons.moves(this, category, commitment, uri);
         findViewById(R.id.nftPlay).setVisibility(moves ? View.VISIBLE : View.GONE);
+        // It's only a button with art to open, and what a reader says is what a tap does.
+        View artView = findViewById(R.id.nftArt);
+        artView.setClickable(uri != null);
+        artView.setContentDescription(uri == null ? null : getString(moves ? R.string.nft_play : R.string.nft_art_open));
     }
 
     // artUri returns the URI of the art to show large, if the NFT's art is there to show: what
-    // moves, or else the full image, or else the icon.
+    // moves, or else the full image, or else the icon. Some NFTs have only one of them.
     private String artUri() {
         TokenMeta token = TokenLabels.get(category);
         TokenMeta.NftType type = token == null || commitment == null ? null : token.nftType(commitment);
@@ -235,16 +240,17 @@ public class NftActivity extends AppCompatActivity {
                 || !TokenIcons.hasNft(this, category, commitment)) {
             return null;
         }
-        if (type.imageUri.isEmpty() || TokenIcons.moves(this, category, commitment, type.iconUri)) {
-            return type.iconUri.isEmpty() ? null : type.iconUri;
+        boolean icon = !type.iconUri.isEmpty();
+        if (icon && (type.imageUri.isEmpty() || TokenIcons.moves(this, category, commitment, type.iconUri))) {
+            return type.iconUri;
         }
-        return type.imageUri;
+        return type.imageUri.isEmpty() ? null : type.imageUri;
     }
 
     // openArt shows the art large, if it's there to show.
     private void openArt() {
         String uri = artUri();
-        if (uri != null) {
+        if (uri != null && (artPopup == null || !artPopup.isShowing())) {
             artPopup = NftArtPopup.show(this, layout, category, commitment, uri);
         }
     }
@@ -345,7 +351,7 @@ public class NftActivity extends AppCompatActivity {
                         tx.getTimestamp() * 1000, DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME
                                 | DateUtils.FORMAT_ABBREV_MONTH)));
                 received.setOnClickListener(v -> detailsPopup = TransactionDetailsPopup.show(this, layout, tx,
-                        settings.getLastBlockHeight(), network));
+                        settings.getLastBlockHeight(), network, TokenChange.find(tx.getTokens(), category)));
                 received.setVisibility(View.VISIBLE);
                 return;
             }
