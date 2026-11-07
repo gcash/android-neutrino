@@ -16,19 +16,27 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.MoreExecutors;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import cash.bchd.android_neutrino.tokens.Identicon;
+import cash.bchd.android_neutrino.tokens.TokenIcons;
 import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
+import cash.bchd.android_neutrino.wallet.TokenMeta;
+import cash.bchd.android_neutrino.wallet.Wallet;
 
 /**
  * HiddenTokensActivity lists the tokens the user hid, which Settings opens while there are any:
- * each one's identicon, short token ID, and what the wallet holds of it, with Show, which puts
- * the token back on the main screen. The screen closes once none is hidden.
+ * each one's icon and name as far as the wallet already knows them, by a peek that reaches no
+ * host, and what it holds of it, with Show, which puts the token back on the main screen. The
+ * screen closes once none is hidden.
  */
 public class HiddenTokensActivity extends AppCompatActivity {
 
@@ -37,6 +45,9 @@ public class HiddenTokensActivity extends AppCompatActivity {
     private List<TokenBalance> tokens;
     private final List<String> hidden = new ArrayList<>();
     private final Rows rows = new Rows();
+    // The wallet can still be starting when the screen opens.
+    private final Runnable walletReady = () -> runOnUiThread(this::peekLabels);
+    private static final int LABELS_PER_CALL = 50;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +73,44 @@ public class HiddenTokensActivity extends AppCompatActivity {
         // With the application's context, as the main screen's lists have.
         list.addItemDecoration(new DividerItemDecoration(getApplicationContext(), DividerItemDecoration.VERTICAL));
         list.setAdapter(rows);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        TokenIcons.configure(settings.getTokenImages(), settings.getLoadedIcons());
+        Wallet.addReadyListener(walletReady);
+        peekLabels();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Wallet.removeReadyListener(walletReady);
+    }
+
+    // peekLabels asks what the wallet already knows of the tokens, which it doesn't follow while
+    // they're hidden, so that they can be told apart.
+    private void peekLabels() {
+        Wallet wallet = Wallet.getInstance();
+        if (wallet == null || !wallet.isRunning()) {
+            return;
+        }
+        for (List<String> part : Lists.partition(new ArrayList<>(hidden), LABELS_PER_CALL)) {
+            Futures.addCallback(wallet.peekTokenMetadataAsync(part, false), new FutureCallback<List<TokenMeta>>() {
+                @Override
+                public void onSuccess(List<TokenMeta> tokens) {
+                    if (TokenLabels.update(tokens)) {
+                        runOnUiThread(rows::notifyDataSetChanged);
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    t.printStackTrace();
+                }
+            }, MoreExecutors.directExecutor());
+        }
     }
 
     @Override
@@ -99,13 +148,14 @@ public class HiddenTokensActivity extends AppCompatActivity {
             return nfts;
         }
         // The amount is a uint64, as the API has it.
-        String amount = TokenLabels.number(token.category, new BigInteger(Long.toUnsignedString(token.amount)));
+        String amount = TokenLabels.listAmount(token.category, new BigInteger(Long.toUnsignedString(token.amount)));
         return nfts == null ? amount : getString(R.string.token_amount_and_nfts, amount, nfts);
     }
 
     private static final class Row extends RecyclerView.ViewHolder {
         final ImageView icon;
         final TextView id;
+        final TextView badge;
         final TextView amount;
         final TextView show;
 
@@ -113,6 +163,7 @@ public class HiddenTokensActivity extends AppCompatActivity {
             super(v);
             icon = v.findViewById(R.id.hiddenTokenIcon);
             id = v.findViewById(R.id.hiddenTokenId);
+            badge = v.findViewById(R.id.hiddenTokenBadge);
             amount = v.findViewById(R.id.hiddenTokenAmount);
             show = v.findViewById(R.id.hiddenTokenShow);
         }
@@ -129,9 +180,15 @@ public class HiddenTokensActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull Row row, int position) {
             String category = hidden.get(position);
-            row.icon.setImageBitmap(Identicon.of(category)
-                    .bitmap(getResources().getDimensionPixelSize(R.dimen.token_row_icon)));
-            row.id.setText(TokenBalance.shortId(category));
+            // Only what was saved, and a look-alike's is made to read as another token's.
+            row.icon.setImageBitmap(TokenIcons.listBitmap(HiddenTokensActivity.this, category,
+                    getResources().getDimensionPixelSize(R.dimen.token_row_icon)));
+            TokenLabels.showTitle(row.id, category, TokenLabels.title(category), true);
+            int badge = TokenLabels.badge(category);
+            row.badge.setVisibility(badge == 0 ? View.GONE : View.VISIBLE);
+            if (badge != 0) {
+                row.badge.setText(badge);
+            }
             row.amount.setText(amount(TokenBalance.find(tokens, category)));
             row.show.setOnClickListener(v -> show(category));
         }
