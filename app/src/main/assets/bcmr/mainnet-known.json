@@ -1,1 +1,252 @@
-{"identities":{}}
+{
+ "$schema": "https://cashtokens.org/bcmr-v2.schema.json",
+ "version": {
+  "major": 0,
+  "minor": 1,
+  "patch": 0
+ },
+ "latestRevision": "2026-11-06T00:00:00.000Z",
+ "registryIdentity": {
+  "name": "Neutrino Known list",
+  "description": "Well-known CashTokens, checked against their own published registries."
+ },
+ "identities": {
+  "2469acc5afa4b10cb5b5c04afb89c3a3ffd61c5da9c01e26d00951cae2a02544": {
+   "2026-11-06T00:00:00.000Z": {
+    "name": "ParyonUSD",
+    "token": {
+     "category": "2469acc5afa4b10cb5b5c04afb89c3a3ffd61c5da9c01e26d00951cae2a02544",
+     "symbol": "PUSD",
+     "decimals": 2
+    },
+    "description": "A dollar pegged stablecoin on Bitcoin Cash.",
+    "uris": {
+     "icon": "https://paryonusd.com/logo.svg",
+     "web": "https://paryonusd.com"
+    }
+   }
+  },
+  "7fa887fd4eac015478b95392c4984721fbe3060223c30b342d43cc06817f07f6": {
+   "2026-11-06T00:00:00.000Z": {
+    "name": "olando",
+    "token": {
+     "category": "7fa887fd4eac015478b95392c4984721fbe3060223c30b342d43cc06817f07f6",
+     "symbol": "OLA",
+     "decimals": 2
+    },
+    "description": "Club Currency for Freedom",
+    "uris": {
+     "web": "https://olando.club",
+     "icon": "ipfs://bafybeidlal7oyr7pf3nshvqqydnrl3nlugv4jwy25fjglouh7yxuwqfype/7fa887fd4eac015478b95392c4984721fbe3060223c30b342d43cc06817f07f6.png"
+    }
+   }
+  },
+  "5932b2fd4915d6a75d3ec53282cd49118149a2176ee67ed68b1111ff0786f7fc": {
+   "2026-11-06T00:00:00.000Z": {
+    "name": "Paytaca LIFT Token",
+    "token": {
+     "category": "5932b2fd4915d6a75d3ec53282cd49118149a2176ee67ed68b1111ff0786f7fc",
+     "symbol": "LIFT",
+     "decimals": 2
+    },
+    "description": "The LIFT token (Leveraging Incentives for Financial Transformation) is the utility token powering the Paytaca ecosystem. It embodies the spirit of Bayanihan, a Filipino concept of community-driven voluntary cooperation. LIFT symbolizes collective effort to advance Bitcoin Cash (BCH) adoption....",
+    "uris": {
+     "web": "https://www.paytaca.com/token",
+     "icon": "ipfs://bafybeictwoxb4ma2ywxl545dhuvqqufiwyhacvauygcj43u2orq3zm2c4e/5932b2fd4915d6a75d3ec53282cd49118149a2176ee67ed68b1111ff0786f7fc.png"
+    }
+   }
+  },
+  "b38a33f750f84c5c169a6f23cb873e6e79605021585d4f3408789689ed87f366": {
+   "2026-11-06T00:00:00.000Z": {
+    "name": "Moria USD",
+    "token": {
+     "category": "b38a33f750f84c5c169a6f23cb873e6e79605021585d4f3408789689ed87f366",
+     "symbol": "MUSD",
+     "decimals": 2
+    },
+    "description": "Moria Protocol MUSD v1.",
+    "uris": {
+     "icon": "https://meta.moria.money/m1.png",
+     "web": "https://moria.money"
+    }
+   }
+  },
+  "d9ab24ed15a7846cc3d9e004aa5cb976860f13dac1ead05784ee4f4622af96ea": {
+   "2026-11-06T00:00:00.000Z": {
+    "name": "Furu Tokens",
+    "token": {
+     "category": "d9ab24ed15a7846cc3d9e004aa5cb976860f13dac1ead05784ee4f4622af96ea",
+     "symbol": "FURU",
+     "decimals": 0
+    },
+    "description": "FURU tokens are the official free-play tokens for the BCH Guru predictions platform.",
+    "uris": {
+     "icon": "ipfs://bafkreicqqq3tkq5tkbtg3vhbhw6urybothpoedsszuejs5baq2k25mhgvu",
+     "web": "https://bch.guru/"
+    }
+   }
+  },
+  "963dbc7d3e3b0e9aab4b34c4fc84f5d03a899b6a53ca831bb26665cc992bab0f": {
+   "2026-11-06T00:00:00.000Z": {
+    "name": "CashStamps",
+    "token": {
+     "category": "963dbc7d3e3b0e9aab4b34c4fc84f5d03a899b6a53ca831bb26665cc992bab0f",
+     "symbol": "STAMP",
+     "decimals": 2
+    },
+    "description": "An attempt at funding future CashStamp campaigns that promote BCH adoption around the globe via CashTokenomics.",
+    "uris": {
+     "icon": "https://ipfs.tapswap.cash/ipfs/QmTQLuEgRQ6XXZD3FbDa13VCgMgxZikVyRLUKXNc6ePFCs",
+     "web": "https://stamps.cash"
+    }
+   }
+  },
+  "270fc70ef4d352ff454bcc218e42b20f246f0691af07af9a069608f14f031c48": {
+   "2026-11-06T00:00:00.000Z": {
+    "name": "BCH PUMP",
+    "token": {
+     "category": "270fc70ef4d352ff454bcc218e42b20f246f0691af07af9a069608f14f031c48",
+     "symbol": "PUMP",
+     "decimals": 2
+    },
+    "description": "A token to celebrate the launch of BCH PUMP App",
+    "uris": {
+     "icon": "https://ipfs.tapswap.cash/ipfs/Qmaowt3SPUUTVdyDrHUdvj4XLd5zaW7LWUhP5UwNzp5zCb",
+     "web": "https://tapswap.cash/pump"
+    }
+   }
+  },
+  "3f3a3250babfd578b7d4fc90defb11475c0c9dca9e1e9739af15321da89e43e7": {
+   "2026-11-06T00:00:00.000Z": {
+    "name": "STORE OF VALUE",
+    "token": {
+     "category": "3f3a3250babfd578b7d4fc90defb11475c0c9dca9e1e9739af15321da89e43e7",
+     "symbol": "SOV",
+     "decimals": 8
+    },
+    "description": "Store of value for everyone, maximum supply 1000 coins. That's all, very simple",
+    "uris": {
+     "icon": "ipfs://bafybeifhig5k5enhr6sek6en2loexomc4jxrahh5clxh4idqtbhpe2s5na/3f3a3250babfd578b7d4fc90defb11475c0c9dca9e1e9739af15321da89e43e7.png"
+    }
+   }
+  },
+  "892cef80a326f92583766abb85562f550fe6a6ff9a7d458067680c720135ff53": {
+   "2026-11-06T00:00:00.000Z": {
+    "name": "Broach",
+    "token": {
+     "category": "892cef80a326f92583766abb85562f550fe6a6ff9a7d458067680c720135ff53",
+     "symbol": "ROACH",
+     "decimals": 2
+    },
+    "description": "A token epitomizing how relentless and hard to kill BCH is. ",
+    "uris": {
+     "icon": "https://ipfs.tapswap.cash/ipfs/QmbAF345YoHhSzeGpvQEVo52DKkcu7mkcEvfuFxr8haqA9"
+    }
+   }
+  },
+  "f6677f3d3805d70949b375d36e094ff0ec9ece2a2cb1fde6d8b0e90b368f1f63": {
+   "2026-11-06T00:00:00.000Z": {
+    "name": "BitcoinCashTV",
+    "token": {
+     "category": "f6677f3d3805d70949b375d36e094ff0ec9ece2a2cb1fde6d8b0e90b368f1f63",
+     "symbol": "BCHTV",
+     "decimals": 8
+    },
+    "description": "BCHTV is a Variety Gaming Show where you can win Bitcoin Cash daily!",
+    "uris": {
+     "icon": "https://ipfs.pat.mn/ipfs/QmeTHACo1GsxsXbwPk9NgYPsmH5an1js2pMvAcFqRjtxJk",
+     "web": "https://bitcoincashtv.com"
+    }
+   }
+  },
+  "b79bfc8246b5fc4707e7c7dedcb6619ef1ab91f494a790c20b0f4c422ed95b92": {
+   "2026-11-06T00:00:00.000Z": {
+    "name": "Cauldron Socks",
+    "token": {
+     "category": "b79bfc8246b5fc4707e7c7dedcb6619ef1ab91f494a790c20b0f4c422ed95b92",
+     "symbol": "SOCK",
+     "decimals": 0
+    },
+    "description": "Cauldron socks",
+    "uris": {
+     "icon": "https://sock.cauldron.quest/sock.png",
+     "web": "https://cauldron.quest"
+    }
+   }
+  },
+  "1f91eb61e3c05f62cfc58ea81350450b6d2c41cce3fb9637c0833a8162aad868": {
+   "2026-11-06T00:00:00.000Z": {
+    "name": "SOL DE ORO",
+    "token": {
+     "category": "1f91eb61e3c05f62cfc58ea81350450b6d2c41cce3fb9637c0833a8162aad868",
+     "symbol": "SDO",
+     "decimals": 4
+    },
+    "description": "Token turístico y cultural del Perú",
+    "uris": {
+     "web": "https://t.me/soldeoro2024",
+     "icon": "ipfs://bafybeih2p4ghpjqnzxi7esdvnxh5aiedikhjhoqpdvq273esouo65h2msu/1f91eb61e3c05f62cfc58ea81350450b6d2c41cce3fb9637c0833a8162aad868.png"
+    }
+   }
+  },
+  "8473d94f604de351cdee3030f6c354d36b257861ad8e95bbc0a06fbab2a2f9cf": {
+   "2026-11-06T00:00:00.000Z": {
+    "name": "DogeCash",
+    "token": {
+     "category": "8473d94f604de351cdee3030f6c354d36b257861ad8e95bbc0a06fbab2a2f9cf",
+     "symbol": "DOGECASH",
+     "decimals": 0
+    },
+    "description": "Created for fun on the CashTokens launch day, distributed through giveaways & airdrops. Don't let your dreams be memes",
+    "uris": {
+     "icon": "https://gist.githubusercontent.com/mr-zwets/84b0057808af20df392815fb27d4a661/raw/Dogecoin_Logo.png",
+     "web": "https://dogecash.uwu.ai/"
+    }
+   }
+  },
+  "4b3cd84a34be48625cd8959eecb98545f755905080ea44f3a3c300f67aa81f8a": {
+   "2026-11-06T00:00:00.000Z": {
+    "name": "A Fifth of Gaming",
+    "token": {
+     "category": "4b3cd84a34be48625cd8959eecb98545f755905080ea44f3a3c300f67aa81f8a",
+     "symbol": "AFOG",
+     "decimals": 5
+    },
+    "description": "The official token of A Fifth Of Gaming",
+    "uris": {
+     "web": "https://afifthofgaming.com/token",
+     "icon": "https://bafybeidvrpsf3zkdkl3becvazyzmvk6hjuowx5vp2jzlrldkb5totzyybm.ipfs.dweb.link/"
+    }
+   }
+  },
+  "e38d7f8e85da78943b3d7766e94c5560522ad67758402ae8f31765412b746292": {
+   "2026-11-06T00:00:00.000Z": {
+    "name": "Dragon City",
+    "token": {
+     "category": "e38d7f8e85da78943b3d7766e94c5560522ad67758402ae8f31765412b746292",
+     "symbol": "DRAGON",
+     "decimals": 6
+    },
+    "description": "Atop the highest tower in Ljubljana's town square rests a unique token etched with the vigilant gaze of a dragon, the revered spirit of Ljubljana. This dragon watches over all 666,666 tokens scattered throughout the city, each polished by centuries and symbolizing protection, luck, and...",
+    "uris": {
+     "icon": "ipfs://bafybeiha2nlsce2h6e6p7kpoy7krvk44hfn4hil2aefvzxjeokkafneryu/e38d7f8e85da78943b3d7766e94c5560522ad67758402ae8f31765412b746292.png"
+    }
+   }
+  },
+  "0adb865ee9cc3038de87fba682e6cd361414edc9acff0da2fd0690d75341c640": {
+   "2026-11-06T00:00:00.000Z": {
+    "name": "FoldingCash",
+    "token": {
+     "category": "0adb865ee9cc3038de87fba682e6cd361414edc9acff0da2fd0690d75341c640",
+     "symbol": "FLDCH",
+     "decimals": 8
+    },
+    "description": "FLDCH tokens are used to reward Folding@Home users for using their computer hardware to contribute to medical research for finding cures to cancer and other deadly diseases.",
+    "uris": {
+     "icon": "ipfs://bafybeif7sijkiikv4d23dtrkf63mceq2vk6edrq6ehexc3bcwi6ydtxusu",
+     "web": "https://folding.cash"
+    }
+   }
+  }
+ }
+}
