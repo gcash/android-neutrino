@@ -21,6 +21,16 @@ public class TokenIconsTest {
     }
 
     @Test
+    public void largeStillsCanBeBroughtDownToFullSize() {
+        assertTrue(TokenIcons.usableFull(5000, 5000));
+        assertTrue(TokenIcons.usableFull(20000, 1000));
+        assertFalse(TokenIcons.usableFull(6000, 6000));
+        assertFalse(TokenIcons.usableFull(16384, 16384));
+        assertFalse(TokenIcons.usableFull(100000, 100000));
+        assertFalse(TokenIcons.usableFull(0, 10));
+    }
+
+    @Test
     public void imagesScaleDownWithoutGoingUnderTheSize() {
         assertEquals(1, TokenIcons.sampleSize(64, 64, 64));
         assertEquals(1, TokenIcons.sampleSize(100, 100, 64));

@@ -249,11 +249,21 @@ public class NftActivity extends AppCompatActivity {
         return type.imageUri.isEmpty() ? null : type.imageUri;
     }
 
+    // fullUri returns the URI to fetch the art in full from, or null if what's saved is that file,
+    // so that a still image isn't downloaded twice.
+    private String fullUri(String uri) {
+        TokenMeta token = TokenLabels.get(category);
+        TokenMeta.NftType type = token == null ? null : token.nftType(commitment);
+        boolean thumbnail = type != null && (type.iconUri.isEmpty() || uri.equals(type.iconUri));
+        return thumbnail && !TokenIcons.moves(this, category, commitment, uri)
+                && TokenIcons.savedFrom(this, category, commitment, uri) ? null : uri;
+    }
+
     // openArt shows the art large, if it's there to show.
     private void openArt() {
         String uri = artUri();
         if (uri != null && (artPopup == null || !artPopup.isShowing())) {
-            artPopup = NftArtPopup.show(this, layout, category, commitment, uri);
+            artPopup = NftArtPopup.show(this, layout, category, commitment, fullUri(uri));
         }
     }
 

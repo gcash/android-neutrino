@@ -130,11 +130,11 @@ public final class NftArt {
                 asked.remove(key(category, commitment));
                 continue;
             }
-            load(wallet.tokenIconAsync(uri), category, commitment);
+            load(wallet.tokenIconAsync(uri), category, commitment, uri);
         }
     }
 
-    private void load(ListenableFuture<byte[]> data, String category, String commitment) {
+    private void load(ListenableFuture<byte[]> data, String category, String commitment, String uri) {
         loading++;
         Futures.addCallback(data, new FutureCallback<byte[]>() {
             @Override
@@ -143,7 +143,7 @@ public final class NftArt {
                 boolean saved = false;
                 try {
                     saved = commitment == null ? TokenIcons.save(context, category, image)
-                            : TokenIcons.saveNft(context, category, commitment, image);
+                            : TokenIcons.saveNft(context, category, commitment, image, uri);
                 } catch (RuntimeException | OutOfMemoryError e) {
                     e.printStackTrace();
                 }

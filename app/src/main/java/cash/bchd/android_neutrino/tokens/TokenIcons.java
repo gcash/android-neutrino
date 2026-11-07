@@ -15,6 +15,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -37,6 +38,13 @@ public final class TokenIcons {
 
     // The largest side of an image it will decode.
     private static final int MAX_SIDE = 4096;
+    // The most pixels of a still image to bring down to full size, so that a large one isn't left
+    // a thumbnail. It's by pixels, as some formats are read whole, whatever size they're read to.
+    private static final long MAX_FULL_PIXELS = 1L << 25;
+    // The side an NFT's art is kept at, which shows it in a list and large in its popup, as many
+    // NFTs have no other image to fetch. It's a little under a phone's width, as all of that takes
+    // twice the space for what can hardly be seen.
+    private static final int NFT_SIDE = 768;
     // What the videos and animations kept to play can take up.
     private static final long MAX_MOTION_SIZE = 32 << 20;
     // The largest file it keeps as it came, as a small image can carry any amount besides.
@@ -76,6 +84,25 @@ public final class TokenIcons {
             return category + "-" + new BigInteger(1, digest).toString(16);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
+        }
+    }
+
+    // sourceFile returns the file that says what URI an NFT's art was saved from.
+    private static File sourceFile(Context context, String category, String commitment) {
+        return new File(nftFile(context, category, commitment).getPath() + ".source");
+    }
+
+    /**
+     * savedFrom returns whether an NFT's saved art came from the URI, at the size it's kept at now.
+     * Art saved by earlier versions says nothing, as it's smaller, and a registry can come to name
+     * other art.
+     */
+    public static boolean savedFrom(Context context, String category, String commitment, String uri) {
+        try {
+            byte[] saved = Files.readAllBytes(sourceFile(context, category, commitment).toPath());
+            return uri.equals(new String(saved, StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            return false;
         }
     }
 
@@ -174,9 +201,16 @@ public final class TokenIcons {
     /**
      * saveNft keeps an NFT's own art as save keeps an icon.
      */
-    public static boolean saveNft(Context context, String category, String commitment, byte[] data) {
+    public static boolean saveNft(Context context, String category, String commitment, byte[] data, String uri) {
         boolean moves = moves(data);
-        boolean saved = save(nftFile(context, category, commitment), data, largestShown(context));
+        boolean saved = save(nftFile(context, category, commitment), data, NFT_SIDE);
+        if (saved) {
+            try {
+                Files.write(sourceFile(context, category, commitment).toPath(), uri.getBytes(StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         if (saved && moves) {
             try {
                 motionMarker(context, category, commitment).createNewFile();
@@ -310,7 +344,8 @@ public final class TokenIcons {
         bounds.inJustDecodeBounds = true;
         BitmapFactory.decodeByteArray(data, 0, data.length, bounds);
         boolean image = bounds.outWidth > 0 && !canAnimate(data);
-        if (bounds.outWidth > 0 && !usable(bounds.outWidth, bounds.outHeight)) {
+        if (bounds.outWidth > 0 && !(image ? usableFull(bounds.outWidth, bounds.outHeight)
+                : usable(bounds.outWidth, bounds.outHeight))) {
             return false;
         }
         File tmp;
@@ -448,7 +483,9 @@ public final class TokenIcons {
     // shrink writes the image with its largest side at maxSide, in its proportions.
     private static boolean shrink(byte[] data, BitmapFactory.Options bounds, int maxSide, FileOutputStream out) {
         BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight, maxSide);
+        // By the largest side, which is what comes down to maxSide.
+        int largest = Math.max(bounds.outWidth, bounds.outHeight);
+        options.inSampleSize = sampleSize(largest, largest, maxSide);
         Bitmap decoded = BitmapFactory.decodeByteArray(data, 0, data.length, options);
         return decoded != null && write(decoded, maxSide, formatOf(bounds.outMimeType), out);
     }
@@ -482,6 +519,13 @@ public final class TokenIcons {
      */
     static boolean usable(int width, int height) {
         return width > 0 && height > 0 && width <= MAX_SIDE && height <= MAX_SIDE;
+    }
+
+    /**
+     * usableFull returns whether a still image's size is one to bring down to full size.
+     */
+    static boolean usableFull(int width, int height) {
+        return width > 0 && height > 0 && (long) width * height <= MAX_FULL_PIXELS;
     }
 
     /**
