@@ -114,6 +114,35 @@ public class SettingsTest {
         String[] gateways = Settings.parseGateways(
                 "https://a.example, https://b.example:8443/\nhttp://c.example ftp://d.example https://e.example/path");
         org.junit.Assert.assertArrayEquals(
-                new String[]{"https://a.example", "https://b.example:8443/"}, gateways);
+                new String[]{"https://a.example", "https://b.example:8443"}, gateways);
+    }
+
+    @Test
+    public void gatewaysForgiveEasyMistakes() {
+        org.junit.Assert.assertArrayEquals(
+                new String[]{"https://ipfs.io", "https://a.example", "https://b.example", "https://c.example:8443"},
+                Settings.parseGateways("  ipfs.io ,, HTTPS://A.example/ipfs/\nb.example/IPFS c.example:8443/ipfs"));
+    }
+
+    @Test
+    public void gatewaysKeepEachHostOnce() {
+        org.junit.Assert.assertArrayEquals(
+                new String[]{"https://ipfs.io", "https://dweb.link"},
+                Settings.parseGateways("ipfs.io https://ipfs.io/ HTTPS://IPFS.IO/ipfs dweb.link"));
+    }
+
+    @Test
+    public void gatewaysRefuseWhatIsNoHttpsHost() {
+        org.junit.Assert.assertEquals(0, Settings.parseGateways(
+                "http://a.example ftp://b.example https://c.example/path d.example/ipfs/x notahost e.example:port "
+                        + "https:// user@f.example").length);
+        org.junit.Assert.assertEquals(0, Settings.parseGateways("").length);
+        org.junit.Assert.assertEquals(0, Settings.parseGateways("   ").length);
+    }
+
+    @Test
+    public void theGatewaysTheAppComesWithAllParse() {
+        org.junit.Assert.assertEquals(4, Settings.parseGateways(
+                "https://gateway.pinata.cloud,https://ipfs.filebase.io,https://ipfs.io,https://dweb.link").length);
     }
 }

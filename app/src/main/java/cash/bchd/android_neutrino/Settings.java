@@ -466,14 +466,31 @@ public class Settings {
         appPrefs.edit().putString(IPFS_GATEWAYS_KEY, gateways).apply();
     }
 
+    // resetIpfsGateways goes back to the gateways the app comes with.
+    void resetIpfsGateways() {
+        appPrefs.edit().remove(IPFS_GATEWAYS_KEY).apply();
+    }
+
     static String[] parseGateways(String text) {
-        java.util.List<String> gateways = new java.util.ArrayList<>();
-        for (String gateway : text.split("[,\\s]+")) {
-            if (gateway.matches("https://[A-Za-z0-9.:-]+/?")) {
+        java.util.Set<String> gateways = new java.util.LinkedHashSet<>();
+        for (String entry : text.split("[,\\s]+")) {
+            String gateway = cleanGateway(entry);
+            if (gateway != null) {
                 gateways.add(gateway);
             }
         }
         return gateways.toArray(new String[0]);
+    }
+
+    // cleanGateway returns an entry as https://host, which it can be without its scheme or with
+    // the path gateways are usually written with, or null if it's anything but an HTTPS host.
+    private static String cleanGateway(String entry) {
+        String host = entry.replaceFirst("(?i)^https://", "").replaceFirst("(?i)/ipfs/?$", "")
+                .replaceFirst("/$", "");
+        if (!host.matches("[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)+(:[0-9]+)?")) {
+            return null;
+        }
+        return "https://" + host.toLowerCase(java.util.Locale.ROOT);
     }
 
     boolean getTokenAutoLoad() {

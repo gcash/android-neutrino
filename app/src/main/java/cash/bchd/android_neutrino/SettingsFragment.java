@@ -309,7 +309,19 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             if (gatewaysPref != null) {
                 gatewaysPref.setText(settings.getIpfsGatewaysText());
                 gatewaysPref.setOnPreferenceChangeListener((preference, o) -> {
-                    settings.setIpfsGateways(o.toString());
+                    String gateways = o.toString();
+                    // Nothing at all asks for the gateways the app comes with.
+                    if (gateways.trim().isEmpty()) {
+                        settings.resetIpfsGateways();
+                        gatewaysPref.setText(settings.getIpfsGatewaysText());
+                        return false;
+                    }
+                    // Tokens on IPFS would fail with no word why, so the list stays as it was.
+                    if (Settings.parseGateways(gateways).length == 0) {
+                        Toast.makeText(requireContext(), R.string.ipfs_gateways_invalid, Toast.LENGTH_LONG).show();
+                        return false;
+                    }
+                    settings.setIpfsGateways(gateways);
                     return true;
                 });
             }
