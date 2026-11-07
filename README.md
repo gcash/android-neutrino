@@ -72,6 +72,33 @@ keytool -genkeypair -keystore ~/neutrino-release.jks -alias neutrino \
     -keyalg RSA -keysize 4096 -validity 10950 -dname "CN=Neutrino"
 ```
 
+Before each release, bring the token files in `app/src/main/assets/bcmr/` up to date:
+
+1. **Hints tables.** For mainnet and testnet4, on a node of that network with `--bcmrindex`
+   that has finished catching up, run bchd's `bcmrhints` at a height at least 100 blocks below
+   the tip, as [bchd's guide](https://github.com/gcash/bchd/blob/master/docs/bcmr_hints.md)
+   explains:
+
+   ```bash
+   BCMRHINTS_RPCUSER=user BCMRHINTS_RPCPASS=pass bcmrhints --height <height> -o mainnet-hints.bin
+   ```
+
+   Copy the result to `<network>-hints.bin`, and give each table's height and SHA-256, which
+   `bcmrhints` prints, in the release notes, so that anyone with a node can make the same file
+   and compare.
+
+2. **Known list.** Check that each entry of `mainnet-known.json` still matches its token's own
+   registry: the category ID, name, symbol and decimals, which are all an entry holds. The
+   maintainer decides what's added.
+
+3. **AAR.** Rebuild `bchwallet/bchwallet.aar` from the bchwallet commit being released, and note
+   that commit. It needs Go, the Android SDK in `ANDROID_HOME` and the Android NDK r28 or newer,
+   in `$ANDROID_HOME/ndk` or else in `ANDROID_NDK_HOME`:
+
+   ```bash
+   ANDROID_HOME=<Android SDK> BCHWALLET_DIR=<bchwallet checkout> scripts/build-bchwallet-aar.sh
+   ```
+
 Set the version in `app/build.gradle`, then build and sign the release:
 
 ```bash
@@ -81,3 +108,6 @@ scripts/build-release.sh ~/neutrino-release.jks
 This asks for the keystore's password and writes an APK for each ABI, a universal APK and
 `SHA256SUMS` to `build/release/<version>/`. Attach them to the GitHub release, and give the
 certificate's SHA-256 digest, which the script prints, in the release notes.
+
+Before publishing, install it on a phone and check a mainnet wallet that holds tokens: their
+names, icons and NFT art, and a payment sent and received.
