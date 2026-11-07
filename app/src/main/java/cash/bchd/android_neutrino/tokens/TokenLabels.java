@@ -6,8 +6,10 @@ import android.widget.TextView;
 import androidx.annotation.StringRes;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -24,8 +26,13 @@ import cash.bchd.android_neutrino.wallet.TokenMeta;
 public final class TokenLabels {
 
     private static final Map<String, TokenMeta> TOKENS = new ConcurrentHashMap<>();
+    // The tokens the wallet told of in this run, as what was kept from the last one only stands
+    // in until it does.
+    private static final Set<String> SAID = ConcurrentHashMap.newKeySet();
     // Counts the changes, for a screen to tell that it drew older labels.
     private static final AtomicLong VERSION = new AtomicLong();
+    // Told when the labels change, to keep them.
+    private static volatile Runnable onChange;
 
     private TokenLabels() {
     }
@@ -36,6 +43,7 @@ public final class TokenLabels {
     public static boolean update(List<TokenMeta> tokens) {
         AtomicBoolean changed = new AtomicBoolean();
         for (TokenMeta token : tokens) {
+            SAID.add(token.category);
             TOKENS.compute(token.category, (category, before) -> {
                 TokenMeta now = token.keepingNftTypes(before);
                 if (!now.equals(before)) {
@@ -45,7 +53,44 @@ public final class TokenLabels {
                 return now;
             });
         }
+        Runnable told = onChange;
+        if (changed.get() && told != null) {
+            told.run();
+        }
         return changed.get();
+    }
+
+    /**
+     * load takes what was kept from the last run, under anything the wallet has said since.
+     */
+    public static void load(List<TokenMeta> tokens) {
+        for (TokenMeta token : tokens) {
+            if (TOKENS.putIfAbsent(token.category, token) == null) {
+                VERSION.incrementAndGet();
+            }
+        }
+    }
+
+    /**
+     * saidThisRun returns whether the wallet told of the token since the app started, whatever
+     * was kept of it from before.
+     */
+    public static boolean saidThisRun(String category) {
+        return SAID.contains(category);
+    }
+
+    /**
+     * all returns everything the wallet has said, to keep.
+     */
+    public static List<TokenMeta> all() {
+        return new ArrayList<>(TOKENS.values());
+    }
+
+    /**
+     * onChange has the listener told when the labels change, on no particular thread.
+     */
+    public static void onChange(Runnable listener) {
+        onChange = listener;
     }
 
     /**
@@ -67,6 +112,7 @@ public final class TokenLabels {
      */
     public static void clear() {
         TOKENS.clear();
+        SAID.clear();
     }
 
     /**

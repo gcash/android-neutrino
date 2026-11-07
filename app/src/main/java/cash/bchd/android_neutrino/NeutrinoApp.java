@@ -6,6 +6,7 @@ import android.os.Looper;
 
 import androidx.lifecycle.ProcessLifecycleOwner;
 
+import cash.bchd.android_neutrino.wallet.TokenLabelFile;
 import cash.bchd.android_neutrino.wallet.Wallet;
 
 /**
@@ -17,6 +18,8 @@ public class NeutrinoApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        // Before any screen, as Android can bring back any of them after it ended the app.
+        TokenLabelFile.open(this, Settings.get(this).getNetwork());
         Handler main = new Handler(Looper.getMainLooper());
         WalletCloser closer = new WalletCloser(new WalletCloser.Wallets() {
             @Override

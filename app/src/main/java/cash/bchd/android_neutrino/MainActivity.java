@@ -87,6 +87,7 @@ import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.SyncStatus;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
 import cash.bchd.android_neutrino.wallet.TokenChange;
+import cash.bchd.android_neutrino.wallet.TokenLabelFile;
 import cash.bchd.android_neutrino.wallet.TokenMeta;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 import cash.bchd.android_neutrino.wallet.TransactionList;
@@ -230,6 +231,7 @@ public class MainActivity extends CloseActivity {
         new TabLayoutMediator(tabs, pages, (tab, position) ->
                 tab.setText(position == MainPages.TOKENS ? R.string.tab_tokens : R.string.tab_activity)).attach();
         // The tokens the wallet held when it last told them, until it tells them again.
+        TokenLabelFile.open(this, network);
         showTokens(settings.getLastTokens());
         showBchPlease();
         fab.setOnClickListener(view -> toggleFABMenu());
@@ -865,7 +867,7 @@ public class MainActivity extends CloseActivity {
         Set<String> unknown = new HashSet<>();
         for (TransactionData tx : mAdapter.getData()) {
             for (TokenChange change : tx.getTokens()) {
-                if (TokenLabels.get(change.category) == null && !hidden.contains(change.category)) {
+                if (!TokenLabels.saidThisRun(change.category) && !hidden.contains(change.category)) {
                     unknown.add(change.category);
                 }
             }

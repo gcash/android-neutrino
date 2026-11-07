@@ -81,8 +81,12 @@ public final class TokenMeta {
     public final boolean reservedSymbol;
     public final List<NftType> nftTypes;
     private final Map<String, NftType> nftTypesByCommitment;
+    // What the wallet said, as it's kept between runs: without the NFT types, of which a
+    // collection can have thousands, and which load with its screens.
+    private final Api.TokenMetadataResponse.Token kept;
 
     TokenMeta(Api.TokenMetadataResponse.Token token) {
+        kept = token.toBuilder().clearNftTypes().build();
         category = token.getCategory();
         hasMetadata = token.getHasMetadata();
         name = token.getName();
@@ -109,6 +113,7 @@ public final class TokenMeta {
 
     // A copy of the token with the NFT types.
     private TokenMeta(TokenMeta token, List<NftType> types) {
+        kept = token.kept;
         category = token.category;
         hasMetadata = token.hasMetadata;
         name = token.name;
@@ -127,6 +132,10 @@ public final class TokenMeta {
         reservedSymbol = token.reservedSymbol;
         nftTypes = types;
         nftTypesByCommitment = byCommitment(types);
+    }
+
+    Api.TokenMetadataResponse.Token kept() {
+        return kept;
     }
 
     private static Map<String, NftType> byCommitment(List<NftType> types) {
@@ -232,12 +241,7 @@ public final class TokenMeta {
             return false;
         }
         TokenMeta o = (TokenMeta) other;
-        return category.equals(o.category) && hasMetadata == o.hasMetadata && name.equals(o.name)
-                && symbol.equals(o.symbol) && decimals == o.decimals && status == o.status
-                && known == o.known && lookAlike == o.lookAlike && burned == o.burned
-                && registryChanged == o.registryChanged
-                && registryFailed == o.registryFailed && reservedSymbol == o.reservedSymbol && nftTypes.size() == o.nftTypes.size()
-                && iconUri.equals(o.iconUri);
+        return kept.equals(o.kept) && nftTypes.size() == o.nftTypes.size();
     }
 
     @Override

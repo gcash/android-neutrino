@@ -30,6 +30,7 @@ import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Bip39;
 import cash.bchd.android_neutrino.wallet.Network;
+import cash.bchd.android_neutrino.wallet.TokenLabelFile;
 import cash.bchd.android_neutrino.wallet.TokensHeld;
 import cash.bchd.android_neutrino.wallet.Wallet;
 
@@ -182,6 +183,7 @@ public class RestoreActivity extends AppCompatActivity {
         settings.setLastTokens(Collections.emptyList());
         settings.clearLoadedIcons();
         TokenLabels.clear();
+        TokenLabelFile.delete(this, network);
         settings.setLastAddress("");
         settings.setLastTokenAddress("");
         settings.setBackupReminder(false);
@@ -198,6 +200,9 @@ public class RestoreActivity extends AppCompatActivity {
         Wallet.runAfterStop(() -> {
             deleteRecursive(walletDir);
             TokenIcons.clear(this);
+            // A reply can have come in until the wallet stopped.
+            TokenLabels.clear();
+            TokenLabelFile.delete(this, network);
         });
 
         Vibrations.buzz(getApplicationContext());

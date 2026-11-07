@@ -13,11 +13,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import cash.bchd.android_neutrino.tokens.TokenLabels;
-import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.BcmrFiles;
 import cash.bchd.android_neutrino.wallet.Config;
 import cash.bchd.android_neutrino.wallet.Migration;
+import cash.bchd.android_neutrino.wallet.TokenLabelFile;
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
 
@@ -27,9 +26,6 @@ import cash.bchd.android_neutrino.wallet.WalletEventListener;
  * app comes back after it stopped the wallet.
  */
 final class WalletStarter {
-
-    // The network that what the labels hold is of.
-    private static Network labelsNetwork;
 
     private WalletStarter() {
     }
@@ -57,11 +53,7 @@ final class WalletStarter {
                 bchdIP.equals(""), settings.getBlocksOnly(), peersOnly ? peers : none, peersOnly ? none : peers,
                 settings.getBchdIP(), settings.getBchdUsername(),
                 settings.getBchdPassword(), settings.getBchdCert(), birthday);
-        // What's known of tokens stays over a restart, which screens stay open across.
-        if (settings.getNetwork() != labelsNetwork) {
-            TokenLabels.clear();
-            labelsNetwork = settings.getNetwork();
-        }
+        TokenLabelFile.open(context, settings.getNetwork());
         cfg.setTokenMetadata(BcmrFiles.hintsPath(context, settings.getNetwork()),
                 BcmrFiles.knownPath(context, settings.getNetwork()), settings.getIpfsGateways(),
                 settings.getTokenAutoLoad());
