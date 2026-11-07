@@ -189,7 +189,7 @@ public class RestoreActivity extends AppCompatActivity {
         // Stop the wallet, and delete its files once it has closed them, so
         // that MainActivity creates the restored wallet. The cached
         // transactions are only read by the app and can go right away.
-        deleteFile(TransactionStore.fileName(network));
+        TransactionStore.delete(this, network);
         Wallet wallet = Wallet.getInstance();
         if (wallet != null) {
             wallet.stop();

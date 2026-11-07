@@ -3,6 +3,10 @@ package cash.bchd.android_neutrino.wallet;
 import java.util.List;
 
 public class WalletEventListener {
+    // Replies can overtake each other, and an older one would drop what a newer one added. It's
+    // the listener's, as what one screen is told says nothing of what another has.
+    final LatestReplies transactionReplies = new LatestReplies();
+
     public void onWalletReady(){}
 
     public void onBalanceChange(long satoshis){}

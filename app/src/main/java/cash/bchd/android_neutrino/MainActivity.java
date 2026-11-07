@@ -411,6 +411,11 @@ public class MainActivity extends CloseActivity {
             // The tokens as the wallet last told them, and the transactions, without a token
             // that its screen hid since, or with one that Settings showed again.
             showTokens(settings.getLastTokens());
+            // A token's screen saves what the wallet tells it while it listens, which can be all
+            // that's left of a memo once the wallet has started again.
+            if (txStore.stale()) {
+                txStore = new TransactionStore(this, settings.getNetwork());
+            }
             mAdapter.setNewData(TransactionList.withoutHidden(txStore.getData(), settings.getHiddenTokens()));
             showBchPlease();
             redrawLabels();

@@ -726,6 +726,7 @@ public class Wallet implements Serializable {
     public void getTransactions(WalletEventListener listener) throws Exception {
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
         Api.GetTransactionsRequest request = Api.GetTransactionsRequest.newBuilder().build();
+        long replyNumber = listener.transactionReplies.next();
         ListenableFuture<Api.GetTransactionsResponse> reply = stub.getTransactions(request);
 
         Futures.addCallback(reply, new FutureCallback<Api.GetTransactionsResponse>() {
@@ -749,7 +750,8 @@ public class Wallet implements Serializable {
                 for (Api.TransactionDetails tx : result.getUnminedTransactionsList()) {
                     txs.add(extractTransactionData(tx, 0, tx.getTimestamp()));
                 }
-                listener.onGetTransactions(txs, bestHeight);
+                int height = bestHeight;
+                listener.transactionReplies.deliver(replyNumber, () -> listener.onGetTransactions(txs, height));
             }
 
             @Override

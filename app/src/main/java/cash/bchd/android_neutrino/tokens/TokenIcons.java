@@ -44,9 +44,13 @@ public final class TokenIcons {
     // The longest commitment a file's name holds whole, and how large an animation is decoded to
     // tell that it moves.
     private static final int MAX_NAME_COMMITMENT = 64;
-    private static final int GIF_CHECK_SIDE = 16;
+    private static final int ANIMATION_CHECK_SIDE = 16;
     private static final String ICON_DIR = "token-icons";
     private static final String MOTION_DIR = "nft-motion";
+
+    // Where a WebP's extended header keeps its flags, and the one for an animation.
+    private static final int WEBP_FLAGS = 20;
+    private static final int WEBP_ANIMATED = 0x02;
 
     // Counts what was saved, for a screen to tell that it drew older images.
     private static final AtomicLong VERSION = new AtomicLong();
@@ -197,10 +201,24 @@ public final class TokenIcons {
     }
 
     /**
-     * isGif returns whether a file starts as a GIF does.
+     * canAnimate returns whether a file starts as a GIF does, which may have one frame, or as a WebP
+     * that says it's animated.
      */
-    public static boolean isGif(byte[] start) {
-        return start.length >= 4 && start[0] == 'G' && start[1] == 'I' && start[2] == 'F' && start[3] == '8';
+    static boolean canAnimate(byte[] start) {
+        if (start.length >= 4 && start[0] == 'G' && start[1] == 'I' && start[2] == 'F' && start[3] == '8') {
+            return true;
+        }
+        return start.length > WEBP_FLAGS && startsWith(start, 0, "RIFF") && startsWith(start, 8, "WEBPVP8X")
+                && (start[WEBP_FLAGS] & WEBP_ANIMATED) != 0;
+    }
+
+    private static boolean startsWith(byte[] data, int at, String text) {
+        for (int i = 0; i < text.length(); i++) {
+            if (data[at + i] != text.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // moves returns whether a file is a video, which no image decoder reads, or an animation. The
@@ -213,12 +231,12 @@ public final class TokenIcons {
         if (bounds.outWidth <= 0) {
             return true;
         }
-        if (!isGif(data) || !usable(bounds.outWidth, bounds.outHeight)) {
+        if (!canAnimate(data) || !usable(bounds.outWidth, bounds.outHeight)) {
             return false;
         }
         try {
             return ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(data)),
-                    (decoder, info, source) -> decoder.setTargetSize(GIF_CHECK_SIDE, GIF_CHECK_SIDE))
+                    (decoder, info, source) -> decoder.setTargetSize(ANIMATION_CHECK_SIDE, ANIMATION_CHECK_SIDE))
                     instanceof AnimatedImageDrawable;
         } catch (IOException | RuntimeException e) {
             return false;
@@ -291,7 +309,7 @@ public final class TokenIcons {
         BitmapFactory.Options bounds = new BitmapFactory.Options();
         bounds.inJustDecodeBounds = true;
         BitmapFactory.decodeByteArray(data, 0, data.length, bounds);
-        boolean image = bounds.outWidth > 0 && !isGif(data);
+        boolean image = bounds.outWidth > 0 && !canAnimate(data);
         if (bounds.outWidth > 0 && !usable(bounds.outWidth, bounds.outHeight)) {
             return false;
         }
@@ -301,23 +319,25 @@ public final class TokenIcons {
         } catch (IOException e) {
             return false;
         }
+        boolean saved = false;
         try (FileOutputStream out = new FileOutputStream(tmp)) {
             if (!image || Math.max(bounds.outWidth, bounds.outHeight) <= maxSide) {
                 out.write(data);
             } else if (!shrink(data, bounds, maxSide, out)) {
-                tmp.delete();
                 return false;
             }
+            saved = tmp.renameTo(file);
         } catch (IOException e) {
-            tmp.delete();
             return false;
+        } finally {
+            if (!saved) {
+                tmp.delete();
+            }
         }
-        if (!tmp.renameTo(file)) {
-            tmp.delete();
-            return false;
+        if (saved) {
+            trimMotion(dir, file);
         }
-        trimMotion(dir, file);
-        return true;
+        return saved;
     }
 
     /**
@@ -393,28 +413,29 @@ public final class TokenIcons {
         } catch (IOException e) {
             return false;
         }
+        boolean saved = false;
         try (FileOutputStream out = new FileOutputStream(tmp)) {
             if (frame != null) {
                 if (!write(frame, maxSide, Bitmap.CompressFormat.JPEG, out)) {
-                    tmp.delete();
                     return false;
                 }
             } else if (Math.max(bounds.outWidth, bounds.outHeight) <= maxSide && data.length <= MAX_KEPT_SIZE) {
                 out.write(data);
             } else if (!shrink(data, bounds, maxSide, out)) {
-                tmp.delete();
                 return false;
             }
+            saved = tmp.renameTo(file);
         } catch (IOException e) {
-            tmp.delete();
             return false;
+        } finally {
+            if (!saved) {
+                tmp.delete();
+            }
         }
-        if (!tmp.renameTo(file)) {
-            tmp.delete();
-            return false;
+        if (saved) {
+            VERSION.incrementAndGet();
         }
-        VERSION.incrementAndGet();
-        return true;
+        return saved;
     }
 
     /**
