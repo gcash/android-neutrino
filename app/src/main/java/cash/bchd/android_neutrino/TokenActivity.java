@@ -82,6 +82,9 @@ public class TokenActivity extends AppCompatActivity {
     private boolean fetched;
     // Until when the screen keeps asking for what Fetch metadata finds, as an uptime.
     private long fetchedUntil;
+    // Whether to ask for a collection's NFT types though the screen has some, as a fetch is over,
+    // which can have read a registry with others.
+    private boolean typesAgain;
     // Whether the collection's NFTs can show, as they sort by the names the wallet says, and
     // shouldn't jump to their places once it has.
     private boolean nftsReady;
@@ -226,7 +229,7 @@ public class TokenActivity extends AppCompatActivity {
 
     // askWallet shows what the wallet can say of the token now. A collection's NFT types, which can
     // be large, are asked for only once it has metadata and the screen doesn't have them, as when
-    // the wallet first reads them, or reads another registry.
+    // the wallet first reads them, or reads another registry, or again once a fetch is over.
     private void askWallet() {
         Wallet wallet = Wallet.getInstance();
         if (wallet == null || !wallet.isRunning()) {
@@ -235,7 +238,9 @@ public class TokenActivity extends AppCompatActivity {
             return;
         }
         TokenMeta known = TokenLabels.get(category);
-        boolean types = nfts != null && known != null && known.hasMetadata && !TokenLabels.hasNftTypes(category);
+        boolean types = nfts != null && known != null && known.hasMetadata
+                && (typesAgain || !TokenLabels.hasNftTypes(category));
+        typesAgain = false;
         Futures.addCallback(wallet.tokenMetadataAsync(Collections.singletonList(category), types),
                 new FutureCallback<List<TokenMeta>>() {
                     @Override
@@ -263,8 +268,14 @@ public class TokenActivity extends AppCompatActivity {
                             if (nfts != null) {
                                 nfts.labelsChanged();
                             }
-                            if (changed && readOver(category)) {
+                            if (fetchOver(fetchedUntil, SystemClock.elapsedRealtime(), changed && readOver(category))) {
                                 fetchedUntil = 0;
+                                if (nfts != null && readOver(category)) {
+                                    typesAgain = true;
+                                    handler.removeCallbacks(askAgain);
+                                    askWallet();
+                                    return;
+                                }
                             }
                             boolean searching = !metadata.isEmpty()
                                     && metadata.get(0).status == TokenMeta.Status.SEARCHING
@@ -352,6 +363,14 @@ public class TokenActivity extends AppCompatActivity {
             new Handler(Looper.getMainLooper()).postDelayed(
                     () -> loadIconOnceKnown(screen, settings, layout, category, done, until), ASK_INTERVAL_MS);
         }
+    }
+
+    /**
+     * fetchOver returns whether the screen is done asking for what Fetch metadata finds: the read
+     * is over, or it's taken longer than the screen waits.
+     */
+    static boolean fetchOver(long fetchedUntil, long now, boolean readOver) {
+        return fetchedUntil != 0 && (readOver || now >= fetchedUntil);
     }
 
     /**
