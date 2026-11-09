@@ -551,18 +551,8 @@ public final class TokenIcons {
     }
 
     /**
-     * clear removes all that was kept of tokens' images, as restoring another wallet does.
-     */
-    public static void clear(Context context) {
-        deleteAll(new File(context.getFilesDir(), ICON_DIR));
-        deleteAll(new File(context.getCacheDir(), MOTION_DIR));
-        DRAWN.clear();
-        DROPPED.incrementAndGet();
-    }
-
-    /**
      * forget removes all that was kept of a token's images, its icon and its NFTs' art, as for one
-     * the user hid. Each of its files' names starts with its token ID.
+     * the user hid, or a restore. Each of its files' names starts with its token ID.
      */
     public static void forget(Context context, String category) {
         forget(category, new File(context.getFilesDir(), ICON_DIR), new File(context.getCacheDir(), MOTION_DIR));
@@ -577,15 +567,6 @@ public final class TokenIcons {
                 for (File file : files) {
                     file.delete();
                 }
-            }
-        }
-    }
-
-    private static void deleteAll(File dir) {
-        File[] files = dir.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                file.delete();
             }
         }
     }

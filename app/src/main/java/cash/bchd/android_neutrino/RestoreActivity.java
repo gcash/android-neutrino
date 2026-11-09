@@ -23,6 +23,8 @@ import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.TimeZone;
 
 import cash.bchd.android_neutrino.tokens.TokenIcons;
@@ -30,7 +32,9 @@ import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Bip39;
 import cash.bchd.android_neutrino.wallet.Network;
+import cash.bchd.android_neutrino.wallet.TokenBalance;
 import cash.bchd.android_neutrino.wallet.TokenLabelFile;
+import cash.bchd.android_neutrino.wallet.TokenMeta;
 import cash.bchd.android_neutrino.wallet.TokensHeld;
 import cash.bchd.android_neutrino.wallet.Wallet;
 
@@ -174,6 +178,15 @@ public class RestoreActivity extends AppCompatActivity {
 
     private void restore(String phrase) {
         Settings settings = Settings.getInstance();
+        // The images kept are of every network's tokens, and only this one's go: those its wallet
+        // told of, held or hid.
+        Set<String> tokens = new HashSet<>(settings.getHiddenTokens());
+        for (TokenMeta token : TokenLabels.all()) {
+            tokens.add(token.category);
+        }
+        for (TokenBalance token : settings.getLastTokens()) {
+            tokens.add(token.category);
+        }
         settings.setMnemonic(phrase);
         settings.setWalletInitialized(false);
         settings.setWalletBirthday(birthday);
@@ -199,7 +212,9 @@ public class RestoreActivity extends AppCompatActivity {
         File walletDir = new File(getDataDir(), network.id);
         Wallet.runAfterStop(() -> {
             deleteRecursive(walletDir);
-            TokenIcons.clear(this);
+            for (String category : tokens) {
+                TokenIcons.forget(this, category);
+            }
             // A reply can have come in until the wallet stopped.
             TokenLabels.clear();
             TokenLabelFile.delete(this, network);
