@@ -212,9 +212,7 @@ public class RestoreActivity extends AppCompatActivity {
         File walletDir = new File(getDataDir(), network.id);
         Wallet.runAfterStop(() -> {
             deleteRecursive(walletDir);
-            for (String category : tokens) {
-                TokenIcons.forget(this, category);
-            }
+            TokenIcons.forgetAll(this, tokens);
             // A reply can have come in until the wallet stopped.
             TokenLabels.clear();
             TokenLabelFile.delete(this, network);

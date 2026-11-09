@@ -102,6 +102,27 @@ public class TokenIconsTest {
     }
 
     @Test
+    public void forgettingTokensListsEachFolderOnce() throws IOException {
+        String a = "aa".repeat(32), b = "bb".repeat(32), c = "cc".repeat(32);
+        java.util.concurrent.atomic.AtomicInteger lists = new java.util.concurrent.atomic.AtomicInteger();
+        File icons = new File(folder.newFolder("icons2").getPath()) {
+            @Override
+            public File[] listFiles(java.io.FilenameFilter filter) {
+                lists.incrementAndGet();
+                return super.listFiles(filter);
+            }
+        };
+        for (String name : new String[]{a, a + "-01", b, b + "-02.source", c, "short"}) {
+            assertTrue(new File(icons, name).createNewFile());
+        }
+        TokenIcons.forget(new java.util.HashSet<>(Arrays.asList(a, b)), icons);
+        assertEquals(1, lists.get());
+        String[] left = icons.list();
+        Arrays.sort(left);
+        assertEquals(Arrays.asList(c, "short"), Arrays.asList(left));
+    }
+
+    @Test
     public void trimmingLeavesFilesBeingWritten() throws IOException {
         File art = folder.newFolder("motion");
         File writing = new File(art, "motion123.tmp");

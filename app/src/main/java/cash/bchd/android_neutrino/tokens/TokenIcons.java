@@ -637,9 +637,28 @@ public final class TokenIcons {
         VERSION.incrementAndGet();
     }
 
+    /**
+     * forgetAll removes all that was kept of the tokens' images, as a restore does, listing each
+     * folder once, however many tokens there are.
+     */
+    public static void forgetAll(Context context, java.util.Collection<String> categories) {
+        forget(new java.util.HashSet<>(categories), new File(context.getFilesDir(), ICON_DIR),
+                new File(context.getCacheDir(), MOTION_DIR));
+        for (String category : categories) {
+            forgetDrawn(category);
+        }
+        VERSION.incrementAndGet();
+    }
+
     static void forget(String category, File... dirs) {
+        forget(java.util.Collections.singleton(category), dirs);
+    }
+
+    // forget removes the files of the tokens from the folders, whose names start with a token ID.
+    static void forget(Set<String> categories, File... dirs) {
         for (File dir : dirs) {
-            File[] files = dir.listFiles((d, name) -> name.startsWith(category));
+            File[] files = dir.listFiles((d, name) -> name.length() >= TOKEN_ID_LENGTH
+                    && categories.contains(name.substring(0, TOKEN_ID_LENGTH)));
             if (files != null) {
                 for (File file : files) {
                     file.delete();
@@ -647,6 +666,9 @@ public final class TokenIcons {
             }
         }
     }
+
+    // The length of a token ID in hex, which each of its files' names starts with.
+    private static final int TOKEN_ID_LENGTH = 64;
 
     static void trimMotion(File dir, File keep) {
         // Not another save's file still being written, which would end that save.
