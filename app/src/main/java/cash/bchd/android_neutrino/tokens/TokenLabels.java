@@ -241,9 +241,6 @@ public final class TokenLabels {
         if (token.known) {
             return R.string.token_known;
         }
-        if (token.registryChanged && token.status == TokenMeta.Status.VERIFIED) {
-            return R.string.token_registry_changed;
-        }
         return token.verified() ? R.string.token_verified : R.string.token_not_yet_verified;
     }
 }

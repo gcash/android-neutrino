@@ -95,18 +95,10 @@ public class TokenLabelsTest {
     }
 
     @Test
-    public void aChangedRegistryOfAnIdentityFollowedToTheTipShowsEverywhere() {
-        update(token().setStatus(Api.TokenMetadataResponse.Status.VERIFIED).setRegistryChanged(true));
-        assertEquals("Name", TokenLabels.title(CATEGORY));
-        assertEquals(R.string.token_registry_changed, TokenLabels.badge(CATEGORY));
+    public void aKnownTokensChangedFileIsKnown() {
+        update(token().setKnown(true).setStatus(Api.TokenMetadataResponse.Status.VERIFIED));
+        assertEquals(R.string.token_known, TokenLabels.badge(CATEGORY));
         assertEquals("Name", TokenLabels.listTitle(CATEGORY));
-    }
-
-    @Test
-    public void aChangedRegistryOfAnIdentityNotFollowedYetIsNotYetVerified() {
-        update(token().setRegistryChanged(true));
-        assertEquals(R.string.token_not_yet_verified, TokenLabels.badge(CATEGORY));
-        assertEquals(TokenBalance.shortId(CATEGORY), TokenLabels.listTitle(CATEGORY));
     }
 
     @Test

@@ -73,8 +73,6 @@ public final class TokenMeta {
     public final boolean loadsByItself;
     public final boolean lookAlike;
     public final boolean burned;
-    // Whether the metadata is from a file other than the published one, so nothing vouches for it.
-    public final boolean registryChanged;
     // Whether the token published a registry that nothing could be read from.
     public final boolean registryFailed;
     // Whether a look-alike is one for its name being the coin's own, not a Known token's.
@@ -103,7 +101,6 @@ public final class TokenMeta {
         loadsByItself = token.getLoadsByItself();
         lookAlike = token.getLookAlike();
         burned = token.getBurned();
-        registryChanged = token.getRegistryChanged();
         registryFailed = token.getRegistryFailed();
         reservedName = token.getReservedName();
         reservedSymbol = token.getReservedSymbol();
@@ -132,7 +129,6 @@ public final class TokenMeta {
         loadsByItself = token.loadsByItself;
         lookAlike = token.lookAlike;
         burned = token.burned;
-        registryChanged = token.registryChanged;
         registryFailed = token.registryFailed;
         reservedName = token.reservedName;
         reservedSymbol = token.reservedSymbol;
@@ -161,7 +157,7 @@ public final class TokenMeta {
     public TokenMeta keepingNftTypes(TokenMeta before) {
         if (before == null || !nftTypes.isEmpty() || before.nftTypes.isEmpty() || !hasMetadata
                 || !name.equals(before.name) || !symbol.equals(before.symbol)
-                || verified() != before.verified() || registryChanged != before.registryChanged) {
+                || verified() != before.verified()) {
             return this;
         }
         return new TokenMeta(this, before.nftTypes);

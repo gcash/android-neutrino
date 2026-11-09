@@ -173,7 +173,6 @@
     <string name="token_known">Known</string>
     <string name="token_verified">Verified</string>
     <string name="token_not_yet_verified">Not yet verified</string>
-    <string name="token_registry_changed">Verified, collection still being published</string>
     <string name="token_registry_failed">Its registry can\'t be read</string>
     <string name="token_reserved_symbol">Uses a reserved symbol</string>
     <string name="token_known_symbol">Uses the symbol of a Known token</string>
