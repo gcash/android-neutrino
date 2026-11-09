@@ -435,10 +435,15 @@ public class Wallet implements Serializable {
     }
 
     // tellBalances tells the listener the wallet's spendable balance, then its tokens, which the
-    // same transactions change.
+    // same transactions change, unless a later ask's were told first.
     private void tellBalances(WalletEventListener listener) throws Exception {
-        listener.onBalanceChange(balance());
-        listener.onTokenBalances(tokenBalances());
+        long replyNumber = listener.balanceReplies.next();
+        long balance = balance();
+        List<TokenBalance> tokens = tokenBalances();
+        listener.balanceReplies.deliver(replyNumber, () -> {
+            listener.onBalanceChange(balance);
+            listener.onTokenBalances(tokens);
+        });
     }
 
     public void listenAddress(String address, AddressListener listener) {
