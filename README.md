@@ -84,8 +84,9 @@ Before each release, bring the token files in `app/src/main/assets/bcmr/` up to 
    ```
 
    Copy the result to `<network>-hints.bin`, and give each table's height and SHA-256, which
-   `bcmrhints` prints, in the release notes, so that anyone with a node can make the same file
-   and compare.
+   `bcmrhints` prints, and the version of bchd that made it, which `bchd --version` prints, in
+   the release notes, so that anyone with a node of that version can make the same file and
+   compare.
 
 2. **Known list.** Check that each entry of `mainnet-known.json` still matches its token's own
    registry: the category ID, name, symbol and decimals, which are all an entry holds. The
