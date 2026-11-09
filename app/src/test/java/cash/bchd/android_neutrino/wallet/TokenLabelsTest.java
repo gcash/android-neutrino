@@ -124,6 +124,13 @@ public class TokenLabelsTest {
     }
 
     @Test
+    public void anAnswerThatAskedForNftTypesMissingForAMomentKeepsThem() {
+        update(token().addNftTypes(nft()));
+        TokenLabels.update(Collections.singletonList(new TokenMeta(token().setNftTypeCount(1).build())), true);
+        assertTrue(TokenLabels.hasNftTypes(CATEGORY));
+    }
+
+    @Test
     public void anAnswerThatAskedForNftTypesWithNoneDropsThem() {
         update(token().addNftTypes(nft()));
         TokenLabels.update(Collections.singletonList(new TokenMeta(token().build())), true);

@@ -98,6 +98,9 @@ public final class TokenMeta {
     // Whether its symbol copies a reserved one, or a Known token's, so its amounts show none.
     public final boolean reservedSymbol;
     public final boolean knownSymbol;
+    // How many NFT types its registry has, which an answer says though nftTypes is empty, as
+    // when the wallet reads them again after their file was evicted.
+    public final int nftTypeCount;
     public final List<NftType> nftTypes;
     private final Map<String, NftType> nftTypesByCommitment;
     // What the wallet said, as it's kept between runs: without the NFT types, of which a
@@ -123,6 +126,7 @@ public final class TokenMeta {
         reservedName = token.getReservedName();
         reservedSymbol = token.getReservedSymbol();
         knownSymbol = token.getKnownSymbol();
+        nftTypeCount = token.getNftTypeCount();
         List<NftType> types = new ArrayList<>();
         for (Api.TokenMetadataResponse.NftType type : token.getNftTypesList()) {
             types.add(new NftType(type));
@@ -151,6 +155,7 @@ public final class TokenMeta {
         reservedName = token.reservedName;
         reservedSymbol = token.reservedSymbol;
         knownSymbol = token.knownSymbol;
+        nftTypeCount = token.nftTypeCount;
         nftTypes = types;
         nftTypesByCommitment = byCommitment(types);
     }
