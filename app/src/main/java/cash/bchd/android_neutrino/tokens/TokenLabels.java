@@ -217,7 +217,7 @@ public final class TokenLabels {
             return 0;
         }
         if (token.lookAlike) {
-            return R.string.token_look_alike;
+            return token.reservedName ? R.string.token_reserved_name : R.string.token_look_alike;
         }
         if (token.reservedSymbol) {
             return R.string.token_reserved_symbol;

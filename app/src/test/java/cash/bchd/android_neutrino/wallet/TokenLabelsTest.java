@@ -181,4 +181,10 @@ public class TokenLabelsTest {
         assertEquals(R.string.token_look_alike, TokenLabels.badge(CATEGORY));
         assertEquals("Name", TokenLabels.title(CATEGORY));
     }
+
+    @Test
+    public void aReservedNameSaysSo() {
+        update(token().setLookAlike(true).setReservedName(true).setReservedSymbol(true));
+        assertEquals(R.string.token_reserved_name, TokenLabels.badge(CATEGORY));
+    }
 }
