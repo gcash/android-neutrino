@@ -95,6 +95,8 @@ final class TransactionDetailsPopup {
         });
         // A stranger's transaction can hold any number, and each row draws an image.
         int rows = 0;
+        // The tokens whose NFTs have rows, which the names are asked for.
+        Set<String> nftTokens = new HashSet<>();
         for (TokenChange change : tx.getTokens()) {
             if (rows >= MAX_NFT_ROWS) {
                 rows += 1 + change.nftsReceived().size() + change.nftsSent().size();
@@ -112,11 +114,13 @@ final class TransactionDetailsPopup {
             for (String commitment : change.nftsReceived()) {
                 if (rows++ < MAX_NFT_ROWS) {
                     addNft(ctx, tokens, change.category, commitment, true, art, artViews, draws);
+                    nftTokens.add(change.category);
                 }
             }
             for (String commitment : change.nftsSent()) {
                 if (rows++ < MAX_NFT_ROWS) {
                     addNft(ctx, tokens, change.category, commitment, false, art, artViews, draws);
+                    nftTokens.add(change.category);
                 }
             }
         }
@@ -171,7 +175,7 @@ final class TransactionDetailsPopup {
         link.setText(network.explorerUrl(tx.getTxid()));
         PopupWindow popupWindow = open(ctx, layout, customView);
         popupWindow.setOnDismissListener(art::stop);
-        showNftNames(ctx, layout, popupWindow, customView, tx, draws);
+        showNftNames(ctx, layout, popupWindow, customView, nftTokens, draws);
         return popupWindow;
     }
 
@@ -203,22 +207,26 @@ final class TransactionDetailsPopup {
         tokens.addView(row);
     }
 
-    // showNftNames asks the wallet what the NFTs are called and where their art is, if it hasn't
-    // said, as it only says for a few tokens at a time, and has the details show it.
+    // showNftNames asks the wallet what the NFTs that have rows are called and where their art is,
+    // if it hasn't said, as it only says for a few tokens at a time, and has the details show it.
+    // Each token is asked for alone, as a large collection's types can take most of what a reply
+    // can hold.
     private static void showNftNames(Context ctx, ViewGroup layout, PopupWindow popupWindow, View details,
-                                     TransactionData tx, List<Runnable> draws) {
-        Set<String> categories = new HashSet<>();
-        for (TokenChange change : tx.getTokens()) {
-            boolean nfts = !change.nftsReceived().isEmpty() || !change.nftsSent().isEmpty();
-            if (nfts && !TokenLabels.hasNftTypes(change.category)) {
-                categories.add(change.category);
-            }
-        }
+                                     Set<String> nftTokens, List<Runnable> draws) {
         Wallet wallet = Wallet.getInstance();
-        if (categories.isEmpty() || wallet == null || !wallet.isRunning()) {
+        if (wallet == null || !wallet.isRunning()) {
             return;
         }
-        Futures.addCallback(wallet.peekTokenMetadataAsync(new ArrayList<>(categories), true),
+        for (String category : nftTokens) {
+            if (!TokenLabels.hasNftTypes(category)) {
+                showNftNames(ctx, layout, popupWindow, details, wallet, category, draws);
+            }
+        }
+    }
+
+    private static void showNftNames(Context ctx, ViewGroup layout, PopupWindow popupWindow, View details,
+                                     Wallet wallet, String category, List<Runnable> draws) {
+        Futures.addCallback(wallet.peekTokenMetadataAsync(Collections.singletonList(category), true),
                 new FutureCallback<List<TokenMeta>>() {
                     @Override
                     public void onSuccess(List<TokenMeta> tokens) {
