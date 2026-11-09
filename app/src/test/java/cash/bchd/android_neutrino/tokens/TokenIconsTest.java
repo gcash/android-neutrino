@@ -116,4 +116,16 @@ public class TokenIconsTest {
         assertTrue(kept.exists());
         assertFalse(old.exists());
     }
+
+    @Test
+    public void namesOfNftsNeverMeet() {
+        String token = "aa".repeat(32);
+        String longCommitment = "ab".repeat(40);
+        String hashed = TokenIcons.nftName(token, longCommitment);
+        assertEquals(token + "-h" + TokenIcons.sha256(longCommitment), hashed);
+        assertEquals(64, TokenIcons.sha256("x").length());
+        // No commitment, which is hex, has the mark's letter.
+        assertFalse(hashed.substring(token.length() + 1).matches("[0-9a-f]*"));
+        assertEquals(token + "-01", TokenIcons.nftName(token, "01"));
+    }
 }

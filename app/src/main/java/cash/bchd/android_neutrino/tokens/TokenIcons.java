@@ -93,14 +93,20 @@ public final class TokenIcons {
     }
 
     // nftName returns the name of an NFT's files: its token ID and commitment, with a long
-    // commitment hashed, as a file's name can't be as long as a commitment can.
-    private static String nftName(String category, String commitment) {
+    // commitment hashed, as a file's name can't be as long as a commitment can, and marked so,
+    // with a letter no commitment's hex has, so that no hash reads as another's commitment.
+    static String nftName(String category, String commitment) {
         if (commitment.length() <= MAX_NAME_COMMITMENT) {
             return category + "-" + commitment;
         }
+        return category + "-h" + sha256(commitment);
+    }
+
+    // sha256 returns the SHA-256 of the text, in all of its 64 hex digits.
+    static String sha256(String text) {
         try {
-            byte[] digest = MessageDigest.getInstance("SHA-256").digest(commitment.getBytes(StandardCharsets.UTF_8));
-            return category + "-" + new BigInteger(1, digest).toString(16);
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8));
+            return String.format("%064x", new BigInteger(1, digest));
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }
@@ -491,7 +497,7 @@ public final class TokenIcons {
      * registry can come to name other art.
      */
     public static File fullFile(Context context, String category, String commitment, String uri) {
-        String name = nftName(category, commitment) + "-" + Integer.toHexString(uri.hashCode());
+        String name = nftName(category, commitment) + "-" + sha256(uri);
         return new File(new File(context.getCacheDir(), MOTION_DIR), name);
     }
 
