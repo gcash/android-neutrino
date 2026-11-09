@@ -63,6 +63,15 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
     }
 
     /**
+     * askedByUser has the art load as the user's, who asked for the token's images, and redraws
+     * the rows.
+     */
+    public void askedByUser() {
+        loader.forUser(category);
+        iconsChanged();
+    }
+
+    /**
      * iconsChanged redraws the rows with the images that were loaded.
      */
     public void iconsChanged() {

@@ -569,7 +569,7 @@ public class TokenActivity extends AppCompatActivity {
             loadIcon(this, settings, layout, category, () -> {
                 showIcon();
                 if (nfts != null) {
-                    nfts.iconsChanged();
+                    nfts.askedByUser();
                 }
             });
             return true;

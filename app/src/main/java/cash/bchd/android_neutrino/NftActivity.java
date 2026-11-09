@@ -213,6 +213,7 @@ public class NftActivity extends AppCompatActivity {
             TokenActivity.loadIcon(this, settings, layout, category, () -> {
                 showIcon();
                 art.retry();
+                art.forUser(category);
                 art.request(category, commitment);
             });
             return true;

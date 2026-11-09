@@ -41,6 +41,8 @@ public final class NftArt {
     private final Set<String> asked = new HashSet<>();
     private final Set<String> failed = new HashSet<>();
     private final Deque<String[]> waiting = new ArrayDeque<>();
+    // The tokens whose images the user asked for, whose art goes ahead of what loads by itself.
+    private final Set<String> byUser = new HashSet<>();
     private boolean stopped;
 
     public NftArt(Context context, Loaded done) {
@@ -75,6 +77,13 @@ public final class NftArt {
         }
         waiting.addFirst(new String[]{category, null, uri});
         loadNext();
+    }
+
+    /**
+     * forUser has the art of a token load as the user's, as after a Load icon tap.
+     */
+    public void forUser(String category) {
+        byUser.add(category);
     }
 
     /**
@@ -127,7 +136,7 @@ public final class NftArt {
                 asked.remove(key(category, commitment));
                 continue;
             }
-            load(wallet.tokenIconAsync(uri), category, commitment, uri);
+            load(wallet.tokenIconAsync(uri, byUser.contains(category)), category, commitment, uri);
         }
     }
 
