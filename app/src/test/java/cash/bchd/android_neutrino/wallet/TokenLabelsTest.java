@@ -204,6 +204,18 @@ public class TokenLabelsTest {
     }
 
     @Test
+    public void saysWhichTokensAreHidden() {
+        TokenLabels.hold(Collections.singleton(CATEGORY));
+        try {
+            assertTrue(TokenLabels.hidden(CATEGORY));
+            assertFalse(TokenLabels.hidden("bb"));
+        } finally {
+            TokenLabels.hold(Collections.emptySet());
+        }
+        assertFalse(TokenLabels.hidden(CATEGORY));
+    }
+
+    @Test
     public void aHiddenTokenWithNoLabelTakesOne() {
         TokenLabels.hold(Collections.singleton(CATEGORY));
         try {

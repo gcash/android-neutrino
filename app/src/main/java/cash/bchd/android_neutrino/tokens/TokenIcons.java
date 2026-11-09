@@ -357,6 +357,10 @@ public final class TokenIcons {
      * returns whether it did.
      */
     public static boolean save(Context context, String category, byte[] data, String uri) {
+        if (TokenLabels.hidden(category)) {
+            // A download that ended after the token was hidden would keep what was forgotten.
+            return false;
+        }
         boolean saved = save(file(context, category), data, largestShown(context));
         if (saved) {
             try {
@@ -388,9 +392,12 @@ public final class TokenIcons {
     }
 
     /**
-     * saveNft keeps an NFT's own art as save keeps an icon.
+     * saveNft keeps an NFT's own art as save keeps an icon, and neither keeps a hidden token's.
      */
     public static boolean saveNft(Context context, String category, String commitment, byte[] data, String uri) {
+        if (TokenLabels.hidden(category)) {
+            return false;
+        }
         boolean moves = moves(data);
         boolean saved = save(nftFile(context, category, commitment), data, NFT_SIDE);
         if (saved) {

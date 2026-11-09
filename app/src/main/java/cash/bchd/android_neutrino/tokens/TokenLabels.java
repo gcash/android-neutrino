@@ -81,6 +81,13 @@ public final class TokenLabels {
     }
 
     /**
+     * hidden returns whether a token is one the user hid.
+     */
+    public static boolean hidden(String category) {
+        return held.contains(category);
+    }
+
+    /**
      * load takes what was kept from the last run, under anything the wallet has said since.
      */
     public static void load(List<TokenMeta> tokens) {
