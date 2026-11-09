@@ -327,11 +327,13 @@ public class NftActivity extends AppCompatActivity {
         }
     }
 
-    // showDetails shows the NFT's description, or else its token's, and its attributes.
+    // showDetails shows the NFT's description, or else its token's, and its attributes, but none
+    // of a look-alike's, which are made to mislead.
     private void showDetails(TokenMeta meta, String commitment) {
-        TokenMeta.NftType type = meta == null ? null : meta.nftType(commitment);
+        boolean lookAlike = meta != null && meta.lookAlike;
+        TokenMeta.NftType type = meta == null || lookAlike ? null : meta.nftType(commitment);
         String text = type != null && !type.description.isEmpty() ? type.description
-                : meta != null && meta.hasMetadata ? meta.description : "";
+                : meta != null && meta.hasMetadata && !lookAlike ? meta.description : "";
         TextView description = findViewById(R.id.nftDescription);
         description.setText(text);
         int shown = text.isEmpty() ? View.GONE : View.VISIBLE;

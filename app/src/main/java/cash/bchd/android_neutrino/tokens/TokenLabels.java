@@ -181,11 +181,12 @@ public final class TokenLabels {
     }
 
     /**
-     * nftName returns what the registry calls an NFT, or null.
+     * nftName returns what the registry calls an NFT, or null, as for a look-alike, whose NFTs'
+     * names are made to mislead as much as its own.
      */
     public static String nftName(String category, String commitment) {
         TokenMeta token = TOKENS.get(category);
-        TokenMeta.NftType type = token == null ? null : token.nftType(commitment);
+        TokenMeta.NftType type = token == null || token.lookAlike ? null : token.nftType(commitment);
         return type == null ? null : type.name;
     }
 

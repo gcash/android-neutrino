@@ -144,6 +144,14 @@ public class TokenLabelsTest {
     }
 
     @Test
+    public void aLookAlikesNftsGoByCommitment() {
+        update(token().addNftTypes(nft()));
+        assertEquals("One", TokenLabels.nftName(CATEGORY, "01"));
+        update(token().addNftTypes(nft()).setLookAlike(true));
+        assertEquals(null, TokenLabels.nftName(CATEGORY, "01"));
+    }
+
+    @Test
     public void namesFromAnIdentityNotYetFollowedAreNotKeptOnceItsVerified() {
         update(token().addNftTypes(nft()));
         update(token().setStatus(Api.TokenMetadataResponse.Status.VERIFIED));

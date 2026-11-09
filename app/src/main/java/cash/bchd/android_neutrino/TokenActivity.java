@@ -267,16 +267,19 @@ public class TokenActivity extends AppCompatActivity {
     }
 
     // showLabels shows the token's name, how far to trust it, and its description, which are
-    // only there once the wallet has them.
+    // only there once the wallet has them.  A look-alike shows its name, under its warning, but
+    // not its symbol or description, which are made to mislead.
     private void showLabels() {
         TokenMeta token = TokenLabels.get(category);
         boolean has = token != null && token.hasMetadata;
+        boolean lookAlike = has && token.lookAlike;
         TextView name = findViewById(R.id.tokenName);
-        name.setText(has ? token.name + " (" + token.symbol + ")" : "");
+        name.setText(!has ? "" : lookAlike ? token.name : token.name + " (" + token.symbol + ")");
         name.setVisibility(has ? View.VISIBLE : View.GONE);
         TextView description = findViewById(R.id.tokenDescription);
-        description.setText(has ? token.description : "");
-        description.setVisibility(has && !token.description.isEmpty() ? View.VISIBLE : View.GONE);
+        boolean described = has && !lookAlike && !token.description.isEmpty();
+        description.setText(described ? token.description : "");
+        description.setVisibility(described ? View.VISIBLE : View.GONE);
         TextView badge = findViewById(R.id.tokenBadge);
         int text = TokenLabels.badge(category);
         badge.setVisibility(text == 0 ? View.GONE : View.VISIBLE);
