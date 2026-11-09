@@ -352,6 +352,9 @@ public final class TokenIcons {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        } else if (saved) {
+            // Still art that took the place of art that moved doesn't.
+            motionMarker(context, category, commitment).delete();
         }
         if (saved) {
             forgetDrawn(category);
