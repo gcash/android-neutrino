@@ -369,6 +369,7 @@ public class TokenActivity extends AppCompatActivity {
     static void fetchMetadata(Activity screen, View layout, String category, Runnable asked) {
         Wallet wallet = Wallet.getInstance();
         if (wallet == null || !wallet.isRunning()) {
+            Snackbar.make(layout, R.string.wallet_not_running, Snackbar.LENGTH_LONG).show();
             return;
         }
         Futures.addCallback(wallet.refreshTokenMetadataAsync(category),
@@ -399,6 +400,7 @@ public class TokenActivity extends AppCompatActivity {
         Wallet wallet = Wallet.getInstance();
         TokenMeta token = TokenLabels.get(category);
         if (wallet == null || !wallet.isRunning()) {
+            Snackbar.make(layout, R.string.wallet_not_running, Snackbar.LENGTH_LONG).show();
             return;
         }
         // A look-alike's images are made to mislead, so none are loaded, its NFTs' art too.
