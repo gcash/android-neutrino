@@ -337,6 +337,11 @@ public class NftActivity extends AppCompatActivity {
         }
     }
 
+    // oneLine puts an attribute's text on one line, as a registry's can break it anywhere.
+    static String oneLine(String text) {
+        return text.replaceAll("\\s+", " ").trim();
+    }
+
     // showDetails shows the NFT's description, or else its token's, and its attributes, but none
     // of a look-alike's, which are made to mislead.
     private void showDetails(TokenMeta meta, String commitment) {
@@ -355,8 +360,8 @@ public class NftActivity extends AppCompatActivity {
         Map<String, String> traits = type == null ? Collections.emptyMap() : type.attributes;
         for (Map.Entry<String, String> trait : traits.entrySet()) {
             View row = LayoutInflater.from(this).inflate(R.layout.nft_attribute_row, attributes, false);
-            ((TextView) row.findViewById(R.id.nftAttributeName)).setText(trait.getKey());
-            ((TextView) row.findViewById(R.id.nftAttributeValue)).setText(trait.getValue());
+            ((TextView) row.findViewById(R.id.nftAttributeName)).setText(oneLine(trait.getKey()));
+            ((TextView) row.findViewById(R.id.nftAttributeValue)).setText(oneLine(trait.getValue()));
             attributes.addView(row);
         }
         shown = traits.isEmpty() ? View.GONE : View.VISIBLE;

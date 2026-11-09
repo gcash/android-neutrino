@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- An attribute of an NFT: its name and value. -->
+<!-- An attribute of an NFT: its name and value, each on a few lines at most, as a registry's can
+     be any length. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -12,6 +13,8 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
+        android:ellipsize="end"
+        android:maxLines="2"
         android:textSize="15sp" />
 
     <TextView
@@ -20,7 +23,9 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
         android:layout_weight="1"
+        android:ellipsize="end"
         android:gravity="end"
+        android:maxLines="3"
         android:textColor="#000"
         android:textSize="15sp" />
 </LinearLayout>
