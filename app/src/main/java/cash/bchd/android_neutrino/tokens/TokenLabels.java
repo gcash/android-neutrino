@@ -131,10 +131,15 @@ public final class TokenLabels {
     }
 
     /**
-     * amount shows a number of the token's smallest units, which is negative for a change.
+     * amount shows a number of the token's smallest units, which is negative for a change: with
+     * the token's symbol, unless its name or symbol copies another's, as an amount of it is made
+     * to read as an amount of something else.
      */
     public static String amount(String category, BigInteger amount) {
         TokenMeta token = TOKENS.get(category);
+        if (token != null && (token.lookAlike || token.reservedSymbol || token.knownSymbol)) {
+            return number(category, amount);
+        }
         return token != null ? token.formatAmount(amount) : TokenMeta.formatUnits(amount, 0);
     }
 
@@ -145,14 +150,6 @@ public final class TokenLabels {
     public static String number(String category, BigInteger amount) {
         TokenMeta token = TOKENS.get(category);
         return TokenMeta.formatUnits(amount, token != null && token.hasMetadata ? token.decimals : 0);
-    }
-
-    /**
-     * listAmount shows an amount where no badge shows, as in a transaction's row: without the
-     * symbol of a look-alike, as an amount of it is made to read as an amount of something else.
-     */
-    public static String listAmount(String category, BigInteger amount) {
-        return isLookAlike(category) ? number(category, amount) : amount(category, amount);
     }
 
     /**
@@ -220,7 +217,13 @@ public final class TokenLabels {
             return 0;
         }
         if (token.lookAlike) {
-            return token.reservedSymbol ? R.string.token_reserved_symbol : R.string.token_look_alike;
+            return R.string.token_look_alike;
+        }
+        if (token.reservedSymbol) {
+            return R.string.token_reserved_symbol;
+        }
+        if (token.knownSymbol) {
+            return R.string.token_known_symbol;
         }
         if (token.status == TokenMeta.Status.FAILED) {
             return R.string.token_identity_not_found;

@@ -152,12 +152,15 @@ public class TokenLabelsTest {
     }
 
     @Test
-    public void aLookAlikesAmountLeavesOutItsSymbolWhereNoBadgeShows() {
-        update(token().setLookAlike(true));
-        assertEquals("15", TokenLabels.listAmount(CATEGORY, BigInteger.valueOf(1500)));
-        assertEquals("15 SYM", TokenLabels.amount(CATEGORY, BigInteger.valueOf(1500)));
+    public void amountsLeaveOutASymbolThatCopies() {
         update(token());
-        assertEquals("15 SYM", TokenLabels.listAmount(CATEGORY, BigInteger.valueOf(1500)));
+        assertEquals("15 SYM", TokenLabels.amount(CATEGORY, BigInteger.valueOf(1500)));
+        update(token().setLookAlike(true));
+        assertEquals("15", TokenLabels.amount(CATEGORY, BigInteger.valueOf(1500)));
+        update(token().setReservedSymbol(true));
+        assertEquals("15", TokenLabels.amount(CATEGORY, BigInteger.valueOf(1500)));
+        update(token().setKnownSymbol(true));
+        assertEquals("15", TokenLabels.amount(CATEGORY, BigInteger.valueOf(1500)));
     }
 
     @Test
@@ -169,10 +172,13 @@ public class TokenLabelsTest {
     }
 
     @Test
-    public void aReservedSymbolSaysSo() {
-        update(token().setLookAlike(true).setReservedSymbol(true));
+    public void aSymbolThatCopiesSaysSo() {
+        update(token().setStatus(Api.TokenMetadataResponse.Status.VERIFIED).setReservedSymbol(true));
         assertEquals(R.string.token_reserved_symbol, TokenLabels.badge(CATEGORY));
-        update(token().setLookAlike(true));
+        update(token().setStatus(Api.TokenMetadataResponse.Status.VERIFIED).setKnownSymbol(true));
+        assertEquals(R.string.token_known_symbol, TokenLabels.badge(CATEGORY));
+        update(token().setLookAlike(true).setKnownSymbol(true));
         assertEquals(R.string.token_look_alike, TokenLabels.badge(CATEGORY));
+        assertEquals("Name", TokenLabels.title(CATEGORY));
     }
 }

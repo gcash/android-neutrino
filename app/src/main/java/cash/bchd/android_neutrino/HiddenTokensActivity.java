@@ -148,7 +148,7 @@ public class HiddenTokensActivity extends AppCompatActivity {
             return nfts;
         }
         // The amount is a uint64, as the API has it.
-        String amount = TokenLabels.listAmount(token.category, new BigInteger(Long.toUnsignedString(token.amount)));
+        String amount = TokenLabels.amount(token.category, new BigInteger(Long.toUnsignedString(token.amount)));
         return nfts == null ? amount : getString(R.string.token_amount_and_nfts, amount, nfts);
     }
 
