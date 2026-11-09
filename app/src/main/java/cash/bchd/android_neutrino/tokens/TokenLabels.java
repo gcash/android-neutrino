@@ -177,13 +177,28 @@ public final class TokenLabels {
     }
 
     /**
-     * listTitle returns what to call a token where no badge shows, as in a transaction's row:
-     * the name only if it can be trusted, as a look-alike's name is made to mislead.
+     * trusted returns whether what a token's registry says can show where no badge says how far to
+     * trust it, as in a transaction's row: it's verified, and isn't a look-alike, whose name is
+     * made to mislead.
+     */
+    public static boolean trusted(String category) {
+        TokenMeta token = TOKENS.get(category);
+        return token != null && token.hasMetadata && token.verified() && !token.lookAlike;
+    }
+
+    /**
+     * listTitle returns what to call a token where no badge shows: its name only if it's trusted.
      */
     public static String listTitle(String category) {
-        TokenMeta token = TOKENS.get(category);
-        return token != null && token.hasMetadata && token.verified() && !token.lookAlike
-                ? token.name : TokenBalance.shortId(category);
+        return trusted(category) ? TOKENS.get(category).name : TokenBalance.shortId(category);
+    }
+
+    /**
+     * listAmount shows an amount where no badge shows: with its symbol only if the token is
+     * trusted, and its decimals either way.
+     */
+    public static String listAmount(String category, BigInteger amount) {
+        return trusted(category) ? amount(category, amount) : number(category, amount);
     }
 
     /**

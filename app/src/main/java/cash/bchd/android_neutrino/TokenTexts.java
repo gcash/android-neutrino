@@ -104,7 +104,7 @@ final class TokenTexts {
     }
 
     private static String signed(String category, long n) {
-        return (n > 0 ? "+" : "") + TokenLabels.amount(category, BigInteger.valueOf(n));
+        return (n > 0 ? "+" : "") + TokenLabels.listAmount(category, BigInteger.valueOf(n));
     }
 
     private static String signed(long n) {

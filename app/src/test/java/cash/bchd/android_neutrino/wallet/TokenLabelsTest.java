@@ -226,4 +226,20 @@ public class TokenLabelsTest {
             TokenIcons.configure(false, Collections.emptySet());
         }
     }
+
+    @Test
+    public void listsAnAmountWithItsSymbolOnlyIfItCanBeTrusted() {
+        update(token());
+        assertEquals("15", TokenLabels.listAmount(CATEGORY, BigInteger.valueOf(1500)));
+        assertFalse(TokenLabels.trusted(CATEGORY));
+        update(token().setStatus(Api.TokenMetadataResponse.Status.VERIFIED));
+        assertEquals("15 SYM", TokenLabels.listAmount(CATEGORY, BigInteger.valueOf(1500)));
+        assertTrue(TokenLabels.trusted(CATEGORY));
+        update(token().setKnown(true));
+        assertEquals("15 SYM", TokenLabels.listAmount(CATEGORY, BigInteger.valueOf(1500)));
+        update(token().setStatus(Api.TokenMetadataResponse.Status.VERIFIED).setKnownSymbol(true));
+        assertEquals("15", TokenLabels.listAmount(CATEGORY, BigInteger.valueOf(1500)));
+        update(token().setStatus(Api.TokenMetadataResponse.Status.VERIFIED).setLookAlike(true));
+        assertFalse(TokenLabels.trusted(CATEGORY));
+    }
 }

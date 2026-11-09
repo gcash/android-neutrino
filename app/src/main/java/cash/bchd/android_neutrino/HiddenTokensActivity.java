@@ -178,8 +178,8 @@ public class HiddenTokensActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull Row row, int position) {
             String category = hidden.get(position);
-            // Only what was saved, and a look-alike's is made to read as another token's.
-            row.icon.setImageBitmap(TokenIcons.listBitmap(HiddenTokensActivity.this, category,
+            // Only what was saved, as on the Tokens page, the badge saying how far to trust it.
+            row.icon.setImageBitmap(TokenIcons.bitmap(HiddenTokensActivity.this, category,
                     getResources().getDimensionPixelSize(R.dimen.token_row_icon)));
             TokenLabels.showTitle(row.id, category, TokenLabels.title(category), true);
             int badge = TokenLabels.badge(category);
