@@ -324,6 +324,11 @@ public class TokenActivity extends AppCompatActivity {
         if (wallet == null || !wallet.isRunning()) {
             return;
         }
+        // A look-alike's images are made to mislead, so none are loaded, its NFTs' art too.
+        if (token != null && token.lookAlike) {
+            Snackbar.make(layout, R.string.token_icon_look_alike, Snackbar.LENGTH_LONG).show();
+            return;
+        }
         // The NFTs' art counts as the token's images, whatever becomes of the icon.
         boolean art = token != null && hasNftArt(token);
         if (art) {

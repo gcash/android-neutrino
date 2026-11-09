@@ -157,6 +157,7 @@
     <string name="token_icon_failed">The token\'s icon couldn\'t be loaded.</string>
     <string name="gateways_busy">Gateways are busy, try again later.</string>
     <string name="token_no_icon">The token has no icon.</string>
+    <string name="token_icon_look_alike">A look-alike\'s images aren\'t loaded, as they\'re made to mislead.</string>
     <string name="token_icon_unavailable">This collection\'s icon isn\'t available right now.</string>
     <string name="token_settings">Tokens</string>
     <string name="token_settings_summary">Loading token details and images, and IPFS gateways.</string>
