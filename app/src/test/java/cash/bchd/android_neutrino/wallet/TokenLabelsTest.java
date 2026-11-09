@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.util.Collections;
 
 import cash.bchd.android_neutrino.R;
+import cash.bchd.android_neutrino.tokens.TokenIcons;
 import cash.bchd.android_neutrino.tokens.TokenLabels;
 import walletrpc.Api;
 
@@ -210,6 +211,19 @@ public class TokenLabelsTest {
             assertEquals("Name", TokenLabels.title(CATEGORY));
         } finally {
             TokenLabels.hold(Collections.emptySet());
+        }
+    }
+
+    @Test
+    public void aLookAlikesImagesNeverShow() {
+        TokenIcons.configure(true, Collections.emptySet());
+        try {
+            update(token());
+            assertTrue(TokenIcons.showing(CATEGORY));
+            update(token().setLookAlike(true));
+            assertFalse(TokenIcons.showing(CATEGORY));
+        } finally {
+            TokenIcons.configure(false, Collections.emptySet());
         }
     }
 }

@@ -171,10 +171,11 @@ public final class TokenIcons {
 
     /**
      * showing returns whether a token's images are to show, and so to load: the setting is on, or
-     * the user loaded them from the token's menu.
+     * the user loaded them from the token's menu. A look-alike's never do, whatever was saved of
+     * them before the wallet said so, as they're made to mislead.
      */
     public static boolean showing(String category) {
-        return showAll || chosen.contains(category);
+        return (showAll || chosen.contains(category)) && !TokenLabels.isLookAlike(category);
     }
 
     /**
