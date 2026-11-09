@@ -935,6 +935,10 @@ public class MainActivity extends CloseActivity {
                 @Override
                 public void onSuccess(List<TokenMeta> tokens) {
                     TokenLabels.update(tokens);
+                    // A screen that's gone asks no more, as a recreated one asks for itself.
+                    if (isDestroyed()) {
+                        return;
+                    }
                     runOnUiThread(MainActivity.this::redrawLabels);
                     if (settings.getTokenImages()) {
                         loadTokenIcons(tokens);
@@ -971,7 +975,9 @@ public class MainActivity extends CloseActivity {
                 @Override
                 public void onSuccess(List<TokenMeta> tokens) {
                     TokenLabels.update(tokens);
-                    runOnUiThread(MainActivity.this::redrawLabels);
+                    if (!isDestroyed()) {
+                        runOnUiThread(MainActivity.this::redrawLabels);
+                    }
                 }
 
                 @Override
@@ -1000,7 +1006,7 @@ public class MainActivity extends CloseActivity {
         synchronized (labelsAsking) {
             labelsAsking.addAll(searching);
         }
-        if (labelsAskPending.compareAndSet(false, true)) {
+        if (!isDestroyed() && labelsAskPending.compareAndSet(false, true)) {
             pagesHandler.postDelayed(() -> {
                 labelsAskPending.set(false);
                 List<String> asking;
