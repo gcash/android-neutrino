@@ -53,6 +53,9 @@ public class Wallet implements Serializable {
     // What the wallet can answer with: all the NFT types of the largest registry it reads, 16 MiB,
     // and room for how the reply writes them.
     private static final int MAX_REPLY_SIZE = 32 << 20;
+    // How long a call the user waits on has to answer, as a wallet that's busy or gone shouldn't
+    // leave a screen waiting for good.
+    private static final long REPLY_DEADLINE_SECONDS = 10;
 
     private ManagedChannel channel;
     public static final io.grpc.Context.Key<String> AUTH_TOKEN_KEY = io.grpc.Context.key("AuthenticationToken");
@@ -653,7 +656,7 @@ public class Wallet implements Serializable {
 
     private ListenableFuture<List<TokenMeta>> tokenMetadataAsync(List<String> categories, boolean nftTypes, boolean peek) {
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel)
-                .withCallCredentials(this.creds).withDeadlineAfter(10, TimeUnit.SECONDS);
+                .withCallCredentials(this.creds).withDeadlineAfter(REPLY_DEADLINE_SECONDS, TimeUnit.SECONDS);
         // A reply that comes after the wallet stopped, as for a switch to another network, says
         // nothing of the tokens of the wallet that runs now.
         return Futures.transform(stub.tokenMetadata(
@@ -667,7 +670,7 @@ public class Wallet implements Serializable {
      */
     public ListenableFuture<Api.RefreshTokenMetadataResponse> refreshTokenMetadataAsync(String category) {
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel)
-                .withCallCredentials(this.creds).withDeadlineAfter(10, TimeUnit.SECONDS);
+                .withCallCredentials(this.creds).withDeadlineAfter(REPLY_DEADLINE_SECONDS, TimeUnit.SECONDS);
         return stub.refreshTokenMetadata(
                 Api.RefreshTokenMetadataRequest.newBuilder().setCategory(category).build());
     }
@@ -678,7 +681,7 @@ public class Wallet implements Serializable {
      */
     public ListenableFuture<Api.ForgetTokenResponse> forgetTokenAsync(String category) {
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel)
-                .withCallCredentials(this.creds).withDeadlineAfter(10, TimeUnit.SECONDS);
+                .withCallCredentials(this.creds).withDeadlineAfter(REPLY_DEADLINE_SECONDS, TimeUnit.SECONDS);
         return stub.forgetToken(Api.ForgetTokenRequest.newBuilder().setCategory(category).build());
     }
 
@@ -717,7 +720,7 @@ public class Wallet implements Serializable {
      */
     public ListenableFuture<TokensHeld> tokensHeldAsync() {
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel)
-                .withCallCredentials(this.creds).withDeadlineAfter(10, TimeUnit.SECONDS);
+                .withCallCredentials(this.creds).withDeadlineAfter(REPLY_DEADLINE_SECONDS, TimeUnit.SECONDS);
         ListenableFuture<Api.TokenBalancesResponse> tokens = stub.tokenBalances(
                 Api.TokenBalancesRequest.newBuilder().setAccountNumber(0).setRequiredConfirmations(0).build());
         ListenableFuture<Api.BalanceResponse> balance = stub.balance(
