@@ -35,7 +35,8 @@ public final class NftArt {
 
     private static final Handler HANDLER = new Handler(Looper.getMainLooper());
     private final Context context;
-    private final Loaded done;
+    // Let go of once stopped, as it holds its screen, and a download can take any time to end.
+    private Loaded done;
     // What was asked for, which isn't asked for again, what failed of that, and what's waiting its
     // turn.
     private final Set<String> asked = new HashSet<>();
@@ -46,7 +47,9 @@ public final class NftArt {
     private boolean stopped;
 
     public NftArt(Context context, Loaded done) {
-        this.context = context;
+        // The application's, as a download holds this until it ends, which can be long after the
+        // screen that asked is gone.
+        this.context = context.getApplicationContext();
         this.done = done;
     }
 
@@ -100,6 +103,7 @@ public final class NftArt {
     public void stop() {
         stopped = true;
         waiting.clear();
+        done = null;
     }
 
     private static String key(String category, String commitment) {

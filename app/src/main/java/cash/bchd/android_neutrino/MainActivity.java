@@ -777,9 +777,13 @@ public class MainActivity extends CloseActivity {
         STORE_READER.execute(() -> {
             TransactionStore store = new TransactionStore(app, network);
             Collections.sort(store.getData(), Collections.reverseOrder());
-            runOnUiThread(() -> {
-                MainActivity activity = ref.get();
-                if (activity == null || activity.isDestroyed() || activity.txStore.newerThan(store)
+            // Through the reference, as the screen isn't to be held while the store is read.
+            MainActivity activity = ref.get();
+            if (activity == null) {
+                return;
+            }
+            activity.runOnUiThread(() -> {
+                if (activity.isDestroyed() || activity.txStore.newerThan(store)
                         || activity.settings.getNetwork() != network) {
                     return;
                 }
