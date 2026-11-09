@@ -155,6 +155,13 @@ public final class TokenMeta {
         nftTypesByCommitment = byCommitment(types);
     }
 
+    /**
+     * withoutNftTypes returns the token without its NFT types.
+     */
+    public TokenMeta withoutNftTypes() {
+        return nftTypes.isEmpty() ? this : new TokenMeta(this, Collections.emptyList());
+    }
+
     Api.TokenMetadataResponse.Token kept() {
         return kept;
     }

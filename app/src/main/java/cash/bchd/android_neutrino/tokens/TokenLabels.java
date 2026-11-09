@@ -74,10 +74,17 @@ public final class TokenLabels {
 
     /**
      * hold keeps the labels of the hidden tokens as they are, as the wallet forgets what it knew of
-     * them, so that Hidden Tokens can still name them. A token that's shown again is told of anew.
+     * them, so that Hidden Tokens can still name them. A token that's shown again is told of anew,
+     * and lets go of its NFT types, which the wallet forgot, so that its screens ask for them.
      */
     public static void hold(Set<String> hidden) {
+        Set<String> before = held;
         held = Collections.unmodifiableSet(new HashSet<>(hidden));
+        for (String category : before) {
+            if (!hidden.contains(category)) {
+                TOKENS.computeIfPresent(category, (key, token) -> token.withoutNftTypes());
+            }
+        }
     }
 
     /**
