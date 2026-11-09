@@ -502,7 +502,8 @@ public class SendActivity extends AppCompatActivity {
         Futures.addCallback(wallet.tokensHeldAsync(), new FutureCallback<TokensHeld>() {
             @Override
             public void onSuccess(TokensHeld held) {
-                if (!held.any() || !sendAll || isFinishing()) {
+                // A dialog on a screen that's gone, as one a rotation replaced, crashes.
+                if (!held.any() || !sendAll || isFinishing() || isDestroyed()) {
                     return;
                 }
                 new AlertDialog.Builder(SendActivity.this)
