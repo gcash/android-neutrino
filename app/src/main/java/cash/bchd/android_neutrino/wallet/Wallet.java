@@ -676,6 +676,17 @@ public class Wallet implements Serializable {
     }
 
     /**
+     * networkChangedAsync tells the wallet that the device moved to another network, so that it
+     * drops its peers' connections, which can be gone without either side being told, and
+     * connects again at once.
+     */
+    public ListenableFuture<Api.NetworkChangedResponse> networkChangedAsync() {
+        WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel)
+                .withCallCredentials(this.creds).withDeadlineAfter(REPLY_DEADLINE_SECONDS, TimeUnit.SECONDS);
+        return stub.networkChanged(Api.NetworkChangedRequest.newBuilder().build());
+    }
+
+    /**
      * forgetTokenAsync has the wallet drop all it keeps of a token, as for one the user hid, so
      * that one shown again starts as if never seen.
      */
