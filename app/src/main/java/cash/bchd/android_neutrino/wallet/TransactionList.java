@@ -3,6 +3,7 @@ package cash.bchd.android_neutrino.wallet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -72,6 +73,19 @@ public final class TransactionList {
             }
         }
         return list;
+    }
+
+    /**
+     * tokens returns the tokens that the transactions moved.
+     */
+    public static Set<String> tokens(List<TransactionData> txs) {
+        Set<String> tokens = new HashSet<>();
+        for (TransactionData tx : txs) {
+            for (TokenChange change : tx.getTokens()) {
+                tokens.add(change.category);
+            }
+        }
+        return tokens;
     }
 
     private static boolean movedOnlyHidden(TransactionData tx, Set<String> hidden) {

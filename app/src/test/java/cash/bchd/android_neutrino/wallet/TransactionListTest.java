@@ -129,4 +129,15 @@ public class TransactionListTest {
         List<TransactionData> wallet = Arrays.asList(tx("zero", 0, 100, 10), tx("a", 1000, 200, 20));
         assertEquals(Collections.singletonList("a"), txids(TransactionList.rebuild(Collections.emptyList(), wallet)));
     }
+
+    @Test
+    public void collectsTheTokensMoved() {
+        TransactionData one = tx("01", 0, 1, 1);
+        one.setTokens(Arrays.asList(new TokenChange("aa", 5, 0), new TokenChange("bb", 7, 0)));
+        TransactionData two = tx("02", 0, 2, 2);
+        two.setTokens(Collections.singletonList(new TokenChange("aa", 1, 0)));
+        TransactionData plain = tx("03", 1000, 3, 3);
+        assertEquals(new java.util.HashSet<>(Arrays.asList("aa", "bb")),
+                TransactionList.tokens(Arrays.asList(one, two, plain)));
+    }
 }

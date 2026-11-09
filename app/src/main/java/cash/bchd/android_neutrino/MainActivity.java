@@ -87,7 +87,6 @@ import cash.bchd.android_neutrino.wallet.ExchangeRates;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.SyncStatus;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
-import cash.bchd.android_neutrino.wallet.TokenChange;
 import cash.bchd.android_neutrino.wallet.TokenLabelFile;
 import cash.bchd.android_neutrino.wallet.TokenMeta;
 import cash.bchd.android_neutrino.wallet.TransactionData;
@@ -983,16 +982,25 @@ public class MainActivity extends CloseActivity {
         }
     }
 
+    // The tokens of the history shown, and the history they're of.
+    private List<TransactionData> historyTokensOf;
+    private Set<String> historyTokens = Collections.emptySet();
+
     // peekTokenLabels asks what the wallet already knows of the tokens in the transactions that it
     // doesn't hold any more, so that their rows read right, without having them load.
     private void peekTokenLabels(Wallet wallet, List<String> held) {
+        // The history's tokens, collected again only when the history changes, as this runs on
+        // the main thread at every ask, and a restored wallet can have thousands of transactions.
+        List<TransactionData> history = mAdapter.getData();
+        if (history != historyTokensOf) {
+            historyTokens = TransactionList.tokens(history);
+            historyTokensOf = history;
+        }
         Set<String> hidden = settings.getHiddenTokens();
         Set<String> unknown = new HashSet<>();
-        for (TransactionData tx : mAdapter.getData()) {
-            for (TokenChange change : tx.getTokens()) {
-                if (!TokenLabels.saidThisRun(change.category) && !hidden.contains(change.category)) {
-                    unknown.add(change.category);
-                }
+        for (String category : historyTokens) {
+            if (!TokenLabels.saidThisRun(category) && !hidden.contains(category)) {
+                unknown.add(category);
             }
         }
         unknown.removeAll(held);
