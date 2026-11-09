@@ -799,6 +799,9 @@ public class MainActivity extends CloseActivity {
         setIntent(intent);
     }
 
+    // The token whose hiding can still be undone, which isn't to be forgotten yet.
+    private String undoable;
+
     // offerUndoHide says that a token's screen hid it, and offers to show it again for a few
     // seconds, once. Then what's kept of it is forgotten.
     private void offerUndoHide() {
@@ -807,6 +810,7 @@ public class MainActivity extends CloseActivity {
             return;
         }
         getIntent().removeExtra(EXTRA_HIDDEN_TOKEN);
+        undoable = category;
         Snackbar.make(mCLayout, R.string.token_hidden, UNDO_HIDE_MS).setAction(R.string.undo, v -> {
             settings.showToken(category);
             showTokens(settings.getLastTokens());
@@ -814,6 +818,9 @@ public class MainActivity extends CloseActivity {
         }).addCallback(new Snackbar.Callback() {
             @Override
             public void onDismissed(Snackbar snackbar, int event) {
+                if (category.equals(undoable)) {
+                    undoable = null;
+                }
                 if (event != DISMISS_EVENT_ACTION && settings.getHiddenTokens().contains(category)) {
                     forgetToken(category);
                 }
@@ -823,7 +830,7 @@ public class MainActivity extends CloseActivity {
 
     // forgetToken drops all that the wallet and the app keep of a hidden token, a collection's NFT
     // types and art can be large, but its label, so that Hidden Tokens can name it. Shown again,
-    // it's found as if new.
+    // it's found as if new. Until the wallet has, it's tried again each time the wallet starts.
     private void forgetToken(String category) {
         TokenIcons.forget(this, category);
         settings.removeLoadedIcon(category);
@@ -834,6 +841,8 @@ public class MainActivity extends CloseActivity {
         Futures.addCallback(wallet.forgetTokenAsync(category), new FutureCallback<Api.ForgetTokenResponse>() {
             @Override
             public void onSuccess(Api.ForgetTokenResponse reply) {
+                // On the main thread, as hiding and showing change the same list there.
+                runOnUiThread(() -> settings.forgotToken(category));
             }
 
             @Override
@@ -841,6 +850,19 @@ public class MainActivity extends CloseActivity {
                 t.printStackTrace();
             }
         }, MoreExecutors.directExecutor());
+    }
+
+    // forgetHiddenTokens forgets the hidden tokens that weren't forgotten when they were hidden,
+    // but one whose hiding can still be undone.
+    private void forgetHiddenTokens() {
+        Set<String> hidden = settings.getHiddenTokens();
+        for (String category : settings.getTokensToForget()) {
+            if (!hidden.contains(category)) {
+                settings.forgotToken(category);
+            } else if (!category.equals(undoable)) {
+                forgetToken(category);
+            }
+        }
     }
 
     // openLaunchPayment opens the payment link or payment request file that started the app,
@@ -1255,6 +1277,7 @@ public class MainActivity extends CloseActivity {
                         mainActivity.runOnUiThread(() -> {
                             mainActivity.openLaunchPayment();
                             mainActivity.upgradeWalletPassphrase();
+                            mainActivity.forgetHiddenTokens();
                         });
                     }
 

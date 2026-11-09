@@ -52,6 +52,7 @@ public class Settings {
     private static final String LAST_TOKEN_ADDRESS_KEY = "LastTokenAddress";
     private static final String HIDDEN_TOKENS_KEY = "HiddenTokens";
     private static final String HIDDEN_ORDER_KEY = "HiddenTokensOrder";
+    private static final String TO_FORGET_KEY = "TokensToForget";
     private static final String LOADED_ICONS_KEY = "LoadedTokenIcons";
     private static final String LAST_BLOCK_HEIGHT_KEY = "LastBlockHeight";
     private static final String LAST_BLOCK_HASH_KEY = "LastBlockHash";
@@ -294,8 +295,11 @@ public class Settings {
         List<String> order = hiddenOrder();
         order.remove(category);
         order.add(0, category);
+        Set<String> toForget = getTokensToForget();
+        toForget.add(category);
         prefs.edit().putStringSet(HIDDEN_TOKENS_KEY, hidden)
-                .putString(HIDDEN_ORDER_KEY, String.join(",", order)).apply();
+                .putString(HIDDEN_ORDER_KEY, String.join(",", order))
+                .putStringSet(TO_FORGET_KEY, toForget).apply();
         TokenLabels.hold(hidden);
     }
 
@@ -304,9 +308,24 @@ public class Settings {
         hidden.remove(category);
         List<String> order = hiddenOrder();
         order.remove(category);
+        Set<String> toForget = getTokensToForget();
+        toForget.remove(category);
         prefs.edit().putStringSet(HIDDEN_TOKENS_KEY, hidden)
-                .putString(HIDDEN_ORDER_KEY, String.join(",", order)).apply();
+                .putString(HIDDEN_ORDER_KEY, String.join(",", order))
+                .putStringSet(TO_FORGET_KEY, toForget).apply();
         TokenLabels.hold(hidden);
+    }
+
+    // The hidden tokens that the wallet hasn't yet forgotten, as the app was closed, or the wallet
+    // wasn't running, or didn't answer, when they were to be.
+    Set<String> getTokensToForget() {
+        return new HashSet<>(prefs.getStringSet(TO_FORGET_KEY, Collections.emptySet()));
+    }
+
+    void forgotToken(String category) {
+        Set<String> toForget = getTokensToForget();
+        toForget.remove(category);
+        prefs.edit().putStringSet(TO_FORGET_KEY, toForget).apply();
     }
 
     void setLastBlockHeight(int blockHeight) {

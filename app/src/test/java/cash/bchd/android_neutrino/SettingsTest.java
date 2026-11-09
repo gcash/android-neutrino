@@ -163,4 +163,16 @@ public class SettingsTest {
         settings.showToken("aa");
         assertEquals(Arrays.asList("dd", "cc"), settings.getHiddenTokensNewestFirst());
     }
+
+    @Test
+    public void remembersTheHiddenTokensToForget() {
+        Settings settings = new Settings(new InMemoryPreferences(), new InMemoryPreferences(), Network.TESTNET4);
+        settings.hideToken("aa");
+        settings.hideToken("bb");
+        settings.hideToken("cc");
+        settings.showToken("aa");
+        settings.forgotToken("bb");
+        assertEquals(Collections.singleton("cc"), settings.getTokensToForget());
+        assertEquals(new java.util.HashSet<>(Arrays.asList("bb", "cc")), settings.getHiddenTokens());
+    }
 }
