@@ -136,4 +136,15 @@ public class TokenIconsTest {
         assertFalse(TokenIcons.usableMotion(10, 4096));
         assertFalse(TokenIcons.usableMotion(0, 10));
     }
+
+    @Test
+    public void tellsAnSvgFromOtherFiles() {
+        java.nio.charset.Charset utf8 = java.nio.charset.StandardCharsets.UTF_8;
+        assertTrue(TokenIcons.looksLikeSvg("<svg xmlns=\"http://www.w3.org/2000/svg\"/>".getBytes(utf8)));
+        assertTrue(TokenIcons.looksLikeSvg("\n <?xml version=\"1.0\"?>\n<svg></svg>".getBytes(utf8)));
+        assertTrue(TokenIcons.looksLikeSvg("\uFEFF<svg></svg>".getBytes(utf8)));
+        assertFalse(TokenIcons.looksLikeSvg("<?xml version=\"1.0\"?><html></html>".getBytes(utf8)));
+        assertFalse(TokenIcons.looksLikeSvg(new byte[]{(byte) 0x89, 'P', 'N', 'G'}));
+        assertFalse(TokenIcons.looksLikeSvg(new byte[0]));
+    }
 }

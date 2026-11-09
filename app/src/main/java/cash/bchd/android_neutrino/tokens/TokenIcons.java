@@ -5,12 +5,17 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.ImageDecoder;
+import android.graphics.RectF;
 import android.graphics.drawable.AnimatedImageDrawable;
 import android.media.MediaDataSource;
 import android.media.MediaMetadataRetriever;
 import android.os.Build;
 import android.widget.ImageView;
 
+import com.caverock.androidsvg.SVG;
+import com.caverock.androidsvg.SVGParseException;
+
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -516,6 +521,11 @@ public final class TokenIcons {
         BitmapFactory.Options bounds = new BitmapFactory.Options();
         bounds.inJustDecodeBounds = true;
         BitmapFactory.decodeByteArray(data, 0, data.length, bounds);
+        // An SVG is drawn at the side to show, as it's shown as an image.
+        Bitmap drawn = bounds.outWidth <= 0 ? svg(data, maxSide) : null;
+        if (drawn != null) {
+            return saveDrawn(file, dir, drawn, maxSide);
+        }
         boolean image = bounds.outWidth > 0 && !canAnimate(data);
         if (bounds.outWidth > 0 && !(image ? usableFull(bounds.outWidth, bounds.outHeight)
                 : usableMotion(bounds.outWidth, bounds.outHeight))) {
@@ -595,6 +605,71 @@ public final class TokenIcons {
         }
     }
 
+    // saveDrawn keeps an image drawn for full art as a PNG, as saveFull keeps the others.
+    private static boolean saveDrawn(File file, File dir, Bitmap drawn, int maxSide) {
+        File tmp;
+        try {
+            tmp = File.createTempFile("motion", ".tmp", dir);
+        } catch (IOException e) {
+            return false;
+        }
+        boolean saved = false;
+        try (FileOutputStream out = new FileOutputStream(tmp)) {
+            saved = write(drawn, maxSide, Bitmap.CompressFormat.PNG, out) && tmp.renameTo(file);
+        } catch (IOException e) {
+            return false;
+        } finally {
+            if (!saved) {
+                tmp.delete();
+            }
+        }
+        if (saved) {
+            trimMotion(dir, file);
+        }
+        return saved;
+    }
+
+    /**
+     * looksLikeSvg returns whether the file starts as an SVG does, as Android can't tell.
+     */
+    static boolean looksLikeSvg(byte[] data) {
+        String start = new String(data, 0, Math.min(data.length, 4096), StandardCharsets.UTF_8).stripLeading();
+        if (start.startsWith("\uFEFF")) {
+            start = start.substring(1).stripLeading();
+        }
+        return (start.startsWith("<svg") || start.startsWith("<?xml") || start.startsWith("<!--")
+                || start.startsWith("<!DOCTYPE")) && start.contains("<svg");
+    }
+
+    // svg draws an SVG at up to the side, in its proportions, or returns null if it isn't one
+    // or can't be drawn. Nothing it names elsewhere is fetched, as no resolver is set for it.
+    private static Bitmap svg(byte[] data, int maxSide) {
+        if (!looksLikeSvg(data)) {
+            return null;
+        }
+        try {
+            SVG svg = SVG.getFromInputStream(new ByteArrayInputStream(data));
+            RectF box = svg.getDocumentViewBox();
+            float width = box != null ? box.width() : svg.getDocumentWidth();
+            float height = box != null ? box.height() : svg.getDocumentHeight();
+            if (!(width > 0) || !(height > 0)) {
+                width = height = maxSide;
+            }
+            if (box == null) {
+                svg.setDocumentViewBox(0, 0, width, height);
+            }
+            int[] fitted = fitted(Math.round(width), Math.round(height), maxSide);
+            Bitmap image = Bitmap.createBitmap(fitted[0], fitted[1], Bitmap.Config.ARGB_8888);
+            // At the size drawn, as a width and height of its own would draw it at those.
+            svg.setDocumentWidth(fitted[0]);
+            svg.setDocumentHeight(fitted[1]);
+            svg.renderToCanvas(new Canvas(image));
+            return image;
+        } catch (SVGParseException | RuntimeException | OutOfMemoryError e) {
+            return null;
+        }
+    }
+
     // largestShown returns the largest side any screen shows an image at on this device, which is
     // all that's worth keeping, as a collection's art can be megabytes each.
     private static int largestShown(Context context) {
@@ -602,13 +677,20 @@ public final class TokenIcons {
     }
 
     private static boolean save(File file, byte[] data, int maxSide) {
-        // A video keeps its first frame, as lists show images.
+        // A video keeps its first frame, as lists show images, and an SVG is drawn, as Android
+        // can't, and kept as a PNG, which keeps what it leaves clear.
         Bitmap frame = null;
+        Bitmap.CompressFormat format = Bitmap.CompressFormat.JPEG;
         BitmapFactory.Options bounds = new BitmapFactory.Options();
         bounds.inJustDecodeBounds = true;
         BitmapFactory.decodeByteArray(data, 0, data.length, bounds);
         if (bounds.outWidth <= 0) {
-            frame = videoFrame(data, maxSide);
+            frame = svg(data, maxSide);
+            if (frame != null) {
+                format = Bitmap.CompressFormat.PNG;
+            } else {
+                frame = videoFrame(data, maxSide);
+            }
             if (frame == null) {
                 return false;
             }
@@ -629,7 +711,7 @@ public final class TokenIcons {
         boolean saved = false;
         try (FileOutputStream out = new FileOutputStream(tmp)) {
             if (frame != null) {
-                if (!write(frame, maxSide, Bitmap.CompressFormat.JPEG, out)) {
+                if (!write(frame, maxSide, format, out)) {
                     return false;
                 }
             } else if (Math.max(bounds.outWidth, bounds.outHeight) <= maxSide && data.length <= MAX_KEPT_SIZE) {

@@ -103,6 +103,9 @@ dependencies {
     implementation 'com.google.zxing:core:3.5.4'
     implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
 
+    // Draws token icons and art that are SVG, which Android can't, under the Apache License 2.0.
+    implementation 'com.caverock:androidsvg-aar:1.4'
+
     testImplementation 'junit:junit:4.13.2'
     // The real org.json for unit tests, which Android's stub would not run.
     testImplementation 'org.json:json:20260814'
