@@ -26,6 +26,7 @@ service WalletService {
 	rpc TokenBalances (TokenBalancesRequest) returns (TokenBalancesResponse);
 	rpc TokenMetadata (TokenMetadataRequest) returns (TokenMetadataResponse);
 	rpc RefreshTokenMetadata (RefreshTokenMetadataRequest) returns (RefreshTokenMetadataResponse);
+	rpc ForgetToken (ForgetTokenRequest) returns (ForgetTokenResponse);
 	rpc TokenIcon (TokenIconRequest) returns (TokenIconResponse);
 	rpc CurrentAddress (CurrentAddressRequest) returns (CurrentAddressResponse);
 	rpc GetTransactions (GetTransactionsRequest) returns (GetTransactionsResponse);
@@ -242,22 +243,36 @@ message TokenMetadataResponse {
 		Status status = 9;
 		bool known = 10; // On the Known list.
 		bool loads_by_itself = 11; // Otherwise it takes RefreshTokenMetadata.
-		bool look_alike = 12; // Has the name or symbol of a Known token.
+		bool look_alike = 12; // Its name copies a Known token's, or is the coin's own.
 		bool burned = 13; // Its identity ended, so its metadata can't change.
 		repeated NftType nft_types = 14; // Sorted by commitment, with include_nft_types.
 		bool publication_stale = 15; // The publication isn't on the head.
 		bool registry_changed = 16; // The fields above are from a file other than the published one.
-		bool registry_failed = 17; // A registry was published, but nothing could be read from it.
-		bool reserved_symbol = 18; // A look_alike that is one for its reserved symbol.
+		bool registry_failed = 17; // A registry was published, but nothing could be read from it, or the fields above are from before, as what it has now can't be used.
+		bool reserved_symbol = 18; // Its symbol copies a reserved one, so its amounts show none.
+		bool reserved_name = 19; // A look_alike that is one for its name, which is the coin's own.
+		bool known_symbol = 20; // Its symbol copies a Known token's, so its amounts show none.
 	}
 	repeated Token tokens = 1; // In the order of the request.
 }
+// RefreshTokenMetadata answers ResourceExhausted when every location of the
+// token's registry is paused or resting, though it's read once one is back.
 message RefreshTokenMetadataRequest {
 	string category = 1; // Hex, in the byte order of transaction IDs.
 }
 message RefreshTokenMetadataResponse {
 }
 
+// ForgetToken drops all the wallet keeps of a token, as for one the user hid,
+// so that one asked about again starts as if never seen.
+message ForgetTokenRequest {
+	string category = 1; // Hex, in the byte order of transaction IDs.
+}
+message ForgetTokenResponse {
+}
+
+// TokenIcon answers ResourceExhausted when every location of the icon is paused
+// or resting, and Unavailable when none gave it.
 message TokenIconRequest {
 	string uri = 1; // An icon_uri of TokenMetadata.
 	bool user_action = 2; // Asked for by the user, which goes before what loads by itself.

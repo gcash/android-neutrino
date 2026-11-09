@@ -77,8 +77,11 @@ public final class TokenMeta {
     public final boolean registryChanged;
     // Whether the token published a registry that nothing could be read from.
     public final boolean registryFailed;
-    // Whether a look-alike is one for its reserved symbol, not for a Known token.
+    // Whether a look-alike is one for its name being the coin's own, not a Known token's.
+    public final boolean reservedName;
+    // Whether its symbol copies a reserved one, or a Known token's, so its amounts show none.
     public final boolean reservedSymbol;
+    public final boolean knownSymbol;
     public final List<NftType> nftTypes;
     private final Map<String, NftType> nftTypesByCommitment;
     // What the wallet said, as it's kept between runs: without the NFT types, of which a
@@ -102,7 +105,9 @@ public final class TokenMeta {
         burned = token.getBurned();
         registryChanged = token.getRegistryChanged();
         registryFailed = token.getRegistryFailed();
+        reservedName = token.getReservedName();
         reservedSymbol = token.getReservedSymbol();
+        knownSymbol = token.getKnownSymbol();
         List<NftType> types = new ArrayList<>();
         for (Api.TokenMetadataResponse.NftType type : token.getNftTypesList()) {
             types.add(new NftType(type));
@@ -129,7 +134,9 @@ public final class TokenMeta {
         burned = token.burned;
         registryChanged = token.registryChanged;
         registryFailed = token.registryFailed;
+        reservedName = token.reservedName;
         reservedSymbol = token.reservedSymbol;
+        knownSymbol = token.knownSymbol;
         nftTypes = types;
         nftTypesByCommitment = byCommitment(types);
     }

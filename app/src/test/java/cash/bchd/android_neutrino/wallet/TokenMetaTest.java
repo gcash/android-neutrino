@@ -96,4 +96,23 @@ public class TokenMetaTest {
                         .putAttributes("Eyes", "Red").putAttributes("Background", "Blue")).build());
         assertEquals("[Background, Eyes]", token.nftType("01").attributes.keySet().toString());
     }
+
+    @Test
+    public void namesAndSymbolsThatCopy() {
+        Api.TokenMetadataResponse.Token.Builder said = Api.TokenMetadataResponse.Token.newBuilder()
+                .setCategory("aa").setHasMetadata(true).setName("Name").setSymbol("SYM")
+                .setLookAlike(true).setReservedName(true).setKnownSymbol(true);
+        TokenMeta token = new TokenMeta(said.build());
+        assertTrue(token.lookAlike);
+        assertTrue(token.reservedName);
+        assertTrue(token.knownSymbol);
+        assertFalse(token.reservedSymbol);
+
+        // A copy that keeps the NFT types keeps them too.
+        TokenMeta before = new TokenMeta(said.clone().addNftTypes(
+                Api.TokenMetadataResponse.NftType.newBuilder().setCommitment("01")).build());
+        TokenMeta copied = token.keepingNftTypes(before);
+        assertEquals(1, copied.nftTypes.size());
+        assertTrue(copied.reservedName && copied.knownSymbol && !copied.reservedSymbol);
+    }
 }
