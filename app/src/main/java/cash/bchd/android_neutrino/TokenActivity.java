@@ -314,6 +314,46 @@ public class TokenActivity extends AppCompatActivity {
         }
     }
 
+    // loadIconOnceKnown loads a token's icon once the wallet has its metadata, asking it every few
+    // seconds until then, or says why it can't once its registry read is over or it's taken too
+    // long.
+    private static void loadIconOnceKnown(Activity screen, Settings settings, View layout, String category,
+                                          Runnable done, long until) {
+        Wallet wallet = Wallet.getInstance();
+        if (screen.isDestroyed() || wallet == null || !wallet.isRunning()) {
+            return;
+        }
+        Futures.addCallback(wallet.tokenMetadataAsync(Collections.singletonList(category), false),
+                new FutureCallback<List<TokenMeta>>() {
+                    @Override
+                    public void onSuccess(List<TokenMeta> metadata) {
+                        TokenLabels.update(metadata);
+                        screen.runOnUiThread(() -> next(screen, settings, layout, category, done, until));
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        screen.runOnUiThread(() -> next(screen, settings, layout, category, done, until));
+                    }
+                }, MoreExecutors.directExecutor());
+    }
+
+    private static void next(Activity screen, Settings settings, View layout, String category, Runnable done,
+                             long until) {
+        if (screen.isDestroyed()) {
+            return;
+        }
+        TokenMeta token = TokenLabels.get(category);
+        if (token != null && token.hasMetadata) {
+            loadIcon(screen, settings, layout, category, done);
+        } else if (token != null && token.registryFailed || SystemClock.elapsedRealtime() >= until) {
+            Snackbar.make(layout, R.string.token_no_icon, Snackbar.LENGTH_LONG).show();
+        } else {
+            new Handler(Looper.getMainLooper()).postDelayed(
+                    () -> loadIconOnceKnown(screen, settings, layout, category, done, until), ASK_INTERVAL_MS);
+        }
+    }
+
     /**
      * readOver returns whether a registry read has said what it found, after a change of what's
      * known of the token: metadata, or that the registry couldn't be read.
@@ -364,6 +404,13 @@ public class TokenActivity extends AppCompatActivity {
         // A look-alike's images are made to mislead, so none are loaded, its NFTs' art too.
         if (token != null && token.lookAlike) {
             Snackbar.make(layout, R.string.token_icon_look_alike, Snackbar.LENGTH_LONG).show();
+            return;
+        }
+        // The icon is named by the metadata, so that's fetched first, and then the icon.
+        if (token == null || !token.hasMetadata) {
+            long until = SystemClock.elapsedRealtime() + FETCH_WAIT_MS;
+            fetchMetadata(screen, layout, category,
+                    () -> loadIconOnceKnown(screen, settings, layout, category, done, until));
             return;
         }
         // The NFTs' art counts as the token's images, whatever becomes of the icon.
