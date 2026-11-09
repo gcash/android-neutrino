@@ -367,7 +367,7 @@ public class TokenActivity extends AppCompatActivity {
             public void onSuccess(byte[] data) {
                 boolean saved = false;
                 try {
-                    saved = TokenIcons.save(screen, category, data);
+                    saved = TokenIcons.save(screen, category, data, token.iconUri);
                 } catch (RuntimeException | OutOfMemoryError e) {
                     e.printStackTrace();
                 }

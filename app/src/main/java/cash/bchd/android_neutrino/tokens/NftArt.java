@@ -69,7 +69,8 @@ public final class NftArt {
      * requestIcon has a token's own icon load, in the same turns as NFTs' art.
      */
     public void requestIcon(String category, String uri) {
-        if (TokenIcons.has(context, category) || !asked.add(category)) {
+        // An icon saved from another URI than the registry names now is loaded again.
+        if (TokenIcons.iconSavedFrom(context, category, uri) || !asked.add(category)) {
             return;
         }
         waiting.addFirst(new String[]{category, null, uri});
@@ -137,7 +138,7 @@ public final class NftArt {
                 // Whatever a stranger's file does, its turn has to end.
                 boolean saved = false;
                 try {
-                    saved = commitment == null ? TokenIcons.save(context, category, image)
+                    saved = commitment == null ? TokenIcons.save(context, category, image, uri)
                             : TokenIcons.saveNft(context, category, commitment, image, uri);
                 } catch (RuntimeException | OutOfMemoryError e) {
                     e.printStackTrace();

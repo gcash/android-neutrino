@@ -323,14 +323,38 @@ public final class TokenIcons {
     }
 
     /**
-     * save keeps an icon if it's an image this device can show, and returns whether it did.
+     * save keeps an icon if it's an image this device can show, with the URI it came from, and
+     * returns whether it did.
      */
-    public static boolean save(Context context, String category, byte[] data) {
+    public static boolean save(Context context, String category, byte[] data, String uri) {
         boolean saved = save(file(context, category), data, largestShown(context));
         if (saved) {
+            try {
+                Files.write(iconSourceFile(context, category).toPath(), uri.getBytes(StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             forgetDrawn(category);
         }
         return saved;
+    }
+
+    // iconSourceFile returns the file that says what URI a token's icon was saved from.
+    private static File iconSourceFile(Context context, String category) {
+        return new File(file(context, category).getPath() + ".source");
+    }
+
+    /**
+     * iconSavedFrom returns whether a token's saved icon came from the URI. One saved by earlier
+     * versions says nothing, and a registry can come to name another icon.
+     */
+    public static boolean iconSavedFrom(Context context, String category, String uri) {
+        try {
+            byte[] saved = Files.readAllBytes(iconSourceFile(context, category).toPath());
+            return has(context, category) && uri.equals(new String(saved, StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     /**
