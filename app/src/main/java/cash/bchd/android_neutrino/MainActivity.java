@@ -137,6 +137,8 @@ public class MainActivity extends CloseActivity {
     private static final long TOKEN_LABELS_INTERVAL_MS = 10_000;
     private final Handler pagesHandler = new Handler(Looper.getMainLooper());
     private final AtomicBoolean labelsAskPending = new AtomicBoolean();
+    // The tokens to ask about again, as the wallet was still looking for them.
+    private final Set<String> labelsAsking = new HashSet<>();
     private NftArt iconLoader;
     // The labels the rows were drawn with, to tell when another screen learned more.
     private long drawnLabels;
@@ -932,8 +934,9 @@ public class MainActivity extends CloseActivity {
                     if (settings.getTokenImages()) {
                         loadTokenIcons(tokens);
                     }
-                    if (searching(tokens)) {
-                        askTokenLabelsSoon();
+                    List<String> searching = searching(tokens);
+                    if (!searching.isEmpty()) {
+                        askTokenLabelsSoon(searching);
                     }
                 }
 
@@ -974,22 +977,40 @@ public class MainActivity extends CloseActivity {
         }
     }
 
-    // searching returns whether the wallet is still looking for any of the tokens.
-    private static boolean searching(List<TokenMeta> tokens) {
+    // searching returns the tokens the wallet is still looking for, of those that load by
+    // themselves.
+    private static List<String> searching(List<TokenMeta> tokens) {
+        List<String> searching = new ArrayList<>();
         for (TokenMeta token : tokens) {
             if (token.loadsByItself && token.status == TokenMeta.Status.SEARCHING) {
-                return true;
+                searching.add(token.category);
             }
         }
-        return false;
+        return searching;
     }
 
-    // askTokenLabelsSoon asks again in a while, as the wallet tells nothing by itself.
-    private void askTokenLabelsSoon() {
+    // askTokenLabelsSoon asks again in a while about the tokens the wallet is still looking for,
+    // as it tells nothing by itself. The others it's asked about at each block.
+    private void askTokenLabelsSoon(List<String> searching) {
+        synchronized (labelsAsking) {
+            labelsAsking.addAll(searching);
+        }
         if (labelsAskPending.compareAndSet(false, true)) {
             pagesHandler.postDelayed(() -> {
                 labelsAskPending.set(false);
-                showTokens(settings.getLastTokens());
+                List<String> asking;
+                synchronized (labelsAsking) {
+                    asking = new ArrayList<>(labelsAsking);
+                    labelsAsking.clear();
+                }
+                Set<String> hidden = settings.getHiddenTokens();
+                List<TokenBalance> shown = new ArrayList<>();
+                for (TokenBalance token : settings.getLastTokens()) {
+                    if (asking.contains(token.category) && !hidden.contains(token.category)) {
+                        shown.add(token);
+                    }
+                }
+                askTokenLabels(shown);
             }, TOKEN_LABELS_INTERVAL_MS);
         }
     }

@@ -197,7 +197,11 @@ public class Settings {
     // The wallet's token balances when it last told them, which the main screen shows when it
     // opens, until the wallet tells them again.
     void setLastTokens(List<TokenBalance> tokens) {
-        putString(LAST_TOKENS_KEY, TokenBalance.toJson(tokens));
+        // Told for every block, and most don't change them.
+        String json = TokenBalance.toJson(tokens);
+        if (!json.equals(prefs.getString(LAST_TOKENS_KEY, "[]"))) {
+            putString(LAST_TOKENS_KEY, json);
+        }
     }
 
     List<TokenBalance> getLastTokens() {

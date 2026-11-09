@@ -218,7 +218,9 @@ public class TokenActivity extends AppCompatActivity {
         TokenIcons.showIcon(icon, category, getResources().getDimensionPixelSize(R.dimen.token_screen_icon));
     }
 
-    // askWallet shows what the wallet can say of the token now.
+    // askWallet shows what the wallet can say of the token now. A collection's NFT types, which can
+    // be large, are asked for only once it has metadata and the screen doesn't have them, as when
+    // the wallet first reads them, or reads another registry.
     private void askWallet() {
         Wallet wallet = Wallet.getInstance();
         if (wallet == null || !wallet.isRunning()) {
@@ -226,11 +228,24 @@ public class TokenActivity extends AppCompatActivity {
             showNftsAnyway();
             return;
         }
-        Futures.addCallback(wallet.tokenMetadataAsync(Collections.singletonList(category), true),
+        TokenMeta known = TokenLabels.get(category);
+        boolean types = nfts != null && known != null && known.hasMetadata && !TokenLabels.hasNftTypes(category);
+        Futures.addCallback(wallet.tokenMetadataAsync(Collections.singletonList(category), types),
                 new FutureCallback<List<TokenMeta>>() {
                     @Override
                     public void onSuccess(List<TokenMeta> metadata) {
                         TokenLabels.update(metadata);
+                        // The types, now that there's metadata to have them with.
+                        boolean typesNow = !types && nfts != null && !metadata.isEmpty()
+                                && metadata.get(0).hasMetadata && !TokenLabels.hasNftTypes(category);
+                        if (typesNow) {
+                            runOnUiThread(() -> {
+                                if (!isDestroyed()) {
+                                    askWallet();
+                                }
+                            });
+                            return;
+                        }
                         runOnUiThread(() -> {
                             if (isDestroyed()) {
                                 return;
