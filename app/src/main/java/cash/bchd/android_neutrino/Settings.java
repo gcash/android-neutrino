@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 
 import androidx.preference.PreferenceManager;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -47,6 +49,7 @@ public class Settings {
     private static final String LAST_ADDRESS_KEY = "LastAddress";
     private static final String LAST_TOKEN_ADDRESS_KEY = "LastTokenAddress";
     private static final String HIDDEN_TOKENS_KEY = "HiddenTokens";
+    private static final String HIDDEN_ORDER_KEY = "HiddenTokensOrder";
     private static final String LOADED_ICONS_KEY = "LoadedTokenIcons";
     private static final String LAST_BLOCK_HEIGHT_KEY = "LastBlockHeight";
     private static final String LAST_BLOCK_HASH_KEY = "LastBlockHash";
@@ -252,16 +255,44 @@ public class Settings {
         prefs.edit().putStringSet(LOADED_ICONS_KEY, loaded).apply();
     }
 
+    // The hidden tokens, the one hidden last first. Those hidden before the order was kept come
+    // after, by token ID.
+    List<String> getHiddenTokensNewestFirst() {
+        Set<String> hidden = getHiddenTokens();
+        List<String> newestFirst = new ArrayList<>();
+        for (String category : hiddenOrder()) {
+            if (hidden.remove(category)) {
+                newestFirst.add(category);
+            }
+        }
+        List<String> rest = new ArrayList<>(hidden);
+        Collections.sort(rest);
+        newestFirst.addAll(rest);
+        return newestFirst;
+    }
+
+    private List<String> hiddenOrder() {
+        String order = prefs.getString(HIDDEN_ORDER_KEY, "");
+        return order.isEmpty() ? new ArrayList<>() : new ArrayList<>(Arrays.asList(order.split(",")));
+    }
+
     void hideToken(String category) {
         Set<String> hidden = getHiddenTokens();
         hidden.add(category);
-        prefs.edit().putStringSet(HIDDEN_TOKENS_KEY, hidden).apply();
+        List<String> order = hiddenOrder();
+        order.remove(category);
+        order.add(0, category);
+        prefs.edit().putStringSet(HIDDEN_TOKENS_KEY, hidden)
+                .putString(HIDDEN_ORDER_KEY, String.join(",", order)).apply();
     }
 
     void showToken(String category) {
         Set<String> hidden = getHiddenTokens();
         hidden.remove(category);
-        prefs.edit().putStringSet(HIDDEN_TOKENS_KEY, hidden).apply();
+        List<String> order = hiddenOrder();
+        order.remove(category);
+        prefs.edit().putStringSet(HIDDEN_TOKENS_KEY, hidden)
+                .putString(HIDDEN_ORDER_KEY, String.join(",", order)).apply();
     }
 
     void setLastBlockHeight(int blockHeight) {

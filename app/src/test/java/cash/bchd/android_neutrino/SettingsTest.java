@@ -146,4 +146,21 @@ public class SettingsTest {
         org.junit.Assert.assertArrayEquals(new String[]{"https://ipfs.filebase.io", "https://ipfs.orbitor.dev",
                 "https://gateway.pinata.cloud", "https://ipfs.io", "https://dweb.link"}, settings.getIpfsGateways());
     }
+
+    @Test
+    public void listsHiddenTokensNewestFirst() {
+        InMemoryPreferences prefs = new InMemoryPreferences();
+        // Hidden before the order was kept.
+        prefs.edit().putStringSet("HiddenTokens", new HashSet<>(Arrays.asList("cc", "aa"))).apply();
+        Settings settings = new Settings(prefs, prefs, Network.MAINNET);
+        assertEquals(Arrays.asList("aa", "cc"), settings.getHiddenTokensNewestFirst());
+        settings.hideToken("dd");
+        settings.hideToken("bb");
+        assertEquals(Arrays.asList("bb", "dd", "aa", "cc"), settings.getHiddenTokensNewestFirst());
+        settings.hideToken("dd");
+        assertEquals(Arrays.asList("dd", "bb", "aa", "cc"), settings.getHiddenTokensNewestFirst());
+        settings.showToken("bb");
+        settings.showToken("aa");
+        assertEquals(Arrays.asList("dd", "cc"), settings.getHiddenTokensNewestFirst());
+    }
 }

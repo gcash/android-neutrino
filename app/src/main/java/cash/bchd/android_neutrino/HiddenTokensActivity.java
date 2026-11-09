@@ -23,7 +23,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import cash.bchd.android_neutrino.tokens.TokenIcons;
@@ -65,9 +64,8 @@ public class HiddenTokensActivity extends AppCompatActivity {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-        // By token ID, as the Tokens page lists them.
-        hidden.addAll(settings.getHiddenTokens());
-        Collections.sort(hidden);
+        // The one hidden last first, as it's the one most likely looked for.
+        hidden.addAll(settings.getHiddenTokensNewestFirst());
         RecyclerView list = findViewById(R.id.hiddenTokens);
         list.setLayoutManager(new LinearLayoutManager(this));
         // With the application's context, as the main screen's lists have.
