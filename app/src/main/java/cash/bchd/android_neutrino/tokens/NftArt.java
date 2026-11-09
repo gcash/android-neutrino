@@ -52,9 +52,12 @@ public final class NftArt {
      * request has the art of an NFT that shows load, if it's to show and isn't there yet.
      */
     public void request(String category, String commitment) {
-        // A look-alike's art wouldn't show, so nothing should reach its host.
-        if (!TokenIcons.showing(category) || TokenLabels.isLookAlike(category)
-                || uri(category, commitment) == null || TokenIcons.hasNft(context, category, commitment)
+        // A look-alike's art wouldn't show, so nothing should reach its host. Art saved from
+        // another URI than the registry names now is loaded again.
+        String uri = uri(category, commitment);
+        if (!TokenIcons.showing(category) || TokenLabels.isLookAlike(category) || uri == null
+                || TokenIcons.hasNft(context, category, commitment)
+                && TokenIcons.savedFrom(context, category, commitment, uri)
                 || !asked.add(key(category, commitment))) {
             return;
         }
@@ -116,7 +119,8 @@ public final class NftArt {
             // token may have turned out to be a look-alike, whose host nothing should reach. What
             // can't load now can be asked for again.
             String uri = commitment == null ? next[2] : uri(category, commitment);
-            boolean there = commitment != null && TokenIcons.hasNft(context, category, commitment);
+            boolean there = commitment != null && TokenIcons.hasNft(context, category, commitment)
+                    && TokenIcons.savedFrom(context, category, commitment, uri);
             if (uri == null || !TokenIcons.showing(category) || TokenLabels.isLookAlike(category) || there
                     || wallet == null || !wallet.isRunning()) {
                 asked.remove(key(category, commitment));
