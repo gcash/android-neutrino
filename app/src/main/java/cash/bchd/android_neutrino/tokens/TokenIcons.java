@@ -41,6 +41,8 @@ public final class TokenIcons {
 
     // The largest side of an image it will decode.
     private static final int MAX_SIDE = 4096;
+    // The largest side of art that moves, whose every frame takes memory as it plays.
+    private static final int MAX_MOTION_SIDE = 2048;
     // The most pixels of a still image to bring down to full size, so that a large one isn't left
     // a thumbnail. It's by pixels, as some formats are read whole, whatever size they're read to.
     private static final long MAX_FULL_PIXELS = 1L << 25;
@@ -516,7 +518,7 @@ public final class TokenIcons {
         BitmapFactory.decodeByteArray(data, 0, data.length, bounds);
         boolean image = bounds.outWidth > 0 && !canAnimate(data);
         if (bounds.outWidth > 0 && !(image ? usableFull(bounds.outWidth, bounds.outHeight)
-                : usable(bounds.outWidth, bounds.outHeight))) {
+                : usableMotion(bounds.outWidth, bounds.outHeight))) {
             return false;
         }
         File tmp;
@@ -695,6 +697,14 @@ public final class TokenIcons {
      */
     static boolean usable(int width, int height) {
         return width > 0 && height > 0 && width <= MAX_SIDE && height <= MAX_SIDE;
+    }
+
+    /**
+     * usableMotion returns whether art that moves is small enough to play on a phone with little
+     * memory.
+     */
+    static boolean usableMotion(int width, int height) {
+        return width > 0 && height > 0 && width <= MAX_MOTION_SIDE && height <= MAX_MOTION_SIDE;
     }
 
     /**

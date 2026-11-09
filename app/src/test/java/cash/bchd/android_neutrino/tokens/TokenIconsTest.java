@@ -128,4 +128,12 @@ public class TokenIconsTest {
         assertFalse(hashed.substring(token.length() + 1).matches("[0-9a-f]*"));
         assertEquals(token + "-01", TokenIcons.nftName(token, "01"));
     }
+
+    @Test
+    public void artThatMovesHasASmallerLimit() {
+        assertTrue(TokenIcons.usableMotion(2048, 2048));
+        assertFalse(TokenIcons.usableMotion(2049, 10));
+        assertFalse(TokenIcons.usableMotion(10, 4096));
+        assertFalse(TokenIcons.usableMotion(0, 10));
+    }
 }
