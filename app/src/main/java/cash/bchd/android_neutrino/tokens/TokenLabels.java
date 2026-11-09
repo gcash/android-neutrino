@@ -44,9 +44,19 @@ public final class TokenLabels {
     }
 
     /**
-     * update takes what the wallet said, and returns whether anything changed.
+     * update takes what the wallet said, without NFT types, and returns whether anything
+     * changed.  The types a token had stay, as the answer didn't ask for them.
      */
     public static boolean update(List<TokenMeta> tokens) {
+        return update(tokens, false);
+    }
+
+    /**
+     * update takes what the wallet said, and returns whether anything changed.  With
+     * typesAsked, the answer's NFT types are the token's, none too, as when its registry
+     * dropped them, and else the types it had stay.
+     */
+    public static boolean update(List<TokenMeta> tokens, boolean typesAsked) {
         AtomicBoolean changed = new AtomicBoolean();
         Set<String> held = TokenLabels.held;
         for (TokenMeta token : tokens) {
@@ -55,7 +65,7 @@ public final class TokenLabels {
             }
             SAID.add(token.category);
             TOKENS.compute(token.category, (category, before) -> {
-                TokenMeta now = token.keepingNftTypes(before);
+                TokenMeta now = typesAsked ? token : token.keepingNftTypes(before);
                 if (!now.equals(before)) {
                     changed.set(true);
                     VERSION.incrementAndGet();

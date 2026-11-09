@@ -230,7 +230,7 @@ final class TransactionDetailsPopup {
                 new FutureCallback<List<TokenMeta>>() {
                     @Override
                     public void onSuccess(List<TokenMeta> tokens) {
-                        TokenLabels.update(tokens);
+                        TokenLabels.update(tokens, true);
                         details.post(() -> {
                             if (!popupWindow.isShowing()) {
                                 return;

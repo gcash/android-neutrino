@@ -274,7 +274,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
                     public void onSuccess(List<TokenMeta> tokens) {
                         // Nothing to draw again if it said nothing new, and a wallet with many
                         // tokens asks this as the screen opens.
-                        if (TokenLabels.update(tokens)) {
+                        if (TokenLabels.update(tokens, true)) {
                             cLayout.post(() -> notifyItemRangeChanged(0, getItemCount()));
                         }
                     }

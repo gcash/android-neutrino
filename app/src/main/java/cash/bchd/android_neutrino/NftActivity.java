@@ -144,7 +144,7 @@ public class NftActivity extends AppCompatActivity {
                 boolean changed = false;
                 try {
                     changed = TokenLabels.update(
-                            wallet.tokenMetadataAsync(Collections.singletonList(category), types).get());
+                            wallet.tokenMetadataAsync(Collections.singletonList(category), types).get(), types);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

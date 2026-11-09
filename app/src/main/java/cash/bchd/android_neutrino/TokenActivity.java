@@ -269,7 +269,7 @@ public class TokenActivity extends AppCompatActivity {
                 new FutureCallback<List<TokenMeta>>() {
                     @Override
                     public void onSuccess(List<TokenMeta> metadata) {
-                        boolean changed = TokenLabels.update(metadata);
+                        boolean changed = TokenLabels.update(metadata, types);
                         // The types, now that there's metadata to have them with.
                         boolean typesNow = !types && nfts != null && !metadata.isEmpty()
                                 && metadata.get(0).hasMetadata && !TokenLabels.hasNftTypes(category);
