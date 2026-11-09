@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
 import cash.bchd.android_neutrino.wallet.WalletSecret;
@@ -255,6 +256,12 @@ public class Settings {
         prefs.edit().putStringSet(LOADED_ICONS_KEY, loaded).apply();
     }
 
+    void removeLoadedIcon(String category) {
+        Set<String> loaded = getLoadedIcons();
+        loaded.remove(category);
+        prefs.edit().putStringSet(LOADED_ICONS_KEY, loaded).apply();
+    }
+
     // The hidden tokens, the one hidden last first. Those hidden before the order was kept come
     // after, by token ID.
     List<String> getHiddenTokensNewestFirst() {
@@ -284,6 +291,7 @@ public class Settings {
         order.add(0, category);
         prefs.edit().putStringSet(HIDDEN_TOKENS_KEY, hidden)
                 .putString(HIDDEN_ORDER_KEY, String.join(",", order)).apply();
+        TokenLabels.hold(hidden);
     }
 
     void showToken(String category) {
@@ -293,6 +301,7 @@ public class Settings {
         order.remove(category);
         prefs.edit().putStringSet(HIDDEN_TOKENS_KEY, hidden)
                 .putString(HIDDEN_ORDER_KEY, String.join(",", order)).apply();
+        TokenLabels.hold(hidden);
     }
 
     void setLastBlockHeight(int blockHeight) {

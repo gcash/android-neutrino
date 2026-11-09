@@ -7,6 +7,8 @@ import androidx.annotation.StringRes;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -33,6 +35,8 @@ public final class TokenLabels {
     private static final AtomicLong VERSION = new AtomicLong();
     // Told when the labels change, to keep them.
     private static volatile Runnable onChange;
+    // The hidden tokens, whose labels stay as they were, as the wallet forgets them.
+    private static volatile Set<String> held = Collections.emptySet();
 
     private TokenLabels() {
     }
@@ -42,7 +46,11 @@ public final class TokenLabels {
      */
     public static boolean update(List<TokenMeta> tokens) {
         AtomicBoolean changed = new AtomicBoolean();
+        Set<String> held = TokenLabels.held;
         for (TokenMeta token : tokens) {
+            if (held.contains(token.category) && TOKENS.containsKey(token.category)) {
+                continue;
+            }
             SAID.add(token.category);
             TOKENS.compute(token.category, (category, before) -> {
                 TokenMeta now = token.keepingNftTypes(before);
@@ -58,6 +66,14 @@ public final class TokenLabels {
             told.run();
         }
         return changed.get();
+    }
+
+    /**
+     * hold keeps the labels of the hidden tokens as they are, as the wallet forgets what it knew of
+     * them, so that Hidden Tokens can still name them. A token that's shown again is told of anew.
+     */
+    public static void hold(Set<String> hidden) {
+        held = Collections.unmodifiableSet(new HashSet<>(hidden));
     }
 
     /**

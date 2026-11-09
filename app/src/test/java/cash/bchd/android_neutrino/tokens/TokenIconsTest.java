@@ -4,8 +4,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 
 public class TokenIconsTest {
@@ -76,5 +80,24 @@ public class TokenIconsTest {
         assertEquals("[25, 100]", java.util.Arrays.toString(TokenIcons.fitted(100, 400, 100)));
         assertEquals("[100, 100]", java.util.Arrays.toString(TokenIcons.fitted(300, 300, 100)));
         assertEquals("[1, 100]", java.util.Arrays.toString(TokenIcons.fitted(1, 4000, 100)));
+    }
+
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder();
+
+    @Test
+    public void forgettingATokenRemovesOnlyItsFiles() throws IOException {
+        String token = "aa".repeat(32), other = "bb".repeat(32);
+        File icons = folder.newFolder("icons"), art = folder.newFolder("art");
+        String[] mine = {token, token + "-01", token + "-01.source", token + "-01.motion"};
+        for (String name : mine) {
+            assertTrue(new File(icons, name).createNewFile());
+        }
+        assertTrue(new File(art, token + "-01-1f").createNewFile());
+        assertTrue(new File(icons, other).createNewFile());
+        assertTrue(new File(art, other + "-01-1f").createNewFile());
+        TokenIcons.forget(token, icons, art);
+        assertEquals(Arrays.asList(other), Arrays.asList(icons.list()));
+        assertEquals(Arrays.asList(other + "-01-1f"), Arrays.asList(art.list()));
     }
 }

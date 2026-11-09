@@ -93,6 +93,7 @@ import cash.bchd.android_neutrino.wallet.TransactionData;
 import cash.bchd.android_neutrino.wallet.TransactionList;
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletEventListener;
+import walletrpc.Api;
 
 
 
@@ -417,6 +418,7 @@ public class MainActivity extends CloseActivity {
     protected void onStart() {
         super.onStart();
         if (settings != null) {
+            TokenLabels.hold(settings.getHiddenTokens());
             // The tokens as the wallet last told them, and the transactions, without a token
             // that its screen hid since, or with one that Settings showed again.
             showTokens(settings.getLastTokens());
@@ -767,7 +769,7 @@ public class MainActivity extends CloseActivity {
     }
 
     // offerUndoHide says that a token's screen hid it, and offers to show it again for a few
-    // seconds, once.
+    // seconds, once. Then what's kept of it is forgotten.
     private void offerUndoHide() {
         String category = getIntent().getStringExtra(EXTRA_HIDDEN_TOKEN);
         if (category == null) {
@@ -778,7 +780,36 @@ public class MainActivity extends CloseActivity {
             settings.showToken(category);
             showTokens(settings.getLastTokens());
             mAdapter.setNewData(TransactionList.withoutHidden(txStore.getData(), settings.getHiddenTokens()));
+        }).addCallback(new Snackbar.Callback() {
+            @Override
+            public void onDismissed(Snackbar snackbar, int event) {
+                if (event != DISMISS_EVENT_ACTION && settings.getHiddenTokens().contains(category)) {
+                    forgetToken(category);
+                }
+            }
         }).show();
+    }
+
+    // forgetToken drops all that the wallet and the app keep of a hidden token, a collection's NFT
+    // types and art can be large, but its label, so that Hidden Tokens can name it. Shown again,
+    // it's found as if new.
+    private void forgetToken(String category) {
+        TokenIcons.forget(this, category);
+        settings.removeLoadedIcon(category);
+        Wallet wallet = Wallet.getInstance();
+        if (wallet == null || !wallet.isRunning()) {
+            return;
+        }
+        Futures.addCallback(wallet.forgetTokenAsync(category), new FutureCallback<Api.ForgetTokenResponse>() {
+            @Override
+            public void onSuccess(Api.ForgetTokenResponse reply) {
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                t.printStackTrace();
+            }
+        }, MoreExecutors.directExecutor());
     }
 
     // openLaunchPayment opens the payment link or payment request file that started the app,

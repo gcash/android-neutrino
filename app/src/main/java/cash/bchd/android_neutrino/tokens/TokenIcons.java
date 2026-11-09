@@ -393,6 +393,26 @@ public final class TokenIcons {
         deleteAll(new File(context.getCacheDir(), MOTION_DIR));
     }
 
+    /**
+     * forget removes all that was kept of a token's images, its icon and its NFTs' art, as for one
+     * the user hid. Each of its files' names starts with its token ID.
+     */
+    public static void forget(Context context, String category) {
+        forget(category, new File(context.getFilesDir(), ICON_DIR), new File(context.getCacheDir(), MOTION_DIR));
+        VERSION.incrementAndGet();
+    }
+
+    static void forget(String category, File... dirs) {
+        for (File dir : dirs) {
+            File[] files = dir.listFiles((d, name) -> name.startsWith(category));
+            if (files != null) {
+                for (File file : files) {
+                    file.delete();
+                }
+            }
+        }
+    }
+
     private static void deleteAll(File dir) {
         File[] files = dir.listFiles();
         if (files != null) {

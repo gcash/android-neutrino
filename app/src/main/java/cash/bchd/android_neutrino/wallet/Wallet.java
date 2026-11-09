@@ -661,6 +661,16 @@ public class Wallet implements Serializable {
     }
 
     /**
+     * forgetTokenAsync has the wallet drop all it keeps of a token, as for one the user hid, so
+     * that one shown again starts as if never seen.
+     */
+    public ListenableFuture<Api.ForgetTokenResponse> forgetTokenAsync(String category) {
+        WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel)
+                .withCallCredentials(this.creds).withDeadlineAfter(10, TimeUnit.SECONDS);
+        return stub.forgetToken(Api.ForgetTokenRequest.newBuilder().setCategory(category).build());
+    }
+
+    /**
      * tokenIconAsync reads the image at an icon's URI. It has no deadline, as the wallet limits
      * downloads itself, by when they stall, and not by time spent waiting for a gateway.
      */

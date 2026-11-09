@@ -187,4 +187,29 @@ public class TokenLabelsTest {
         update(token().setLookAlike(true).setReservedName(true).setReservedSymbol(true));
         assertEquals(R.string.token_reserved_name, TokenLabels.badge(CATEGORY));
     }
+
+    @Test
+    public void aHiddenTokensLabelStaysAsItWas() {
+        update(token());
+        TokenLabels.hold(Collections.singleton(CATEGORY));
+        try {
+            update(token().setHasMetadata(false).setName(""));
+            assertEquals("Name", TokenLabels.title(CATEGORY));
+        } finally {
+            TokenLabels.hold(Collections.emptySet());
+        }
+        update(token().setHasMetadata(false).setName(""));
+        assertEquals(TokenBalance.shortId(CATEGORY), TokenLabels.title(CATEGORY));
+    }
+
+    @Test
+    public void aHiddenTokenWithNoLabelTakesOne() {
+        TokenLabels.hold(Collections.singleton(CATEGORY));
+        try {
+            update(token());
+            assertEquals("Name", TokenLabels.title(CATEGORY));
+        } finally {
+            TokenLabels.hold(Collections.emptySet());
+        }
+    }
 }
