@@ -165,9 +165,9 @@
     <string name="token_settings">Tokens</string>
     <string name="token_settings_summary">Loading token details and images, and IPFS gateways.</string>
     <string name="token_auto_load">Load token details automatically</string>
-    <string name="token_auto_load_summary">Look up the tokens you receive. A token\'s host sees that you asked, which could reveal your IP address. With this off, use a token\'s menu. Takes effect when the wallet restarts.</string>
+    <string name="token_auto_load_summary">Look up the tokens you receive that the app knows of, as of its release. A token\'s host sees that you asked, which could reveal your IP address. Newer tokens, and all of them with this off, wait for Fetch metadata in the token\'s menu. Takes effect when the wallet restarts.</string>
     <string name="token_images">Token images</string>
-    <string name="token_images_summary">Load the icons of your tokens. Each icon\'s host sees that you asked. You can also load one from a token\'s menu.</string>
+    <string name="token_images_summary">Load the icons of your tokens and the art of their NFTs. Each image\'s host sees that you asked. You can also load a token\'s from its menu.</string>
     <string name="ipfs_gateways">IPFS gateways</string>
     <string name="ipfs_gateways_invalid">None of those is an HTTPS gateway, such as ipfs.io.</string>
     <string name="nft_storage">NFT storage</string>
