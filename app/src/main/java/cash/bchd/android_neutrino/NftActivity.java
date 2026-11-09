@@ -66,8 +66,8 @@ public class NftActivity extends AppCompatActivity {
     private NftArt art;
     // How many more times to look for what a fetch brought.
     private int refreshesLeft;
-    private static final int FETCH_REFRESHES = 6;
     private static final long FETCH_REFRESH_MS = 5_000;
+    private static final int FETCH_REFRESHES = (int) (TokenActivity.FETCH_WAIT_MS / FETCH_REFRESH_MS);
     private final Handler handler = new Handler(Looper.getMainLooper());
     // The wallet stops while the app is away, and takes a moment when it comes back to this screen.
     private final Runnable walletReady = this::refresh;
@@ -126,17 +126,23 @@ public class NftActivity extends AppCompatActivity {
         new Thread(() -> {
             try {
                 List<TokenBalance> tokens = wallet.tokenBalances();
+                boolean changed = false;
                 try {
-                    TokenLabels.update(wallet.tokenMetadataAsync(Collections.singletonList(category), true).get());
+                    changed = TokenLabels.update(
+                            wallet.tokenMetadataAsync(Collections.singletonList(category), true).get());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+                boolean readOver = changed && TokenActivity.readOver(category);
                 runOnUiThread(() -> {
                     if (isDestroyed()) {
                         return;
                     }
                     showNft(tokens);
-                    // The wallet only starts fetching when it's asked to.
+                    // After Fetch metadata, until what the registry read found shows.
+                    if (readOver) {
+                        refreshesLeft = 0;
+                    }
                     if (refreshesLeft > 0) {
                         refreshesLeft--;
                         handler.postDelayed(this::refresh, FETCH_REFRESH_MS);

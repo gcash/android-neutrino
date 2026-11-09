@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -79,6 +80,8 @@ public class TokenActivity extends AppCompatActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
     // Whether the user asked for the token's metadata on this screen.
     private boolean fetched;
+    // Until when the screen keeps asking for what Fetch metadata finds, as an uptime.
+    private long fetchedUntil;
     // Whether the collection's NFTs can show, as they sort by the names the wallet says, and
     // shouldn't jump to their places once it has.
     private boolean nftsReady;
@@ -96,6 +99,9 @@ public class TokenActivity extends AppCompatActivity {
         }
     });
     private static final long ASK_INTERVAL_MS = 5_000;
+    // How long the screen keeps asking after Fetch metadata, as the registry is read after the
+    // wallet answers it, and can take a while to download.
+    static final long FETCH_WAIT_MS = 120_000;
 
     /**
      * open opens the screen of a token on the Tokens page: that of its NFTs for a category that
@@ -234,7 +240,7 @@ public class TokenActivity extends AppCompatActivity {
                 new FutureCallback<List<TokenMeta>>() {
                     @Override
                     public void onSuccess(List<TokenMeta> metadata) {
-                        TokenLabels.update(metadata);
+                        boolean changed = TokenLabels.update(metadata);
                         // The types, now that there's metadata to have them with.
                         boolean typesNow = !types && nfts != null && !metadata.isEmpty()
                                 && metadata.get(0).hasMetadata && !TokenLabels.hasNftTypes(category);
@@ -257,8 +263,13 @@ public class TokenActivity extends AppCompatActivity {
                             if (nfts != null) {
                                 nfts.labelsChanged();
                             }
-                            if (!metadata.isEmpty() && metadata.get(0).status == TokenMeta.Status.SEARCHING
-                                    && (metadata.get(0).loadsByItself || fetched)) {
+                            if (changed && readOver(category)) {
+                                fetchedUntil = 0;
+                            }
+                            boolean searching = !metadata.isEmpty()
+                                    && metadata.get(0).status == TokenMeta.Status.SEARCHING
+                                    && (metadata.get(0).loadsByItself || fetched);
+                            if (searching || SystemClock.elapsedRealtime() < fetchedUntil) {
                                 handler.removeCallbacks(askAgain);
                                 handler.postDelayed(askAgain, ASK_INTERVAL_MS);
                             }
@@ -301,6 +312,15 @@ public class TokenActivity extends AppCompatActivity {
         if (text != 0) {
             badge.setText(text);
         }
+    }
+
+    /**
+     * readOver returns whether a registry read has said what it found, after a change of what's
+     * known of the token: metadata, or that the registry couldn't be read.
+     */
+    static boolean readOver(String category) {
+        TokenMeta token = TokenLabels.get(category);
+        return token != null && (token.hasMetadata || token.registryFailed);
     }
 
     /**
@@ -491,7 +511,10 @@ public class TokenActivity extends AppCompatActivity {
             return true;
         } else if (itemId == R.id.fetchTokenMetadata) {
             fetched = true;
-            fetchMetadata(this, layout, category, this::askWallet);
+            fetchMetadata(this, layout, category, () -> {
+                fetchedUntil = SystemClock.elapsedRealtime() + FETCH_WAIT_MS;
+                askWallet();
+            });
             return true;
         } else if (itemId == R.id.loadTokenIcon) {
             loadIcon(this, settings, layout, category, () -> {
