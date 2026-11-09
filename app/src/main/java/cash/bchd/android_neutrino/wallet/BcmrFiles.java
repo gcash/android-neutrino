@@ -16,12 +16,18 @@ import java.nio.charset.StandardCharsets;
 /**
  * BcmrFiles puts the files that ship with the app where bchwallet reads them: the hints table of
  * every token, and the Known list. They're copied out of the APK so that a newer table can take
- * the place of the bundled one, and a bundled table only replaces an older one.
+ * the place of the bundled one, and a bundled table replaces any other that isn't whole, newer or
+ * the same.
  */
 public final class BcmrFiles {
 
     private static final String MAGIC = "BCMRHNT1";
     private static final int HEIGHT_OFFSET = MAGIC.length();
+    // A table's header: the magic, the height, and the numbers of entries and of publications,
+    // which take ENTRY_SIZE and PUBLICATION_SIZE bytes each after it.
+    private static final int HEADER_SIZE = HEIGHT_OFFSET + 12;
+    private static final int ENTRY_SIZE = 72;
+    private static final int PUBLICATION_SIZE = 36;
 
     private BcmrFiles() {
     }
@@ -46,7 +52,7 @@ public final class BcmrFiles {
         AssetManager assets = context.getAssets();
         try (InputStream in = assets.open("bcmr/" + name)) {
             byte[] bundled = readAll(in);
-            if (!file.exists() || !isHints || isNewer(bundled, file)) {
+            if (!file.exists() || !isHints || !keeps(file, bundled)) {
                 write(dir, file, bundled);
             }
             return file.getPath();
@@ -56,14 +62,35 @@ public final class BcmrFiles {
         }
     }
 
-    private static boolean isNewer(byte[] bundled, File file) throws IOException {
-        byte[] header = new byte[HEIGHT_OFFSET + 4];
+    /**
+     * keeps returns whether an installed table stays rather than the bundled one: only one that's
+     * whole, and newer, as an update to the table can bring, or of the same height and size, as the
+     * bundled one written before is. One that's torn, or of the same height but another, gives way.
+     */
+    static boolean keeps(File file, byte[] bundled) throws IOException {
+        byte[] header = new byte[HEADER_SIZE];
         try (InputStream in = new FileInputStream(file)) {
             if (in.read(header) != header.length) {
-                return true;
+                return false;
             }
         }
-        return height(bundled) > height(header);
+        if (size(header) != file.length()) {
+            return false;
+        }
+        long installed = height(header), shipped = height(bundled);
+        return installed > shipped || installed == shipped && file.length() == bundled.length;
+    }
+
+    /**
+     * size returns the size a table's header says it has, or -1 if it isn't one.
+     */
+    static long size(byte[] header) {
+        if (header.length < HEADER_SIZE || height(header) < 0) {
+            return -1;
+        }
+        ByteBuffer counts = ByteBuffer.wrap(header, HEIGHT_OFFSET + 4, 8).order(ByteOrder.LITTLE_ENDIAN);
+        long entries = counts.getInt() & 0xffffffffL, publications = counts.getInt() & 0xffffffffL;
+        return HEADER_SIZE + entries * ENTRY_SIZE + publications * PUBLICATION_SIZE;
     }
 
     /**
@@ -93,8 +120,10 @@ public final class BcmrFiles {
             throw new IOException("can't make " + dir);
         }
         File tmp = new File(dir, file.getName() + ".tmp");
+        // On the disk before it takes the old one's place, so that a crash leaves one or the other.
         try (FileOutputStream out = new FileOutputStream(tmp)) {
             out.write(data);
+            out.getFD().sync();
         }
         if (!tmp.renameTo(file)) {
             throw new IOException("can't replace " + file);
