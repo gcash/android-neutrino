@@ -571,8 +571,9 @@ public final class TokenIcons {
         }
     }
 
-    private static void trimMotion(File dir, File keep) {
-        File[] files = dir.listFiles();
+    static void trimMotion(File dir, File keep) {
+        // Not another save's file still being written, which would end that save.
+        File[] files = dir.listFiles((d, name) -> !name.endsWith(".tmp"));
         if (files == null) {
             return;
         }

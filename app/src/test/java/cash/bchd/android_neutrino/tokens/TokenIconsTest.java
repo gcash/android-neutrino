@@ -100,4 +100,20 @@ public class TokenIconsTest {
         assertEquals(Arrays.asList(other), Arrays.asList(icons.list()));
         assertEquals(Arrays.asList(other + "-01-1f"), Arrays.asList(art.list()));
     }
+
+    @Test
+    public void trimmingLeavesFilesBeingWritten() throws IOException {
+        File art = folder.newFolder("motion");
+        File writing = new File(art, "motion123.tmp");
+        assertTrue(writing.createNewFile());
+        File old = new File(art, "old");
+        java.nio.file.Files.write(old.toPath(), new byte[1 << 20]);
+        assertTrue(old.setLastModified(System.currentTimeMillis() - 60_000));
+        File kept = new File(art, "kept");
+        java.nio.file.Files.write(kept.toPath(), new byte[40 << 20]);
+        TokenIcons.trimMotion(art, kept);
+        assertTrue(writing.exists());
+        assertTrue(kept.exists());
+        assertFalse(old.exists());
+    }
 }
