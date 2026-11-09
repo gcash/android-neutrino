@@ -56,7 +56,7 @@ final class WalletStarter {
         TokenLabelFile.open(context, settings.getNetwork());
         cfg.setTokenMetadata(BcmrFiles.hintsPath(context, settings.getNetwork()),
                 BcmrFiles.knownPath(context, settings.getNetwork()), settings.getIpfsGateways(),
-                settings.getTokenAutoLoad());
+                settings.getTokenAutoLoad(), settings.getNftStorageMb());
         Wallet wallet = new Wallet(context, cfg);
         wallet.start();
         return wallet;

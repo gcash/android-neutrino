@@ -24,4 +24,12 @@ public class ConfigTest {
         assertFalse(data.contains("testnet"));
         assertFalse(data.contains("chipnet"));
     }
+
+    @Test
+    public void limitsTheNftTypes() {
+        Config config = config(Network.MAINNET);
+        assertTrue(config.getConfigData().contains("\nbcmrnftlimit=1024\n"));
+        config.setTokenMetadata("", "", new String[0], true, 0);
+        assertTrue(config.getConfigData().contains("\nbcmrnftlimit=0\n"));
+    }
 }

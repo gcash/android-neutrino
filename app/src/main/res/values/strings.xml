@@ -169,6 +169,10 @@
     <string name="token_images_summary">Load the icons of your tokens. Each icon\'s host sees that you asked. You can also load one from a token\'s menu.</string>
     <string name="ipfs_gateways">IPFS gateways</string>
     <string name="ipfs_gateways_invalid">None of those is an HTTPS gateway, such as ipfs.io.</string>
+    <string name="nft_storage">NFT storage</string>
+    <string name="nft_storage_summary">Up to %1$s for what NFT collections\' registries say of their NFTs. Past it, the collections looked at longest ago are deleted, and loaded again when they\'re looked at. Takes effect the next time the wallet starts.</string>
+    <string name="nft_storage_summary_unlimited">No limit on what NFT collections\' registries say of their NFTs. Takes effect the next time the wallet starts.</string>
+    <string name="nft_storage_unlimited">Unlimited</string>
     <string name="ipfs_gateways_summary">The servers that token metadata and icons on IPFS load through, separated by commas. Takes effect the next time the wallet starts.</string>
     <string name="token_identity_not_found">Its identity couldn\'t be found</string>
     <string name="token_node_needs_index">Your node needs --bcmrindex for token names</string>

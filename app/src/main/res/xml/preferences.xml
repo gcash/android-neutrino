@@ -126,6 +126,14 @@
             android:title="@string/token_images"
             app:summary="@string/token_images_summary" />
 
+        <ListPreference
+            android:entries="@array/nft_storage_names"
+            android:entryValues="@array/nft_storage_values"
+            android:icon="@drawable/token_icon_small"
+            android:key="nftStorage"
+            android:persistent="false"
+            android:title="@string/nft_storage" />
+
         <EditTextPreference
             android:icon="@drawable/ip_icon_small"
             android:key="ipfsGateways"

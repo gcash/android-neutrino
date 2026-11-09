@@ -305,6 +305,16 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                     return true;
                 });
             }
+            ListPreference storagePref = findPreference("nftStorage");
+            if (storagePref != null) {
+                showNftStorage(storagePref, settings.getNftStorageMb());
+                storagePref.setOnPreferenceChangeListener((preference, o) -> {
+                    int mb = Integer.parseInt(o.toString());
+                    settings.setNftStorageMb(mb);
+                    showNftStorage(storagePref, mb);
+                    return false;
+                });
+            }
             EditTextPreference gatewaysPref = findPreference("ipfsGateways");
             if (gatewaysPref != null) {
                 gatewaysPref.setText(settings.getIpfsGatewaysText());
@@ -414,6 +424,13 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     }
 
     // confirmNetworkSwitch asks whether to switch the app to the network's wallet, and switches.
+    // showNftStorage shows the NFT storage chosen.
+    private void showNftStorage(ListPreference pref, int mb) {
+        pref.setValue(String.valueOf(mb));
+        pref.setSummary(mb == 0 ? getString(R.string.nft_storage_summary_unlimited)
+                : getString(R.string.nft_storage_summary, pref.getEntry()));
+    }
+
     private void confirmNetworkSwitch(Network network) {
         String to = Networks.name(requireContext(), network);
         String from = Networks.name(requireContext(), settings.getNetwork());

@@ -3,6 +3,22 @@
         <item>mainnet</item>
         <item>testnet4</item>
     </string-array>
+    <string-array name="nft_storage_values" translatable="false">
+        <item>256</item>
+        <item>512</item>
+        <item>1024</item>
+        <item>2048</item>
+        <item>4096</item>
+        <item>0</item>
+    </string-array>
+    <string-array name="nft_storage_names">
+        <item>256 MB</item>
+        <item>512 MB</item>
+        <item>1 GB</item>
+        <item>2 GB</item>
+        <item>4 GB</item>
+        <item>@string/nft_storage_unlimited</item>
+    </string-array>
     <string-array name="network_names">
         <item>@string/network_mainnet</item>
         <item>@string/network_testnet4</item>

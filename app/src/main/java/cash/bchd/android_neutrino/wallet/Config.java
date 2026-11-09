@@ -61,6 +61,8 @@ public class Config {
     private String bcmrHints = "";
     private String bcmrKnown = "";
     private String[] bcmrGateways = new String[0];
+    // The most room the NFT types of collections take, in MB, or 0 for no limit.
+    private int bcmrNftLimitMb = 1024;
     private boolean bcmrAutoLoad = true;
 
     // The port of the wallet's gRPC server on 127.0.0.1. A random one is
@@ -104,11 +106,12 @@ public class Config {
     /**
      * setTokenMetadata gives the wallet what it reads token metadata with.
      */
-    public void setTokenMetadata(String hints, String known, String[] gateways, boolean autoLoad) {
+    public void setTokenMetadata(String hints, String known, String[] gateways, boolean autoLoad, int nftLimitMb) {
         this.bcmrHints = hints;
         this.bcmrKnown = known;
         this.bcmrGateways = gateways;
         this.bcmrAutoLoad = autoLoad;
+        this.bcmrNftLimitMb = nftLimitMb;
     }
 
     /**
@@ -164,6 +167,7 @@ public class Config {
         for (String gateway : this.bcmrGateways) {
             configFileContents += "bcmrgateway=" + gateway + "\n";
         }
+        configFileContents += "bcmrnftlimit=" + this.bcmrNftLimitMb + "\n";
         return configFileContents;
     }
 

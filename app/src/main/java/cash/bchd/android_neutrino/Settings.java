@@ -34,6 +34,7 @@ public class Settings {
     private static final String IPFS_GATEWAYS_KEY = "IpfsGateways";
     private static final String TOKEN_IMAGES_KEY = "TokenImages";
     private static final String TOKEN_AUTO_LOAD_KEY = "TokenAutoLoad";
+    private static final String NFT_STORAGE_KEY = "NftStorageMb";
     private static final String DEFAULT_IPFS_GATEWAYS =
             "ipfs.filebase.io, ipfs.orbitor.dev, gateway.pinata.cloud, ipfs.io, dweb.link";
     private static final String DEFAULT_MEMO_KEY = "DefaultMemo";
@@ -539,6 +540,16 @@ public class Settings {
 
     void setTokenAutoLoad(boolean on) {
         appPrefs.edit().putBoolean(TOKEN_AUTO_LOAD_KEY, on).apply();
+    }
+
+    // The most room the NFT types of collections take, in MB, or 0 for no limit: past it, the
+    // wallet deletes those looked at longest ago, and reads them again when they're looked at.
+    int getNftStorageMb() {
+        return appPrefs.getInt(NFT_STORAGE_KEY, 1024);
+    }
+
+    void setNftStorageMb(int mb) {
+        appPrefs.edit().putInt(NFT_STORAGE_KEY, mb).apply();
     }
 
     // Whether token icons load by themselves. It's off, as a host sees who asks.
