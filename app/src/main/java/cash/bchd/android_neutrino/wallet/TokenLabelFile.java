@@ -44,6 +44,10 @@ public final class TokenLabelFile {
      * wallet said stays over a restart, which screens stay open across.
      */
     public static void open(Context context, Network now) {
+        open(context.getFilesDir(), now);
+    }
+
+    static void open(File dir, Network now) {
         // Without the lock, as a save can hold it, and a screen is waiting.
         if (now == network) {
             return;
@@ -62,9 +66,12 @@ public final class TokenLabelFile {
                     }
                 });
             }
+            // A save that was coming is the last network's, done above, which one for this
+            // network's changes doesn't wait for.
+            saveDue = false;
             TokenLabels.clear();
             network = now;
-            file = new File(context.getFilesDir(), fileName(now));
+            file = new File(dir, fileName(now));
             TokenLabels.onChange(TokenLabelFile::saveSoon);
             // Off the main thread, and on the thread that saves, so that no save comes before it.
             // What the wallet said meanwhile stays over it.
@@ -96,11 +103,18 @@ public final class TokenLabelFile {
     private static synchronized void saveSoon() {
         if (!saveDue) {
             saveDue = true;
-            SAVER.schedule(TokenLabelFile::save, SAVE_DELAY_SECONDS, TimeUnit.SECONDS);
+            Network now = network;
+            SAVER.schedule(() -> save(now), SAVE_DELAY_SECONDS, TimeUnit.SECONDS);
         }
     }
 
-    private static synchronized void save() {
+    // save saves the labels of the network the save was for, and does nothing once another's are
+    // open, as a save that came due as the network changed would write the new network's file
+    // before it's read.
+    static synchronized void save(Network scheduled) {
+        if (scheduled != network) {
+            return;
+        }
         saveDue = false;
         try {
             write(file, TokenLabels.all());

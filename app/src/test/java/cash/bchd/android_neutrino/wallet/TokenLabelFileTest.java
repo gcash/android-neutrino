@@ -110,6 +110,29 @@ public class TokenLabelFileTest {
     }
 
     @Test
+    public void aSaveForTheLastNetworkLeavesTheNewOnesFile() throws IOException, InterruptedException {
+        File dir = folder.getRoot();
+        File testnet = new File(dir, TokenLabelFile.fileName(Network.TESTNET4));
+        TokenLabelFile.write(testnet, Collections.singletonList(token("Kept")));
+        try {
+            TokenLabelFile.open(dir, Network.MAINNET);
+            TokenLabelFile.open(dir, Network.TESTNET4);
+            // Wide, as the file is read on another thread, which a slow machine can be late to.
+            for (int i = 0; i < 1000 && TokenLabels.get(CATEGORY) == null; i++) {
+                Thread.sleep(10);
+            }
+            assertEquals("Kept", TokenLabels.get(CATEGORY).name);
+            // As if the save came due as the network changed, before the new file was read.
+            TokenLabels.clear();
+            TokenLabelFile.save(Network.MAINNET);
+            assertEquals(1, TokenLabelFile.read(testnet).size());
+            assertFalse(new File(dir, TokenLabelFile.fileName(Network.MAINNET)).exists());
+        } finally {
+            TokenLabels.onChange(null);
+        }
+    }
+
+    @Test
     public void eachNetworkHasItsOwnFile() {
         assertNotEquals(TokenLabelFile.fileName(Network.MAINNET), TokenLabelFile.fileName(Network.TESTNET4));
     }
