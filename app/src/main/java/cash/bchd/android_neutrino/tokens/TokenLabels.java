@@ -89,6 +89,9 @@ public final class TokenLabels {
             if (TOKENS.putIfAbsent(token.category, token) == null) {
                 VERSION.incrementAndGet();
                 loaded = true;
+                // What was drawn before, with no label, can be what a look-alike's
+                // label has it not show.
+                TokenIcons.forgetDrawn(token.category);
             }
         }
         Runnable told = onLoad;

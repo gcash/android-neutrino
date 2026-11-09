@@ -257,4 +257,11 @@ public class TokenLabelsTest {
             TokenLabels.onLoad(null);
         }
     }
+
+    @Test
+    public void whatLoadsLetsGoOfWhatWasDrawn() {
+        long before = TokenIcons.generation(CATEGORY);
+        TokenLabels.load(Collections.singletonList(new TokenMeta(token().setLookAlike(true).build())));
+        assertEquals(before + 1, TokenIcons.generation(CATEGORY));
+    }
 }

@@ -12,6 +12,8 @@ import android.media.MediaMetadataRetriever;
 import android.os.Build;
 import android.widget.ImageView;
 
+import androidx.annotation.VisibleForTesting;
+
 import com.caverock.androidsvg.SVG;
 import com.caverock.androidsvg.SVGParseException;
 
@@ -176,6 +178,14 @@ public final class TokenIcons {
      */
     public static void forgetDrawn(String category) {
         DRAWN.removeStartingWith(category);
+    }
+
+    /**
+     * generation returns how many times what was drawn of a token was let go, for tests.
+     */
+    @VisibleForTesting
+    public static long generation(String category) {
+        return DRAWN.generations(category)[1];
     }
 
     // nftScope returns the scope of what's drawn of an NFT's art, at any size.
