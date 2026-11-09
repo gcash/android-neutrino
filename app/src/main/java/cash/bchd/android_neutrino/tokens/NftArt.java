@@ -112,11 +112,13 @@ public final class NftArt {
             String[] next = waiting.pollFirst();
             String category = next[0];
             String commitment = next[1];
-            // What was waiting may no longer be wanted, or known, or already be there. What can't
-            // load now can be asked for again.
+            // What was waiting may no longer be wanted, or known, or already be there, and the
+            // token may have turned out to be a look-alike, whose host nothing should reach. What
+            // can't load now can be asked for again.
             String uri = commitment == null ? next[2] : uri(category, commitment);
             boolean there = commitment != null && TokenIcons.hasNft(context, category, commitment);
-            if (uri == null || !TokenIcons.showing(category) || there || wallet == null || !wallet.isRunning()) {
+            if (uri == null || !TokenIcons.showing(category) || TokenLabels.isLookAlike(category) || there
+                    || wallet == null || !wallet.isRunning()) {
                 asked.remove(key(category, commitment));
                 continue;
             }
