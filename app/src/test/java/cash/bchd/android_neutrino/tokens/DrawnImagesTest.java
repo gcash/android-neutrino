@@ -1,7 +1,9 @@
 package cash.bchd.android_neutrino.tokens;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -41,5 +43,28 @@ public class DrawnImagesTest {
         assertEquals("x", drawn.get("bb:icon:64"));
         drawn.put("cc", "x".repeat(99));
         assertEquals("x", drawn.get("bb:icon:64"));
+    }
+
+    @Test
+    public void aDrawingWhoseScopeWentIsLetGo() {
+        DrawnImages<String> drawn = new DrawnImages<>(100, String::length);
+        String[] nft = {"aa", "aa:nft:01:"};
+        long[] seen = drawn.generations(nft);
+        drawn.removeStartingWith("aa:nft:02:");
+        assertTrue(drawn.putIfCurrent("aa:nft:01:64", "x", nft, seen));
+        seen = drawn.generations(nft);
+        drawn.removeStartingWith("aa:nft:01:");
+        assertFalse(drawn.putIfCurrent("aa:nft:01:64", "y", nft, seen));
+        assertNull(drawn.get("aa:nft:01:64"));
+        seen = drawn.generations(nft);
+        drawn.removeStartingWith("aa");
+        assertFalse(drawn.putIfCurrent("aa:nft:01:64", "y", nft, seen));
+        seen = drawn.generations(nft);
+        drawn.clear();
+        assertFalse(drawn.putIfCurrent("aa:nft:01:64", "y", nft, seen));
+        seen = drawn.generations(nft);
+        drawn.removeStartingWith("bb");
+        assertTrue(drawn.putIfCurrent("aa:nft:01:64", "z", nft, seen));
+        assertEquals("z", drawn.get("aa:nft:01:64"));
     }
 }

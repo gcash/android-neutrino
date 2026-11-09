@@ -80,8 +80,6 @@ public final class TokenIcons {
     // the memory the app may use, as every screen shows the same few and drawing them is slow.
     private static final DrawnImages<Bitmap> DRAWN = new DrawnImages<>(Runtime.getRuntime().maxMemory() / 8,
             Bitmap::getByteCount);
-    // Counts what was dropped of DRAWN, for a drawing begun before to be let go.
-    private static final AtomicLong DROPPED = new AtomicLong();
     // Draws the images off the main thread.
     private static final ExecutorService DRAWER = Executors.newFixedThreadPool(2);
 
@@ -160,7 +158,6 @@ public final class TokenIcons {
         // What was drawn of the tokens whose images now show or no longer do is wrong.
         if (all != allBefore) {
             DRAWN.clear();
-            DROPPED.incrementAndGet();
             return;
         }
         Set<String> changed = new HashSet<>(before);
@@ -179,7 +176,11 @@ public final class TokenIcons {
      */
     public static void forgetDrawn(String category) {
         DRAWN.removeStartingWith(category);
-        DROPPED.incrementAndGet();
+    }
+
+    // nftScope returns the scope of what's drawn of an NFT's art, at any size.
+    private static String nftScope(String category, String commitment) {
+        return category + ":nft:" + commitment + ":";
     }
 
     /**
@@ -188,7 +189,7 @@ public final class TokenIcons {
      */
     public static void showIcon(ImageView view, String category, int size) {
         Context context = view.getContext().getApplicationContext();
-        show(view, category + ":icon:" + size, category, size, () -> bitmap(context, category, size));
+        show(view, category + ":icon:" + size, category, size, () -> bitmap(context, category, size), category);
     }
 
     /**
@@ -196,8 +197,8 @@ public final class TokenIcons {
      */
     public static void showNft(ImageView view, String category, String commitment, int size) {
         Context context = view.getContext().getApplicationContext();
-        show(view, category + ":nft:" + size + ":" + commitment, category, size,
-                () -> nftBitmap(context, category, commitment, size));
+        String scope = nftScope(category, commitment);
+        show(view, scope + size, category, size, () -> nftBitmap(context, category, commitment, size), category, scope);
     }
 
     /**
@@ -254,7 +255,9 @@ public final class TokenIcons {
 
     // show puts the image of the key on the view, drawn at once if it was before, and else off the
     // main thread, the identicon showing until it is. A view shows only the image it was last given.
-    private static void show(ImageView view, String key, String category, int size, Drawing drawing) {
+    // What a scope's change made wrong while it was drawn is drawn again, if the view still wants it.
+    private static void show(ImageView view, String key, String category, int size, Drawing drawing,
+                             String... scopes) {
         view.setTag(R.id.image_key, key);
         Bitmap drawn = DRAWN.get(key);
         if (drawn != null) {
@@ -262,7 +265,7 @@ public final class TokenIcons {
             return;
         }
         view.setImageBitmap(identicon(category, size));
-        long dropped = DROPPED.get();
+        long[] seen = DRAWN.generations(scopes);
         DRAWER.execute(() -> {
             Bitmap image;
             try {
@@ -271,14 +274,18 @@ public final class TokenIcons {
                 e.printStackTrace();
                 return;
             }
-            // What changed while it was drawn is drawn again, for the screen that redraws it.
-            if (image == null || DROPPED.get() != dropped) {
+            if (image == null) {
                 return;
             }
-            DRAWN.put(key, image);
+            boolean current = DRAWN.putIfCurrent(key, image, scopes, seen);
             view.post(() -> {
-                if (key.equals(view.getTag(R.id.image_key))) {
+                if (!key.equals(view.getTag(R.id.image_key))) {
+                    return;
+                }
+                if (current) {
                     view.setImageBitmap(image);
+                } else {
+                    show(view, key, category, size, drawing, scopes);
                 }
             });
         });
@@ -394,7 +401,8 @@ public final class TokenIcons {
             motionMarker(context, category, commitment).delete();
         }
         if (saved) {
-            forgetDrawn(category);
+            // Only this NFT's, as the others' art and the icon are as they were.
+            DRAWN.removeStartingWith(nftScope(category, commitment));
         }
         return saved;
     }
