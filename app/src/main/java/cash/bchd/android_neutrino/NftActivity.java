@@ -25,6 +25,7 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout;
 
 import com.google.android.material.snackbar.Snackbar;
 
+import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +72,7 @@ public class NftActivity extends AppCompatActivity {
     private static final long FETCH_REFRESH_MS = 5_000;
     private static final int FETCH_REFRESHES = (int) (TokenActivity.FETCH_WAIT_MS / FETCH_REFRESH_MS);
     private final Handler handler = new Handler(Looper.getMainLooper());
+    private static final ExecutorService STORE_READER = Executors.newSingleThreadExecutor();
     // Whether to ask for the collection's NFT types though the screen has some, as a fetch is over.
     private boolean typesAgain;
     // The wallet stops while the app is away, and takes a moment when it comes back to this screen.
@@ -395,8 +397,27 @@ public class NftActivity extends AppCompatActivity {
     // showReceived shows when the NFT came, which opens the transaction it came in, if the main
     // screen has that transaction.
     private void showReceived() {
+        // Off the main thread, as a wallet with many transactions takes a while to read.
+        Context app = getApplicationContext();
+        Network network = this.network;
+        WeakReference<NftActivity> ref = new WeakReference<>(this);
+        STORE_READER.execute(() -> {
+            List<TransactionData> saved = new TransactionStore(app, network).getData();
+            NftActivity screen = ref.get();
+            if (screen == null) {
+                return;
+            }
+            screen.runOnUiThread(() -> {
+                if (!screen.isDestroyed()) {
+                    screen.showReceived(saved);
+                }
+            });
+        });
+    }
+
+    private void showReceived(List<TransactionData> saved) {
         TextView received = findViewById(R.id.nftReceived);
-        for (TransactionData tx : new TransactionStore(this, network).getData()) {
+        for (TransactionData tx : saved) {
             if (tx.getTxid().equals(txid)) {
                 // In the phone's language and its 12 or 24 hour clock.
                 received.setText(getString(R.string.nft_received, DateUtils.formatDateTime(this,

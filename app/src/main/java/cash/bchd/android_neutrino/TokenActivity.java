@@ -35,6 +35,8 @@ import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import cash.bchd.android_neutrino.tokens.TokenIcons;
 import cash.bchd.android_neutrino.tokens.TokenLabels;
@@ -78,6 +80,7 @@ public class TokenActivity extends AppCompatActivity {
     private PopupWindow detailsPopup;
     private final WalletEventListener listener = new Listener(this);
     private final Handler handler = new Handler(Looper.getMainLooper());
+    private static final ExecutorService STORE_READER = Executors.newSingleThreadExecutor();
     // Whether the user asked for the token's metadata on this screen.
     private boolean fetched;
     // Until when the screen keeps asking for what Fetch metadata finds, as an uptime.
@@ -211,13 +214,34 @@ public class TokenActivity extends AppCompatActivity {
             if (list.getItemAnimator() instanceof SimpleItemAnimator) {
                 ((SimpleItemAnimator) list.getItemAnimator()).setSupportsChangeAnimations(false);
             }
-            transactions = new TransactionStore(this, network).getData();
-            Collections.sort(transactions, Collections.reverseOrder());
             blockHeight = settings.getLastBlockHeight();
-            history.setTransactions(transactions, blockHeight);
+            readTransactions();
         }
         showToken(tokens);
         askWallet();
+    }
+
+    // readTransactions shows the transactions the main screen saved, read off the main thread, as
+    // a wallet with many takes a while to, unless the wallet told newer ones meanwhile.
+    private void readTransactions() {
+        Context app = getApplicationContext();
+        Network network = this.network;
+        WeakReference<TokenActivity> ref = new WeakReference<>(this);
+        STORE_READER.execute(() -> {
+            List<TransactionData> saved = new TransactionStore(app, network).getData();
+            Collections.sort(saved, Collections.reverseOrder());
+            TokenActivity screen = ref.get();
+            if (screen == null) {
+                return;
+            }
+            screen.runOnUiThread(() -> {
+                if (screen.isDestroyed() || screen.transactions != null) {
+                    return;
+                }
+                screen.transactions = saved;
+                screen.history.setTransactions(saved, screen.blockHeight);
+            });
+        });
     }
 
     // showIcon shows the token's icon, which is its identicon until one is loaded.
