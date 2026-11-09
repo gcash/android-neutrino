@@ -309,8 +309,10 @@ public class TokenActivity extends AppCompatActivity {
 
                     @Override
                     public void onFailure(Throwable t) {
-                        screen.runOnUiThread(() -> Snackbar.make(layout,
-                                R.string.fetch_token_metadata_failed, Snackbar.LENGTH_LONG).show());
+                        // Every gateway being paused or out isn't the token's fault, and passes.
+                        int message = Wallet.gatewaysBusy(t) ? R.string.gateways_busy
+                                : R.string.fetch_token_metadata_failed;
+                        screen.runOnUiThread(() -> Snackbar.make(layout, message, Snackbar.LENGTH_LONG).show());
                     }
                 }, MoreExecutors.directExecutor());
     }

@@ -692,7 +692,8 @@ public class Wallet implements Serializable {
     }
 
     /**
-     * gatewaysBusy returns whether an icon the user asked for failed as every gateway was busy.
+     * gatewaysBusy returns whether an icon or a Refresh the user asked for failed as every gateway
+     * was busy.
      */
     public static boolean gatewaysBusy(Throwable t) {
         return io.grpc.Status.fromThrowable(t).getCode() == io.grpc.Status.Code.RESOURCE_EXHAUSTED;
