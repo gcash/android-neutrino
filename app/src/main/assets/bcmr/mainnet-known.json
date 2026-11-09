@@ -5,7 +5,7 @@
   "minor": 1,
   "patch": 0
  },
- "latestRevision": "2026-11-06T00:00:00.000Z",
+ "latestRevision": "2026-11-07T00:00:00.000Z",
  "registryIdentity": {
   "name": "Neutrino Known list",
   "description": "Well-known CashTokens, by category ID, name, symbol and decimals."
@@ -121,16 +121,6 @@
     }
    }
   },
-  "1f91eb61e3c05f62cfc58ea81350450b6d2c41cce3fb9637c0833a8162aad868": {
-   "2026-11-06T00:00:00.000Z": {
-    "name": "SOL DE ORO",
-    "token": {
-     "category": "1f91eb61e3c05f62cfc58ea81350450b6d2c41cce3fb9637c0833a8162aad868",
-     "symbol": "SDO",
-     "decimals": 4
-    }
-   }
-  },
   "8473d94f604de351cdee3030f6c354d36b257861ad8e95bbc0a06fbab2a2f9cf": {
    "2026-11-06T00:00:00.000Z": {
     "name": "DogeCash",
@@ -151,23 +141,43 @@
     }
    }
   },
-  "e38d7f8e85da78943b3d7766e94c5560522ad67758402ae8f31765412b746292": {
-   "2026-11-06T00:00:00.000Z": {
-    "name": "Dragon City",
+  "945555908fa8f208b6a6588004037b886f70ab1641bae6720f2862afb7af7983": {
+   "2026-11-07T00:00:00.000Z": {
+    "name": "The Reapers",
     "token": {
-     "category": "e38d7f8e85da78943b3d7766e94c5560522ad67758402ae8f31765412b746292",
-     "symbol": "DRAGON",
-     "decimals": 6
+     "category": "945555908fa8f208b6a6588004037b886f70ab1641bae6720f2862afb7af7983",
+     "symbol": "REAPER",
+     "decimals": 0
     }
    }
   },
-  "0adb865ee9cc3038de87fba682e6cd361414edc9acff0da2fd0690d75341c640": {
-   "2026-11-06T00:00:00.000Z": {
-    "name": "FoldingCash",
+  "fafc4eee40d33b6a7eb50df2da3167ac6d226b19f2d7302664a718ec8d973c64": {
+   "2026-11-07T00:00:00.000Z": {
+    "name": "First Reapers Summons",
     "token": {
-     "category": "0adb865ee9cc3038de87fba682e6cd361414edc9acff0da2fd0690d75341c640",
-     "symbol": "FLDCH",
-     "decimals": 8
+     "category": "fafc4eee40d33b6a7eb50df2da3167ac6d226b19f2d7302664a718ec8d973c64",
+     "symbol": "SUMMON",
+     "decimals": 0
+    }
+   }
+  },
+  "04aa978537a08675a9465aefc1329e1198b11695d4d27d624cc8dd4c27ae2668": {
+   "2026-11-07T00:00:00.000Z": {
+    "name": "Cash-Ninjas Holiday Specials",
+    "token": {
+     "category": "04aa978537a08675a9465aefc1329e1198b11695d4d27d624cc8dd4c27ae2668",
+     "symbol": "HOLIDAY",
+     "decimals": 0
+    }
+   }
+  },
+  "77a95410a07c2392c340384aef323aea902ebfa698a35815c4ef100062c6d8ac": {
+   "2026-11-07T00:00:00.000Z": {
+    "name": "CashNinjas",
+    "token": {
+     "category": "77a95410a07c2392c340384aef323aea902ebfa698a35815c4ef100062c6d8ac",
+     "symbol": "CASHNINJA",
+     "decimals": 0
     }
    }
   }
