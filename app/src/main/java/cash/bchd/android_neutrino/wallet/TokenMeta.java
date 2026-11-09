@@ -57,6 +57,24 @@ public final class TokenMeta {
             imageUri = type.getImageUri();
             attributes = Collections.unmodifiableMap(new TreeMap<>(type.getAttributesMap()));
         }
+
+        @Override
+        public boolean equals(Object other) {
+            if (other == this) {
+                return true;
+            }
+            if (!(other instanceof NftType)) {
+                return false;
+            }
+            NftType o = (NftType) other;
+            return commitment.equals(o.commitment) && name.equals(o.name) && description.equals(o.description)
+                    && iconUri.equals(o.iconUri) && imageUri.equals(o.imageUri) && attributes.equals(o.attributes);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(commitment, name);
+        }
     }
 
     public final String category;
@@ -244,7 +262,8 @@ public final class TokenMeta {
             return false;
         }
         TokenMeta o = (TokenMeta) other;
-        return kept.equals(o.kept) && nftTypes.size() == o.nftTypes.size();
+        // The same types, kept from before, are the same list.
+        return kept.equals(o.kept) && (nftTypes == o.nftTypes || nftTypes.equals(o.nftTypes));
     }
 
     @Override

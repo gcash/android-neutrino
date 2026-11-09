@@ -115,4 +115,22 @@ public class TokenMetaTest {
         assertEquals(1, copied.nftTypes.size());
         assertTrue(copied.reservedName && copied.knownSymbol && !copied.reservedSymbol);
     }
+
+    @Test
+    public void renamedNftsAreAChange() {
+        Api.TokenMetadataResponse.Token.Builder said = Api.TokenMetadataResponse.Token.newBuilder()
+                .setCategory("aa").setHasMetadata(true).setName("Set").setSymbol("SET");
+        TokenMeta one = new TokenMeta(said.clone().addNftTypes(
+                Api.TokenMetadataResponse.NftType.newBuilder().setCommitment("01").setName("One")).build());
+        TokenMeta same = new TokenMeta(said.clone().addNftTypes(
+                Api.TokenMetadataResponse.NftType.newBuilder().setCommitment("01").setName("One")).build());
+        TokenMeta renamed = new TokenMeta(said.clone().addNftTypes(
+                Api.TokenMetadataResponse.NftType.newBuilder().setCommitment("01").setName("Uno")).build());
+        TokenMeta retraited = new TokenMeta(said.clone().addNftTypes(
+                Api.TokenMetadataResponse.NftType.newBuilder().setCommitment("01").setName("One")
+                        .putAttributes("Eyes", "Blue")).build());
+        assertEquals(one, same);
+        assertFalse(one.equals(renamed));
+        assertFalse(one.equals(retraited));
+    }
 }
