@@ -44,6 +44,9 @@ public final class NftArt {
     private final Deque<String[]> waiting = new ArrayDeque<>();
     // The tokens whose images the user asked for, whose art goes ahead of what loads by itself.
     private final Set<String> byUser = new HashSet<>();
+    // The art found saved from the URI the registry names, by token, NFT and URI, so that each
+    // row that shows it doesn't read its source file again.
+    private final TokenIcons.SavedChecks savedChecked = new TokenIcons.SavedChecks();
     private boolean stopped;
 
     public NftArt(Context context, Loaded done) {
@@ -61,8 +64,9 @@ public final class NftArt {
         // another URI than the registry names now is loaded again.
         String uri = uri(category, commitment);
         if (!TokenIcons.showing(category) || TokenLabels.isLookAlike(category) || uri == null
-                || TokenIcons.hasNft(context, category, commitment)
-                && TokenIcons.savedFrom(context, category, commitment, uri)
+                || TokenIcons.knownSaved(savedChecked, TokenIcons.version(), key(category, commitment) + " " + uri,
+                        () -> TokenIcons.hasNft(context, category, commitment)
+                                && TokenIcons.savedFrom(context, category, commitment, uri))
                 || !asked.add(key(category, commitment))) {
             return;
         }
@@ -75,7 +79,9 @@ public final class NftArt {
      */
     public void requestIcon(String category, String uri) {
         // An icon saved from another URI than the registry names now is loaded again.
-        if (TokenIcons.iconSavedFrom(context, category, uri) || !asked.add(category)) {
+        if (TokenIcons.knownSaved(savedChecked, TokenIcons.version(), category + " " + uri,
+                () -> TokenIcons.iconSavedFrom(context, category, uri))
+                || !asked.add(category)) {
             return;
         }
         waiting.addFirst(new String[]{category, null, uri});

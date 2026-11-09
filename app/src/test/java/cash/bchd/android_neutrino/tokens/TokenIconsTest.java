@@ -174,4 +174,31 @@ public class TokenIconsTest {
             dir.delete();
         }
     }
+
+    @Test
+    public void readsWhetherArtIsSavedOnceFound() {
+        TokenIcons.SavedChecks found = new TokenIcons.SavedChecks();
+        java.util.concurrent.atomic.AtomicInteger reads = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.function.BooleanSupplier saved = () -> {
+            reads.incrementAndGet();
+            return true;
+        };
+        for (int i = 0; i < 3; i++) {
+            assertTrue(TokenIcons.knownSaved(found, 1, "aa-01 ipfs://one", saved));
+        }
+        assertEquals(1, reads.get());
+
+        // Another URI is read, and what isn't saved is read each time, as a load can save it.
+        for (int i = 0; i < 2; i++) {
+            assertFalse(TokenIcons.knownSaved(found, 1, "aa-01 ipfs://two", () -> {
+                reads.incrementAndGet();
+                return false;
+            }));
+        }
+        assertEquals(3, reads.get());
+
+        // Once the images changed, as when a token's were forgotten, what was found is read again.
+        assertTrue(TokenIcons.knownSaved(found, 2, "aa-01 ipfs://one", saved));
+        assertEquals(4, reads.get());
+    }
 }

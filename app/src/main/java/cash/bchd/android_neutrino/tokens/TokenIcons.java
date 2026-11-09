@@ -379,6 +379,36 @@ public final class TokenIcons {
     }
 
     /**
+     * SavedChecks is the art a screen found saved from its URI, as of a version of the images.
+     */
+    static final class SavedChecks {
+        private final Set<String> keys = new java.util.HashSet<>();
+        private long version;
+    }
+
+    /**
+     * knownSaved returns whether art is saved from its URI, by what was found of it before, or
+     * by reading it, which found keeps.  What isn't saved is read again the next time, as a load
+     * can save it, and all is read again once the images' version changed, as when a token's
+     * were forgotten.
+     */
+    static boolean knownSaved(SavedChecks found, long version, String key,
+                              java.util.function.BooleanSupplier read) {
+        if (found.version != version) {
+            found.keys.clear();
+            found.version = version;
+        }
+        if (found.keys.contains(key)) {
+            return true;
+        }
+        if (read.getAsBoolean()) {
+            found.keys.add(key);
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * iconSavedFrom returns whether a token's saved icon came from the URI. One saved by earlier
      * versions says nothing, and a registry can come to name another icon.
      */
