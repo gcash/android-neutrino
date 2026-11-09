@@ -54,22 +54,8 @@ final class TransactionDetailsPopup {
      * returns the popup.
      */
     static PopupWindow show(Context ctx, ViewGroup layout, TransactionData tx, int blockHeight, Network network) {
-        return show(ctx, layout, tx, blockHeight, network, null);
-    }
-
-    /**
-     * show shows the details as the row of one of the tokens the transaction moved has it, with
-     * that token's direction.
-     */
-    static PopupWindow show(Context ctx, ViewGroup layout, TransactionData tx, int blockHeight, Network network,
-                            TokenChange rowChange) {
         View customView = LayoutInflater.from(ctx).inflate(R.layout.txdetailspopup, layout, false);
 
-        ImageView arrow = customView.findViewById(R.id.txDetailsArrow);
-        boolean incoming = rowChange == null ? tx.shownIncoming() : rowChange.received();
-        boolean swapped = rowChange == null ? tx.swapped() : rowChange.swapped();
-        arrow.setImageResource(incoming ? R.drawable.receive_arrow : R.drawable.send_arrow);
-        arrow.setVisibility(swapped ? View.GONE : View.VISIBLE);
         TextView bchAmount = customView.findViewById(R.id.txDetailsBchAmount);
         String detailsAmount = ctx.getString(R.string.bch_amount, new Amount(tx.shownAmount()).toString());
         bchAmount.setText(detailsAmount);
@@ -79,6 +65,7 @@ final class TransactionDetailsPopup {
         if (!tx.showsBch()) {
             bchAmount.setVisibility(View.GONE);
             fiatAmount.setVisibility(View.GONE);
+            customView.findViewById(R.id.txDetailsAmountSpace).setVisibility(View.GONE);
         }
 
         // A row for each token the transaction moved: its icon, what to call it and how much, then

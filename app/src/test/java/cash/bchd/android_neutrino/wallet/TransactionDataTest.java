@@ -131,20 +131,4 @@ public class TransactionDataTest {
         TransactionData old = new TransactionData("", true, "", 5000, "", "USD", 0, "", 0);
         assertTrue(old.showsBch());
     }
-
-    @Test
-    public void aTokenTransactionShowsTheDirectionOfItsRow() {
-        TransactionData plain = new TransactionData("", true, "", 5000, "", "USD", 0, "", 0);
-        assertTrue(plain.shownIncoming());
-        assertFalse(plain.swapped());
-
-        TransactionData received = new TransactionData("", false, "", -500, "", "USD", 0, "", 0);
-        received.setTokens(Collections.singletonList(new TokenChange("c", 0, 1)));
-        assertTrue(received.shownIncoming());
-
-        TransactionData swap = new TransactionData("", false, "", -500, "", "USD", 0, "", 0);
-        swap.setTokens(Collections.singletonList(new TokenChange("c", 0, 0,
-                Collections.singletonList("02"), Collections.singletonList("01"))));
-        assertTrue(swap.swapped());
-    }
 }

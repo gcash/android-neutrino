@@ -38,7 +38,6 @@ import cash.bchd.android_neutrino.tokens.TokenLabels;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
-import cash.bchd.android_neutrino.wallet.TokenChange;
 import cash.bchd.android_neutrino.wallet.TokenMeta;
 import cash.bchd.android_neutrino.wallet.TokenNft;
 import cash.bchd.android_neutrino.wallet.TransactionData;
@@ -424,7 +423,7 @@ public class NftActivity extends AppCompatActivity {
                         tx.getTimestamp() * 1000, DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME
                                 | DateUtils.FORMAT_ABBREV_MONTH)));
                 received.setOnClickListener(v -> detailsPopup = TransactionDetailsPopup.show(this, layout, tx,
-                        settings.getLastBlockHeight(), network, TokenChange.find(tx.getTokens(), category)));
+                        settings.getLastBlockHeight(), network));
                 received.setVisibility(View.VISIBLE);
                 return;
             }

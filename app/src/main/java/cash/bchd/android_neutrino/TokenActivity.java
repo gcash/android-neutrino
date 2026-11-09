@@ -44,7 +44,6 @@ import cash.bchd.android_neutrino.tokens.NftAdapter;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TokenBalance;
-import cash.bchd.android_neutrino.wallet.TokenChange;
 import cash.bchd.android_neutrino.wallet.TokenMeta;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 import cash.bchd.android_neutrino.wallet.TransactionList;
@@ -207,8 +206,7 @@ public class TokenActivity extends AppCompatActivity {
             nftsReady = TokenLabels.hasNftTypes(category);
         } else {
             history = new TokenHistoryAdapter(this, category, tx ->
-                    detailsPopup = TransactionDetailsPopup.show(this, layout, tx, blockHeight, network,
-                            TokenChange.find(tx.getTokens(), category)));
+                    detailsPopup = TransactionDetailsPopup.show(this, layout, tx, blockHeight, network));
             list.setAdapter(history);
             // As the main screen's lists, rows that change just update.
             if (list.getItemAnimator() instanceof SimpleItemAnimator) {

@@ -124,22 +124,6 @@ public class TransactionData implements Serializable, Comparable<TransactionData
     }
 
     /**
-     * shownIncoming returns whether the transaction shows as received, as its row has it: by the
-     * first token it moved, if it moved any.
-     */
-    public boolean shownIncoming() {
-        return getTokens().isEmpty() ? this.incoming : getTokens().get(0).received();
-    }
-
-    /**
-     * swapped returns whether the first token the transaction moved, which its row goes by, moved
-     * as many NFTs both ways and nothing else, so that it has no direction.
-     */
-    public boolean swapped() {
-        return !getTokens().isEmpty() && getTokens().get(0).swapped();
-    }
-
-    /**
      * shownAmount returns how much the transaction changed the balance by, as its details show it:
      * what's spendable, as in its row, if it moved tokens.
      */
