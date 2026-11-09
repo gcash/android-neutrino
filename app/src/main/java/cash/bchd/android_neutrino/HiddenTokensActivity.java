@@ -179,8 +179,7 @@ public class HiddenTokensActivity extends AppCompatActivity {
         public void onBindViewHolder(@NonNull Row row, int position) {
             String category = hidden.get(position);
             // Only what was saved, as on the Tokens page, the badge saying how far to trust it.
-            row.icon.setImageBitmap(TokenIcons.bitmap(HiddenTokensActivity.this, category,
-                    getResources().getDimensionPixelSize(R.dimen.token_row_icon)));
+            TokenIcons.showIcon(row.icon, category, getResources().getDimensionPixelSize(R.dimen.token_row_icon));
             TokenLabels.showTitle(row.id, category, TokenLabels.title(category), true);
             int badge = TokenLabels.badge(category);
             row.badge.setVisibility(badge == 0 ? View.GONE : View.VISIBLE);

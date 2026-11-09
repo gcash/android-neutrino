@@ -222,8 +222,11 @@ public class NftActivity extends AppCompatActivity {
         TokenIcons.configure(settings.getTokenImages(), settings.getLoadedIcons());
         ImageView icon = findViewById(R.id.nftIcon);
         int size = getResources().getDimensionPixelSize(R.dimen.nft_screen_icon);
-        icon.setImageBitmap(commitment == null ? TokenIcons.bitmap(this, category, size)
-                : TokenIcons.nftBitmap(this, category, commitment, size));
+        if (commitment == null) {
+            TokenIcons.showIcon(icon, category, size);
+        } else {
+            TokenIcons.showNft(icon, category, commitment, size);
+        }
         String uri = artUri();
         boolean moves = uri != null && TokenIcons.moves(this, category, commitment, uri);
         findViewById(R.id.nftPlay).setVisibility(moves ? View.VISIBLE : View.GONE);

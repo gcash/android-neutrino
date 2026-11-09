@@ -90,7 +90,7 @@ final class TransactionDetailsPopup {
         Map<String, List<ImageView>> artViews = new HashMap<>();
         NftArt art = new NftArt(ctx, (category, commitment) -> {
             for (ImageView view : artViews.getOrDefault(category + "-" + commitment, Collections.emptyList())) {
-                view.setImageBitmap(TokenIcons.listNftBitmap(ctx, category, commitment, nftIconSize));
+                TokenIcons.showListNft(view, category, commitment, nftIconSize);
             }
         });
         // A stranger's transaction can hold any number, and each row draws an image.
@@ -103,7 +103,7 @@ final class TransactionDetailsPopup {
             rows++;
             View row = LayoutInflater.from(ctx).inflate(R.layout.txdetails_token_row, tokens, false);
             ImageView icon = row.findViewById(R.id.txDetailsTokenIcon);
-            icon.setImageBitmap(TokenIcons.listBitmap(ctx, change.category, iconSize));
+            TokenIcons.showListIcon(icon, change.category, iconSize);
             TextView id = row.findViewById(R.id.txDetailsTokenId);
             TokenLabels.showTitle(id, change.category, TokenLabels.listTitle(change.category), false);
             TextView amount = row.findViewById(R.id.txDetailsTokenChange);
@@ -192,7 +192,7 @@ final class TransactionDetailsPopup {
         int size = ctx.getResources().getDimensionPixelSize(R.dimen.tx_details_nft_icon);
         artViews.computeIfAbsent(category + "-" + commitment, key -> new ArrayList<>()).add(icon);
         Runnable draw = () -> {
-            icon.setImageBitmap(TokenIcons.listNftBitmap(ctx, category, commitment, size));
+            TokenIcons.showListNft(icon, category, commitment, size);
             name.setText(in ? TokenTexts.nftIn(ctx, category, commitment) : TokenTexts.nftOut(ctx, category, commitment));
             if (!Settings.get(ctx).getHiddenTokens().contains(category)) {
                 art.request(category, commitment);

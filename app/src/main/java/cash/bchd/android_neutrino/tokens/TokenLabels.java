@@ -57,6 +57,8 @@ public final class TokenLabels {
                 if (!now.equals(before)) {
                     changed.set(true);
                     VERSION.incrementAndGet();
+                    // What shows of its images can change with what the wallet says of it.
+                    TokenIcons.forgetDrawn(category);
                 }
                 return now;
             });

@@ -1,8 +1,6 @@
 package cash.bchd.android_neutrino.tokens;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,8 +33,6 @@ public final class TokenAdapter extends RecyclerView.Adapter<TokenAdapter.Row> {
     private final Context context;
     private final OnClick onClick;
     private final int iconSize;
-    // The identicons drawn so far, by token ID.
-    private final LruCache<String, Bitmap> icons = new LruCache<>(64);
     private List<TokenBalance> tokens = Collections.emptyList();
 
     public static final class Row extends RecyclerView.ViewHolder {
@@ -71,7 +67,6 @@ public final class TokenAdapter extends RecyclerView.Adapter<TokenAdapter.Row> {
      * iconsChanged redraws the rows with the icons that were loaded.
      */
     public void iconsChanged() {
-        icons.evictAll();
         notifyItemRangeChanged(0, tokens.size());
     }
 
@@ -115,7 +110,7 @@ public final class TokenAdapter extends RecyclerView.Adapter<TokenAdapter.Row> {
     @Override
     public void onBindViewHolder(@NonNull Row row, int position) {
         TokenBalance token = tokens.get(position);
-        row.icon.setImageBitmap(icon(token.category));
+        TokenIcons.showIcon(row.icon, token.category, iconSize);
         TokenLabels.showTitle(row.id, token.category, TokenLabels.title(token.category), true);
         int badge = TokenLabels.badge(token.category);
         row.badge.setVisibility(badge == 0 ? View.GONE : View.VISIBLE);
@@ -131,14 +126,6 @@ public final class TokenAdapter extends RecyclerView.Adapter<TokenAdapter.Row> {
         return tokens.size();
     }
 
-    private Bitmap icon(String category) {
-        Bitmap icon = icons.get(category);
-        if (icon == null) {
-            icon = TokenIcons.bitmap(context, category, iconSize);
-            icons.put(category, icon);
-        }
-        return icon;
-    }
 
     // amount says what the wallet holds of a category: its fungible amount, in the token's
     // smallest units, its NFTs, or both.

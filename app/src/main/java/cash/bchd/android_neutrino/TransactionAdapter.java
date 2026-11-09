@@ -1,10 +1,8 @@
 package cash.bchd.android_neutrino;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.text.TextPaint;
 import android.text.TextUtils;
-import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,8 +52,6 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     // The art of the NFTs that rows lead with, and the tokens whose NFTs were asked about.
     private final NftArt art;
     private final Set<String> askedTypes = new HashSet<>();
-    // The icons that rows lead with, by token ID, with the commitment for an NFT's.
-    private final LruCache<String, Bitmap> icons = new LruCache<>(64);
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -162,6 +158,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         holder.txMemo.setEllipsize(TextUtils.TruncateAt.END);
         if (tx.getIncoming()) {
             holder.txDescription.setText(R.string.received_bitcoin_cash);
+            TokenIcons.clear(holder.arrowImage);
             holder.arrowImage.setImageResource(R.drawable.receive_arrow);
             holder.bchAmount.setTextColor(ContextCompat.getColor(ctx, R.color.darkGreen));
             if (tx.getMemo().equals("")) {
@@ -170,6 +167,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
                 holder.txMemo.setText(tx.getMemo());
             }
         } else {
+            TokenIcons.clear(holder.arrowImage);
             holder.arrowImage.setImageResource(R.drawable.send_arrow);
             holder.txDescription.setText(R.string.sent_bitcoin_cash);
             holder.bchAmount.setTextColor(ContextCompat.getColor(ctx, R.color.neonPurple));
@@ -193,7 +191,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         boolean received = first.received();
         boolean nftsOnly = first.amount == 0;
         holder.arrowImage.setScaleType(ImageView.ScaleType.CENTER);
-        holder.arrowImage.setImageBitmap(icon(tokens));
+        showIcon(holder.arrowImage, tokens);
         holder.txDescription.setText(first.swapped() ? R.string.swapped_nft
                 : received ? (nftsOnly ? R.string.received_nft : R.string.received_token)
                 : (nftsOnly ? R.string.sent_nft : R.string.sent_token));
@@ -229,7 +227,6 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     }
 
     private void artLoaded(String category, String commitment) {
-        icons.remove(category + "-" + commitment);
         for (int i = 0; i < mDataset.size(); i++) {
             List<TokenChange> tokens = mDataset.get(i).getTokens();
             if (tokens.size() == 1 && tokens.get(0).category.equals(category)
@@ -239,24 +236,21 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         }
     }
 
-    // icon returns what a row leads with: the art of the NFT if the transaction moved just that,
+    // showIcon shows what a row leads with: the art of the NFT if the transaction moved just that,
     // or else the token's icon.
-    private Bitmap icon(List<TokenChange> tokens) {
+    private void showIcon(ImageView view, List<TokenChange> tokens) {
         TokenChange change = tokens.get(0);
         String category = change.category;
         String commitment = tokens.size() == 1 ? change.onlyNft() : null;
         if (commitment != null) {
             loadArt(category, commitment);
         }
-        String key = commitment == null ? category : category + "-" + commitment;
-        Bitmap icon = icons.get(key);
-        if (icon == null) {
-            int size = ctx.getResources().getDimensionPixelSize(R.dimen.token_row_icon);
-            icon = commitment == null ? TokenIcons.listBitmap(ctx, category, size)
-                    : TokenIcons.listNftBitmap(ctx, category, commitment, size);
-            icons.put(key, icon);
+        int size = ctx.getResources().getDimensionPixelSize(R.dimen.token_row_icon);
+        if (commitment == null) {
+            TokenIcons.showListIcon(view, category, size);
+        } else {
+            TokenIcons.showListNft(view, category, commitment, size);
         }
-        return icon;
     }
 
     // loadArt has the art of an NFT load, asking the wallet what its token's NFTs are first, as it
@@ -299,8 +293,6 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
      */
     void labelsChanged() {
         askedTypes.clear();
-        // Icons drawn before the labels came may be of look-alikes.
-        icons.evictAll();
         notifyItemRangeChanged(0, getItemCount());
     }
 
@@ -322,7 +314,6 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
      * iconsChanged redraws the rows with the icons that were loaded.
      */
     void iconsChanged() {
-        icons.evictAll();
         notifyItemRangeChanged(0, getItemCount());
     }
 

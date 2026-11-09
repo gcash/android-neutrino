@@ -9,6 +9,7 @@ import android.graphics.drawable.AnimatedImageDrawable;
 import android.media.MediaDataSource;
 import android.media.MediaMetadataRetriever;
 import android.os.Build;
+import android.widget.ImageView;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -25,6 +26,8 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 import cash.bchd.android_neutrino.R;
@@ -65,6 +68,22 @@ public final class TokenIcons {
 
     private static volatile boolean showAll;
     private static volatile Set<String> chosen = Collections.emptySet();
+
+    // The images drawn so far, each under a key that starts with its token ID, up to an eighth of
+    // the memory the app may use, as every screen shows the same few and drawing them is slow.
+    private static final DrawnImages<Bitmap> DRAWN = new DrawnImages<>(Runtime.getRuntime().maxMemory() / 8,
+            Bitmap::getByteCount);
+    // Counts what was dropped of DRAWN, for a drawing begun before to be let go.
+    private static final AtomicLong DROPPED = new AtomicLong();
+    // Draws the images off the main thread.
+    private static final ExecutorService DRAWER = Executors.newFixedThreadPool(2);
+
+    /**
+     * Drawing draws an image, off the main thread.
+     */
+    private interface Drawing {
+        Bitmap draw();
+    }
 
     private TokenIcons() {
     }
@@ -121,8 +140,135 @@ public final class TokenIcons {
      * those the user loaded from a token's menu.
      */
     public static void configure(boolean all, Set<String> chosen) {
+        Set<String> before = TokenIcons.chosen;
+        boolean allBefore = showAll;
         showAll = all;
         TokenIcons.chosen = new HashSet<>(chosen);
+        // What was drawn of the tokens whose images now show or no longer do is wrong.
+        if (all != allBefore) {
+            DRAWN.clear();
+            DROPPED.incrementAndGet();
+            return;
+        }
+        Set<String> changed = new HashSet<>(before);
+        changed.addAll(chosen);
+        Set<String> kept = new HashSet<>(before);
+        kept.retainAll(chosen);
+        changed.removeAll(kept);
+        for (String category : changed) {
+            forgetDrawn(category);
+        }
+    }
+
+    /**
+     * forgetDrawn drops what was drawn of a token's images, as they changed, or as what shows of
+     * them did, as when the wallet said more of it.
+     */
+    public static void forgetDrawn(String category) {
+        DRAWN.removeStartingWith(category);
+        DROPPED.incrementAndGet();
+    }
+
+    /**
+     * showIcon puts a token's icon on a view, as bitmap draws it, off the main thread unless it was
+     * drawn before. Until it's drawn, the view shows the token's identicon.
+     */
+    public static void showIcon(ImageView view, String category, int size) {
+        Context context = view.getContext().getApplicationContext();
+        show(view, category + ":icon:" + size, category, size, () -> bitmap(context, category, size));
+    }
+
+    /**
+     * showNft puts an NFT's art on a view, as nftBitmap draws it, as showIcon does a token's icon.
+     */
+    public static void showNft(ImageView view, String category, String commitment, int size) {
+        Context context = view.getContext().getApplicationContext();
+        show(view, category + ":nft:" + size + ":" + commitment, category, size,
+                () -> nftBitmap(context, category, commitment, size));
+    }
+
+    /**
+     * showListIcon puts a token's icon on a view where no badge shows, as in a transaction's row:
+     * only a trusted token's, and else its identicon, as an icon can be made to read as another
+     * token's.
+     */
+    public static void showListIcon(ImageView view, String category, int size) {
+        if (TokenLabels.trusted(category)) {
+            showIcon(view, category, size);
+        } else {
+            showIdenticon(view, category, size);
+        }
+    }
+
+    /**
+     * showListNft puts an NFT's art on a view where no badge shows, as showListIcon does a token's
+     * icon.
+     */
+    public static void showListNft(ImageView view, String category, String commitment, int size) {
+        if (TokenLabels.trusted(category)) {
+            showNft(view, category, commitment, size);
+        } else {
+            showIdenticon(view, category, size);
+        }
+    }
+
+    /**
+     * showIdenticon puts a token's identicon on a view, which nothing drawn before replaces.
+     */
+    public static void showIdenticon(ImageView view, String category, int size) {
+        view.setTag(R.id.image_key, null);
+        view.setImageBitmap(identicon(category, size));
+    }
+
+    // identicon returns a token's identicon, drawn once.
+    private static Bitmap identicon(String category, int size) {
+        String key = category + ":identicon:" + size;
+        Bitmap identicon = DRAWN.get(key);
+        if (identicon == null) {
+            identicon = Identicon.of(category).bitmap(size);
+            DRAWN.put(key, identicon);
+        }
+        return identicon;
+    }
+
+    /**
+     * clear has a view that showed a token's image show something else, which nothing drawn before
+     * replaces.
+     */
+    public static void clear(ImageView view) {
+        view.setTag(R.id.image_key, null);
+    }
+
+    // show puts the image of the key on the view, drawn at once if it was before, and else off the
+    // main thread, the identicon showing until it is. A view shows only the image it was last given.
+    private static void show(ImageView view, String key, String category, int size, Drawing drawing) {
+        view.setTag(R.id.image_key, key);
+        Bitmap drawn = DRAWN.get(key);
+        if (drawn != null) {
+            view.setImageBitmap(drawn);
+            return;
+        }
+        view.setImageBitmap(identicon(category, size));
+        long dropped = DROPPED.get();
+        DRAWER.execute(() -> {
+            Bitmap image;
+            try {
+                image = drawing.draw();
+            } catch (RuntimeException | OutOfMemoryError e) {
+                e.printStackTrace();
+                return;
+            }
+            // What changed while it was drawn is drawn again, for the screen that redraws it.
+            if (image == null || DROPPED.get() != dropped) {
+                return;
+            }
+            DRAWN.put(key, image);
+            view.post(() -> {
+                if (key.equals(view.getTag(R.id.image_key))) {
+                    view.setImageBitmap(image);
+                }
+            });
+        });
     }
 
     /**
@@ -137,22 +283,6 @@ public final class TokenIcons {
             }
         }
         return Identicon.of(category).bitmap(size);
-    }
-
-    /**
-     * listBitmap returns a token's icon where no badge shows, as in a transaction's row: only a
-     * trusted token's, and else its identicon, as an icon can be made to read as another token's.
-     */
-    public static Bitmap listBitmap(Context context, String category, int size) {
-        return TokenLabels.trusted(category) ? bitmap(context, category, size) : Identicon.of(category).bitmap(size);
-    }
-
-    /**
-     * listNftBitmap returns an NFT's art where no badge shows, as listBitmap does a token's.
-     */
-    public static Bitmap listNftBitmap(Context context, String category, String commitment, int size) {
-        return TokenLabels.trusted(category) ? nftBitmap(context, category, commitment, size)
-                : Identicon.of(category).bitmap(size);
     }
 
     /**
@@ -196,7 +326,11 @@ public final class TokenIcons {
      * save keeps an icon if it's an image this device can show, and returns whether it did.
      */
     public static boolean save(Context context, String category, byte[] data) {
-        return save(file(context, category), data, largestShown(context));
+        boolean saved = save(file(context, category), data, largestShown(context));
+        if (saved) {
+            forgetDrawn(category);
+        }
+        return saved;
     }
 
     /**
@@ -218,6 +352,9 @@ public final class TokenIcons {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+        if (saved) {
+            forgetDrawn(category);
         }
         return saved;
     }
@@ -392,6 +529,8 @@ public final class TokenIcons {
     public static void clear(Context context) {
         deleteAll(new File(context.getFilesDir(), ICON_DIR));
         deleteAll(new File(context.getCacheDir(), MOTION_DIR));
+        DRAWN.clear();
+        DROPPED.incrementAndGet();
     }
 
     /**
@@ -400,6 +539,7 @@ public final class TokenIcons {
      */
     public static void forget(Context context, String category) {
         forget(category, new File(context.getFilesDir(), ICON_DIR), new File(context.getCacheDir(), MOTION_DIR));
+        forgetDrawn(category);
         VERSION.incrementAndGet();
     }
 

@@ -215,8 +215,7 @@ public class TokenActivity extends AppCompatActivity {
     private void showIcon() {
         TokenIcons.configure(settings.getTokenImages(), settings.getLoadedIcons());
         ImageView icon = findViewById(R.id.tokenIcon);
-        icon.setImageBitmap(TokenIcons.bitmap(this, category,
-                getResources().getDimensionPixelSize(R.dimen.token_screen_icon)));
+        TokenIcons.showIcon(icon, category, getResources().getDimensionPixelSize(R.dimen.token_screen_icon));
     }
 
     // askWallet shows what the wallet can say of the token now.

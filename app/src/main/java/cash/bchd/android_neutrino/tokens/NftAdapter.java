@@ -1,9 +1,7 @@
 package cash.bchd.android_neutrino.tokens;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Typeface;
-import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -41,8 +39,6 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
     private final String category;
     private final int iconSize;
     private final NftArt loader;
-    // The art drawn so far, by commitment.
-    private final LruCache<String, Bitmap> art = new LruCache<>(64);
     private List<TokenNft> nfts = Collections.emptyList();
 
     public static final class Row extends RecyclerView.ViewHolder {
@@ -70,7 +66,6 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
      * iconsChanged redraws the rows with the images that were loaded.
      */
     public void iconsChanged() {
-        art.evictAll();
         loader.retry();
         notifyItemRangeChanged(0, nfts.size());
     }
@@ -82,17 +77,7 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
         loader.stop();
     }
 
-    private Bitmap art(String commitment) {
-        Bitmap bitmap = art.get(commitment);
-        if (bitmap == null) {
-            bitmap = TokenIcons.nftBitmap(context, category, commitment, iconSize);
-            art.put(commitment, bitmap);
-        }
-        return bitmap;
-    }
-
     private void artLoaded(String commitment) {
-        art.remove(commitment);
         for (int i = 0; i < nfts.size(); i++) {
             if (nfts.get(i).commitment.equals(commitment)) {
                 notifyItemChanged(i);
@@ -203,7 +188,7 @@ public final class NftAdapter extends RecyclerView.Adapter<NftAdapter.Row> {
     @Override
     public void onBindViewHolder(@NonNull Row row, int position) {
         TokenNft nft = nfts.get(position);
-        row.icon.setImageBitmap(art(nft.commitment));
+        TokenIcons.showNft(row.icon, category, nft.commitment, iconSize);
         loader.request(category, nft.commitment);
         String name = TokenLabels.nftName(category, nft.commitment);
         if (name != null) {
