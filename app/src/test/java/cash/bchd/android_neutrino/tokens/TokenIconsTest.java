@@ -158,4 +158,20 @@ public class TokenIconsTest {
         assertFalse(TokenIcons.cheapSvg("<svg><image href=\"data:image/png;base64,AA\"/></svg>".getBytes(utf8)));
         assertFalse(TokenIcons.cheapSvg(("<svg>" + "<use href=\"#a\"/>".repeat(65) + "</svg>").getBytes(utf8)));
     }
+
+    @Test
+    public void keepsNoFullArtOfAHiddenToken() throws java.io.IOException {
+        java.io.File dir = java.nio.file.Files.createTempDirectory("full").toFile();
+        java.io.File file = new java.io.File(dir, "art");
+        String category = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789";
+        TokenLabels.hold(java.util.Collections.singleton(category));
+        try {
+            assertFalse(TokenIcons.saveFull(category, file, new byte[]{1, 2, 3}, 100));
+            assertFalse(file.exists());
+        } finally {
+            TokenLabels.hold(java.util.Collections.emptySet());
+            file.delete();
+            dir.delete();
+        }
+    }
 }

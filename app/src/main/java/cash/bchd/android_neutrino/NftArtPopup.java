@@ -64,14 +64,14 @@ final class NftArtPopup {
             } else {
                 // Art that moves has nothing to show for it but a still, which needs saying.
                 boolean moves = TokenIcons.moves(screen, category, commitment, uri);
-                fetch(screen, layout, view, popup, moves, uri, file, size);
+                fetch(screen, layout, view, popup, category, moves, uri, file, size);
             }
         }
         return popup;
     }
 
-    private static void fetch(Activity screen, ViewGroup layout, View view, PopupWindow popup, boolean moves,
-                              String uri, File file, int size) {
+    private static void fetch(Activity screen, ViewGroup layout, View view, PopupWindow popup, String category,
+                              boolean moves, String uri, File file, int size) {
         Wallet wallet = Wallet.getInstance();
         if (wallet == null || !wallet.isRunning()) {
             if (moves) {
@@ -88,7 +88,7 @@ final class NftArtPopup {
             public void onSuccess(byte[] data) {
                 boolean saved = false;
                 try {
-                    saved = TokenIcons.saveFull(file, data, side);
+                    saved = TokenIcons.saveFull(category, file, data, side);
                 } catch (RuntimeException | OutOfMemoryError e) {
                     e.printStackTrace();
                 }

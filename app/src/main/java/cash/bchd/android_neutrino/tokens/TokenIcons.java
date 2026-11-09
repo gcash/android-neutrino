@@ -536,9 +536,13 @@ public final class TokenIcons {
     /**
      * saveFull keeps an NFT's art in full to show large, and the newest such files up to a limit,
      * as only the user's taps bring them here. An image that's larger than the screen is kept at
-     * the side of the screen, which is all it can show.
+     * the side of the screen, which is all it can show.  A hidden token's isn't kept, as a
+     * download that ended after the token was hidden would keep what was forgotten.
      */
-    public static boolean saveFull(File file, byte[] data, int maxSide) {
+    public static boolean saveFull(String category, File file, byte[] data, int maxSide) {
+        if (TokenLabels.hidden(category)) {
+            return false;
+        }
         File dir = file.getParentFile();
         if (dir == null || (!dir.isDirectory() && !dir.mkdirs())) {
             return false;
