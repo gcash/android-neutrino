@@ -147,4 +147,15 @@ public class TokenIconsTest {
         assertFalse(TokenIcons.looksLikeSvg(new byte[]{(byte) 0x89, 'P', 'N', 'G'}));
         assertFalse(TokenIcons.looksLikeSvg(new byte[0]));
     }
+
+
+    @Test
+    public void onlyACheapSvgIsDrawn() {
+        java.nio.charset.Charset utf8 = java.nio.charset.StandardCharsets.UTF_8;
+        assertTrue(TokenIcons.cheapSvg("<svg><use href=\"#a\"/></svg>".getBytes(utf8)));
+        assertFalse(TokenIcons.cheapSvg(new byte[(256 << 10) + 1]));
+        assertFalse(TokenIcons.cheapSvg("<!DOCTYPE svg [<!ENTITY a \"aa\">]><svg/>".getBytes(utf8)));
+        assertFalse(TokenIcons.cheapSvg("<svg><image href=\"data:image/png;base64,AA\"/></svg>".getBytes(utf8)));
+        assertFalse(TokenIcons.cheapSvg(("<svg>" + "<use href=\"#a\"/>".repeat(65) + "</svg>").getBytes(utf8)));
+    }
 }

@@ -659,10 +659,36 @@ public final class TokenIcons {
                 || start.startsWith("<!DOCTYPE")) && start.contains("<svg");
     }
 
+    // The most an SVG is let be, as it's drawn by a stranger's instructions, which can make it take
+    // any time or memory: its size, and the number of the elements that draw others again.
+    private static final int MAX_SVG_SIZE = 256 << 10;
+    private static final int MAX_SVG_USES = 64;
+
+    /**
+     * cheapSvg returns whether an SVG is one to draw: small, with no entities, which can grow
+     * without limit, no data: images, which decode at any size, and few elements that draw others.
+     */
+    static boolean cheapSvg(byte[] data) {
+        if (data.length > MAX_SVG_SIZE) {
+            return false;
+        }
+        String text = new String(data, StandardCharsets.UTF_8);
+        if (text.contains("<!ENTITY") || text.contains("data:")) {
+            return false;
+        }
+        int uses = 0;
+        for (int i = text.indexOf("<use"); i >= 0; i = text.indexOf("<use", i + 4)) {
+            if (++uses > MAX_SVG_USES) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // svg draws an SVG at up to the side, in its proportions, or returns null if it isn't one
     // or can't be drawn. Nothing it names elsewhere is fetched, as no resolver is set for it.
     private static Bitmap svg(byte[] data, int maxSide) {
-        if (!looksLikeSvg(data)) {
+        if (!looksLikeSvg(data) || !cheapSvg(data)) {
             return null;
         }
         try {
