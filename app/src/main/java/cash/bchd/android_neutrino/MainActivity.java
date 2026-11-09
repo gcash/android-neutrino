@@ -137,6 +137,8 @@ public class MainActivity extends CloseActivity {
     private static final long TOKEN_LABELS_INTERVAL_MS = 10_000;
     private final Handler pagesHandler = new Handler(Looper.getMainLooper());
     private final AtomicBoolean labelsAskPending = new AtomicBoolean();
+    // Whether the rows are to be redrawn for the icons that loaded, at the next frame.
+    private boolean iconsRedrawPending;
     // The tokens to ask about again, as the wallet was still looking for them.
     private final Set<String> labelsAsking = new HashSet<>();
     private NftArt iconLoader;
@@ -1042,8 +1044,16 @@ public class MainActivity extends CloseActivity {
     }
 
     private void redrawTokenIcons() {
-        tokenAdapter.iconsChanged();
-        mAdapter.iconsChanged();
+        // Once a frame, however many icons load in it, as each redraws every row.
+        if (iconsRedrawPending) {
+            return;
+        }
+        iconsRedrawPending = true;
+        pages.postOnAnimation(() -> {
+            iconsRedrawPending = false;
+            tokenAdapter.iconsChanged();
+            mAdapter.iconsChanged();
+        });
     }
 
     // loadTokenIcons loads the icons of the tokens that don't have theirs yet.
