@@ -441,6 +441,10 @@ public class Wallet implements Serializable {
         long balance = balance();
         List<TokenBalance> tokens = tokenBalances();
         listener.balanceReplies.deliver(replyNumber, () -> {
+            // A wallet that was stopped, as for a restore, tells nothing more.
+            if (stopped) {
+                return;
+            }
             listener.onBalanceChange(balance);
             listener.onTokenBalances(tokens);
         });
@@ -785,7 +789,11 @@ public class Wallet implements Serializable {
                     txs.add(extractTransactionData(tx, 0, tx.getTimestamp()));
                 }
                 int height = bestHeight;
-                listener.transactionReplies.deliver(replyNumber, () -> listener.onGetTransactions(txs, height));
+                listener.transactionReplies.deliver(replyNumber, () -> {
+                    if (!stopped) {
+                        listener.onGetTransactions(txs, height);
+                    }
+                });
             }
 
             @Override

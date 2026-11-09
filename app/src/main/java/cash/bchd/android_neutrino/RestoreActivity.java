@@ -203,6 +203,9 @@ public class RestoreActivity extends AppCompatActivity {
             // A reply can have come in until the wallet stopped.
             TokenLabels.clear();
             TokenLabelFile.delete(this, network);
+            settings.setLastBalance(0);
+            settings.setLastTokens(Collections.emptyList());
+            TransactionStore.delete(this, network);
         });
 
         Vibrations.buzz(getApplicationContext());
