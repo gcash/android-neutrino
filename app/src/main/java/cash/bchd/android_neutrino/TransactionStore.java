@@ -36,6 +36,27 @@ public class TransactionStore {
     private long readAt;
     private ArrayList<TransactionData> transactionDataSet = new ArrayList<TransactionData>();
 
+    private TransactionStore(Network network) {
+        fileName = fileName(network);
+        readAt = -1;
+    }
+
+    /**
+     * empty returns a store that has read nothing yet, and is stale, for a screen to show while
+     * the file is read.
+     */
+    static TransactionStore empty(Network network) {
+        return new TransactionStore(network);
+    }
+
+    /**
+     * newerThan returns whether this store has what's in the file as it was later than the other
+     * one does, as two read at once can come in out of order.
+     */
+    boolean newerThan(TransactionStore other) {
+        return readAt > other.readAt;
+    }
+
     public TransactionStore(Context context, Network network) {
         fileName = fileName(network);
         readAt = SAVES.get();

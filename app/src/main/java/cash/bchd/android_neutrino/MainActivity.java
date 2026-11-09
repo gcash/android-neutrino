@@ -70,6 +70,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -101,6 +102,8 @@ public class MainActivity extends CloseActivity {
 
     // EXTRA_HIDDEN_TOKEN is the token a screen just hid, whose hiding can be undone.
     static final String EXTRA_HIDDEN_TOKEN = "hiddenToken";
+    // Reads the saved transactions, one read at a time.
+    private static final ExecutorService STORE_READER = Executors.newSingleThreadExecutor();
     // How long the hiding of a token can be undone.
     private static final int UNDO_HIDE_MS = 5000;
 
@@ -191,7 +194,8 @@ public class MainActivity extends CloseActivity {
         this.settings = Settings.load(this);
         Network network = settings.getNetwork();
         Networks.showBadge(this, network);
-        this.txStore = new TransactionStore(this, network);
+        // Read off the main thread, which onStart has done, as it's stale.
+        this.txStore = TransactionStore.empty(network);
         TextView bchBalanceView = findViewById(R.id.bchBalanceView);
         Amount lastBal = new Amount(this.settings.getLastBalance());
         bchBalanceView.setText(getString(R.string.bch_amount, lastBal.toString()));
@@ -212,11 +216,7 @@ public class MainActivity extends CloseActivity {
         changeTransform.setDuration(500);
         changeTransform.setInterpolator(new AccelerateInterpolator());
         TransitionManager.beginDelayedTransition(mCLayout, changeTransform);
-        List<TransactionData> txs = txStore.getData();
-        Collections.sort(txs, Collections.reverseOrder());
-        // Without the transactions of the tokens the user hid, which the store keeps.
-        mAdapter = new TransactionAdapter(TransactionList.withoutHidden(txs, settings.getHiddenTokens()), this,
-                mCLayout, settings.getLastBlockHeight(), network);
+        mAdapter = new TransactionAdapter(new ArrayList<>(), this, mCLayout, settings.getLastBlockHeight(), network);
         tokenAdapter = new TokenAdapter(this, this::openToken);
         iconLoader = new NftArt(this, (category, commitment) -> redrawTokenIcons());
         mainPages = new MainPages(mAdapter, tokenAdapter, this::refresh, savedInstanceState);
@@ -425,7 +425,7 @@ public class MainActivity extends CloseActivity {
             // A token's screen saves what the wallet tells it while it listens, which can be all
             // that's left of a memo once the wallet has started again.
             if (txStore.stale()) {
-                txStore = new TransactionStore(this, settings.getNetwork());
+                readStore();
             }
             mAdapter.setNewData(TransactionList.withoutHidden(txStore.getData(), settings.getHiddenTokens()));
             showBchPlease();
@@ -761,6 +761,30 @@ public class MainActivity extends CloseActivity {
         startSyncStatusPoller();
     }
 
+    // readStore reads the saved transactions off the main thread, as a wallet with many takes a
+    // while to, and shows them, unless a newer store came in the meantime, as from the wallet.
+    private void readStore() {
+        Context app = getApplicationContext();
+        Network network = settings.getNetwork();
+        WeakReference<MainActivity> ref = new WeakReference<>(this);
+        STORE_READER.execute(() -> {
+            TransactionStore store = new TransactionStore(app, network);
+            Collections.sort(store.getData(), Collections.reverseOrder());
+            runOnUiThread(() -> {
+                MainActivity activity = ref.get();
+                if (activity == null || activity.isDestroyed() || activity.txStore.newerThan(store)
+                        || activity.settings.getNetwork() != network) {
+                    return;
+                }
+                activity.txStore = store;
+                // Without the transactions of the tokens the user hid, which the store keeps.
+                activity.mAdapter.setNewData(TransactionList.withoutHidden(store.getData(),
+                        activity.settings.getHiddenTokens()));
+                activity.showBchPlease();
+            });
+        });
+    }
+
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
@@ -1043,7 +1067,8 @@ public class MainActivity extends CloseActivity {
 
     // showBchPlease asks for BCH on the Activity page while the wallet has no transactions.
     private void showBchPlease() {
-        boolean empty = mAdapter.getItemCount() == 0;
+        // Not before the saved transactions are read, or it would show at every start.
+        boolean empty = mAdapter.getItemCount() == 0 && !txStore.stale();
         boolean shown = empty && pages.getCurrentItem() == MainPages.ACTIVITY;
         findViewById(R.id.bchPlease).setVisibility(shown ? View.VISIBLE : View.GONE);
     }

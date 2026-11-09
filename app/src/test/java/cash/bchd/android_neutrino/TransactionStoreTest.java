@@ -11,9 +11,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import cash.bchd.android_neutrino.wallet.Network;
 import cash.bchd.android_neutrino.wallet.TransactionData;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThrows;
 
 public class TransactionStoreTest {
@@ -46,5 +49,13 @@ public class TransactionStoreTest {
         assertThrows(InvalidObjectException.class, () -> TransactionStore.read(saved("sent")));
         assertThrows(InvalidObjectException.class,
                 () -> TransactionStore.read(saved(new ArrayList<>(Collections.singletonList("sent")))));
+    }
+
+    @Test
+    public void anEmptyStoreIsStaleAndNewerThanNone() {
+        TransactionStore empty = TransactionStore.empty(Network.MAINNET);
+        assertTrue(empty.stale());
+        assertTrue(empty.getData().isEmpty());
+        assertFalse(empty.newerThan(TransactionStore.empty(Network.MAINNET)));
     }
 }
