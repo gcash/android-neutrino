@@ -149,6 +149,8 @@
     <string name="token_id_copied">Token ID copied to clipboard.</string>
     <string name="copy_token_id">Copy token ID</string>
     <string name="hide_token">Hide</string>
+    <string name="token_hidden">Token hidden</string>
+    <string name="undo">Undo</string>
     <string name="hide_collection">Hide collection</string>
     <string name="fetch_token_metadata">Fetch metadata</string>
     <string name="fetch_token_metadata_failed">The wallet couldn\'t be asked for the token\'s metadata.</string>

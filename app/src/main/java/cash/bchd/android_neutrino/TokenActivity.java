@@ -132,6 +132,7 @@ public class TokenActivity extends AppCompatActivity {
     static void hide(Activity screen, Settings settings, String category) {
         settings.hideToken(category);
         Intent intent = new Intent(screen, MainActivity.class);
+        intent.putExtra(MainActivity.EXTRA_HIDDEN_TOKEN, category);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         screen.startActivity(intent);
         screen.finish();

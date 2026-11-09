@@ -98,6 +98,11 @@ import cash.bchd.android_neutrino.wallet.WalletEventListener;
 
 public class MainActivity extends CloseActivity {
 
+    // EXTRA_HIDDEN_TOKEN is the token a screen just hid, whose hiding can be undone.
+    static final String EXTRA_HIDDEN_TOKEN = "hiddenToken";
+    // How long the hiding of a token can be undone.
+    private static final int UNDO_HIDE_MS = 5000;
+
     Settings settings;
     ExchangeRates exchangeRates;
     FloatingActionButton fab;
@@ -428,6 +433,7 @@ public class MainActivity extends CloseActivity {
             // Start the wallet if it stopped while the app was in the background, or listen to
             // the one that WalletCloser started again while another screen was in front.
             createWallet();
+            offerUndoHide();
         }
     }
 
@@ -751,6 +757,28 @@ public class MainActivity extends CloseActivity {
             openLaunchPayment();
         }
         startSyncStatusPoller();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        // A token's screen comes back here when it hides the token.
+        setIntent(intent);
+    }
+
+    // offerUndoHide says that a token's screen hid it, and offers to show it again for a few
+    // seconds, once.
+    private void offerUndoHide() {
+        String category = getIntent().getStringExtra(EXTRA_HIDDEN_TOKEN);
+        if (category == null) {
+            return;
+        }
+        getIntent().removeExtra(EXTRA_HIDDEN_TOKEN);
+        Snackbar.make(mCLayout, R.string.token_hidden, UNDO_HIDE_MS).setAction(R.string.undo, v -> {
+            settings.showToken(category);
+            showTokens(settings.getLastTokens());
+            mAdapter.setNewData(TransactionList.withoutHidden(txStore.getData(), settings.getHiddenTokens()));
+        }).show();
     }
 
     // openLaunchPayment opens the payment link or payment request file that started the app,
