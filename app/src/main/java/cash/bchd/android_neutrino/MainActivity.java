@@ -309,6 +309,7 @@ public class MainActivity extends CloseActivity {
         mAdapter.stop();
         iconLoader.stop();
         pagesHandler.removeCallbacksAndMessages(null);
+        TokenLabels.onLoad(null);
         super.onDestroy();
     }
 
@@ -420,6 +421,8 @@ public class MainActivity extends CloseActivity {
     protected void onStart() {
         super.onStart();
         if (settings != null) {
+            // The labels kept from the last run can come after the screen shows.
+            TokenLabels.onLoad(() -> runOnUiThread(this::redrawLabels));
             TokenLabels.hold(settings.getHiddenTokens());
             // The tokens as the wallet last told them, and the transactions, without a token
             // that its screen hid since, or with one that Settings showed again.

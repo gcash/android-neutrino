@@ -52,8 +52,18 @@ public final class TokenLabelFile {
             TokenLabels.clear();
             network = now;
             file = new File(context.getFilesDir(), fileName(now));
-            TokenLabels.load(read(file));
             TokenLabels.onChange(TokenLabelFile::saveSoon);
+            // Off the main thread, and on the thread that saves, so that no save comes before it.
+            // What the wallet said meanwhile stays over it.
+            File reading = file;
+            SAVER.execute(() -> {
+                List<TokenMeta> tokens = read(reading);
+                synchronized (TokenLabelFile.class) {
+                    if (network == now) {
+                        TokenLabels.load(tokens);
+                    }
+                }
+            });
         }
     }
 

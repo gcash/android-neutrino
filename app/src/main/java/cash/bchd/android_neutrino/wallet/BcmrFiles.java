@@ -12,6 +12,8 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Arrays;
 
 /**
  * BcmrFiles puts the files that ship with the app where bchwallet reads them: the hints table of
@@ -50,10 +52,25 @@ public final class BcmrFiles {
         File dir = new File(context.getFilesDir(), "bcmr");
         File file = new File(dir, name);
         AssetManager assets = context.getAssets();
-        try (InputStream in = assets.open("bcmr/" + name)) {
-            byte[] bundled = readAll(in);
-            if (!file.exists() || !isHints || !keeps(file, bundled)) {
-                write(dir, file, bundled);
+        String asset = "bcmr/" + name;
+        try {
+            // A table is megabytes, so only its header is read unless it's written. The Known list
+            // is small, and written when it differs.
+            boolean kept;
+            if (isHints) {
+                byte[] header = new byte[HEADER_SIZE];
+                try (InputStream in = assets.open(asset)) {
+                    kept = file.exists() && readFully(in, header) && keeps(file, header);
+                }
+            } else {
+                try (InputStream in = assets.open(asset)) {
+                    kept = file.exists() && Arrays.equals(readAll(in), Files.readAllBytes(file.toPath()));
+                }
+            }
+            if (!kept) {
+                try (InputStream in = assets.open(asset)) {
+                    write(dir, file, readAll(in));
+                }
             }
             return file.getPath();
         } catch (IOException e) {
@@ -63,9 +80,10 @@ public final class BcmrFiles {
     }
 
     /**
-     * keeps returns whether an installed table stays rather than the bundled one: only one that's
-     * whole, and newer, as an update to the table can bring, or of the same height and size, as the
-     * bundled one written before is. One that's torn, or of the same height but another, gives way.
+     * keeps returns whether an installed table stays rather than the bundled one, of which it takes
+     * the header: only one that's whole, and newer, as an update to the table can bring, or of the
+     * same height and size, as the bundled one written before is. One that's torn, or of the same
+     * height but another, gives way.
      */
     static boolean keeps(File file, byte[] bundled) throws IOException {
         byte[] header = new byte[HEADER_SIZE];
@@ -78,7 +96,7 @@ public final class BcmrFiles {
             return false;
         }
         long installed = height(header), shipped = height(bundled);
-        return installed > shipped || installed == shipped && file.length() == bundled.length;
+        return installed > shipped || installed == shipped && file.length() == size(bundled);
     }
 
     /**
@@ -103,6 +121,19 @@ public final class BcmrFiles {
         }
         return ByteBuffer.wrap(table, HEIGHT_OFFSET, 4).order(ByteOrder.LITTLE_ENDIAN).getInt()
                 & 0xffffffffL;
+    }
+
+    // readFully reads the whole of the buffer, and returns whether there was that much.
+    private static boolean readFully(InputStream in, byte[] buffer) throws IOException {
+        int read = 0;
+        while (read < buffer.length) {
+            int n = in.read(buffer, read, buffer.length - read);
+            if (n < 0) {
+                return false;
+            }
+            read += n;
+        }
+        return true;
     }
 
     private static byte[] readAll(InputStream in) throws IOException {

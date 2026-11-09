@@ -35,6 +35,8 @@ public final class TokenLabels {
     private static final AtomicLong VERSION = new AtomicLong();
     // Told when the labels change, to keep them.
     private static volatile Runnable onChange;
+    // Told when what was kept from the last run is loaded, which is after the first screen shows.
+    private static volatile Runnable onLoad;
     // The hidden tokens, whose labels stay as they were, as the wallet forgets them.
     private static volatile Set<String> held = Collections.emptySet();
 
@@ -82,11 +84,25 @@ public final class TokenLabels {
      * load takes what was kept from the last run, under anything the wallet has said since.
      */
     public static void load(List<TokenMeta> tokens) {
+        boolean loaded = false;
         for (TokenMeta token : tokens) {
             if (TOKENS.putIfAbsent(token.category, token) == null) {
                 VERSION.incrementAndGet();
+                loaded = true;
             }
         }
+        Runnable told = onLoad;
+        if (loaded && told != null) {
+            told.run();
+        }
+    }
+
+    /**
+     * onLoad has the listener told when what was kept from the last run is loaded, on no
+     * particular thread, or no one with null.
+     */
+    public static void onLoad(Runnable listener) {
+        onLoad = listener;
     }
 
     /**

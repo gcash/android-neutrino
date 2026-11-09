@@ -242,4 +242,19 @@ public class TokenLabelsTest {
         update(token().setStatus(Api.TokenMetadataResponse.Status.VERIFIED).setLookAlike(true));
         assertFalse(TokenLabels.trusted(CATEGORY));
     }
+
+    @Test
+    public void tellsOfWhatLoadsOnlyIfItsNew() {
+        int[] told = {0};
+        TokenLabels.onLoad(() -> told[0]++);
+        try {
+            TokenMeta kept = new TokenMeta(token().build());
+            TokenLabels.load(Collections.singletonList(kept));
+            assertEquals(1, told[0]);
+            TokenLabels.load(Collections.singletonList(kept));
+            assertEquals(1, told[0]);
+        } finally {
+            TokenLabels.onLoad(null);
+        }
+    }
 }
