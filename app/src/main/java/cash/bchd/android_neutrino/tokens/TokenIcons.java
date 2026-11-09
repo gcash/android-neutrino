@@ -451,15 +451,15 @@ public final class TokenIcons {
         return true;
     }
 
-    // moves returns whether a file is a video, which no image decoder reads, or an animation. The
-    // file is a stranger's, so an image's size is checked first, and an animation is only looked at
-    // as a thumbnail.
+    // moves returns whether a file is a video, which no image decoder reads, but isn't an SVG,
+    // which none reads either, or an animation. The file is a stranger's, so an image's size is
+    // checked first, and an animation is only looked at as a thumbnail.
     private static boolean moves(byte[] data) {
         BitmapFactory.Options bounds = new BitmapFactory.Options();
         bounds.inJustDecodeBounds = true;
         BitmapFactory.decodeByteArray(data, 0, data.length, bounds);
         if (bounds.outWidth <= 0) {
-            return true;
+            return !looksLikeSvg(data);
         }
         if (!canAnimate(data) || !usable(bounds.outWidth, bounds.outHeight)) {
             return false;
