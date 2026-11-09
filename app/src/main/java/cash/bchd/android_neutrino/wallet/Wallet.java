@@ -16,6 +16,7 @@ import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -653,10 +654,12 @@ public class Wallet implements Serializable {
     private ListenableFuture<List<TokenMeta>> tokenMetadataAsync(List<String> categories, boolean nftTypes, boolean peek) {
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel)
                 .withCallCredentials(this.creds).withDeadlineAfter(10, TimeUnit.SECONDS);
+        // A reply that comes after the wallet stopped, as for a switch to another network, says
+        // nothing of the tokens of the wallet that runs now.
         return Futures.transform(stub.tokenMetadata(
                 Api.TokenMetadataRequest.newBuilder().addAllCategories(categories)
                         .setIncludeNftTypes(nftTypes).setPeek(peek).build()),
-                TokenMeta::of, MoreExecutors.directExecutor());
+                reply -> stopped ? Collections.emptyList() : TokenMeta.of(reply), MoreExecutors.directExecutor());
     }
 
     /**

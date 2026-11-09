@@ -49,6 +49,19 @@ public final class TokenLabelFile {
             return;
         }
         synchronized (TokenLabelFile.class) {
+            // What the last network's wallet said in the few seconds before a save would have come
+            // is saved first, on the thread that saves.
+            if (network != null && saveDue) {
+                List<TokenMeta> last = TokenLabels.all();
+                File lastFile = file;
+                SAVER.execute(() -> {
+                    try {
+                        write(lastFile, last);
+                    } catch (IOException | RuntimeException e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
             TokenLabels.clear();
             network = now;
             file = new File(context.getFilesDir(), fileName(now));
