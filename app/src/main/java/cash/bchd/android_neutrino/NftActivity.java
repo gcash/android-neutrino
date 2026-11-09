@@ -28,6 +28,8 @@ import com.google.android.material.snackbar.Snackbar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import cash.bchd.android_neutrino.tokens.NftArt;
 import cash.bchd.android_neutrino.tokens.TokenIcons;
@@ -69,8 +71,16 @@ public class NftActivity extends AppCompatActivity {
     private static final long FETCH_REFRESH_MS = 5_000;
     private static final int FETCH_REFRESHES = (int) (TokenActivity.FETCH_WAIT_MS / FETCH_REFRESH_MS);
     private final Handler handler = new Handler(Looper.getMainLooper());
+    // Whether to ask for the collection's NFT types though the screen has some, as a fetch is over.
+    private boolean typesAgain;
     // The wallet stops while the app is away, and takes a moment when it comes back to this screen.
-    private final Runnable walletReady = this::refresh;
+    private final Runnable walletReady = () -> handler.post(this::refresh);
+    // One thread for the screens' questions, which wait on the wallet, so that they take turns.
+    private static final ExecutorService ASKER = Executors.newSingleThreadExecutor(task -> {
+        Thread thread = new Thread(task, "wallet-nfts");
+        thread.setDaemon(true);
+        return thread;
+    });
     private PopupWindow artPopup;
 
     /**
@@ -117,19 +127,22 @@ public class NftActivity extends AppCompatActivity {
     }
 
     // refresh shows the wallet's NFTs as they are now, which the main screen may not have told
-    // since, with what the wallet can say of them.
+    // since, with what the wallet can say of them. The collection's NFT types, which can be many,
+    // are asked for when the screen has none, and once more when a fetch is over.
     private void refresh() {
         Wallet wallet = Wallet.getInstance();
         if (wallet == null || !wallet.isRunning()) {
             return;
         }
-        new Thread(() -> {
+        boolean types = asksForTypes(typesAgain, TokenLabels.hasNftTypes(category));
+        typesAgain = false;
+        ASKER.execute(() -> {
             try {
                 List<TokenBalance> tokens = wallet.tokenBalances();
                 boolean changed = false;
                 try {
                     changed = TokenLabels.update(
-                            wallet.tokenMetadataAsync(Collections.singletonList(category), true).get());
+                            wallet.tokenMetadataAsync(Collections.singletonList(category), types).get());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -140,18 +153,28 @@ public class NftActivity extends AppCompatActivity {
                     }
                     showNft(tokens);
                     // After Fetch metadata, until what the registry read found shows.
-                    if (readOver) {
+                    if (readOver && refreshesLeft > 0) {
                         refreshesLeft = 0;
-                    }
-                    if (refreshesLeft > 0) {
+                        typesAgain = true;
+                        refresh();
+                    } else if (refreshesLeft > 0) {
                         refreshesLeft--;
+                        typesAgain = refreshesLeft == 0;
                         handler.postDelayed(this::refresh, FETCH_REFRESH_MS);
                     }
                 });
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }, "wallet-nfts").start();
+        });
+    }
+
+    /**
+     * asksForTypes returns whether to ask the wallet for the collection's NFT types: when they're
+     * to be asked for again, or the screen has none.
+     */
+    static boolean asksForTypes(boolean again, boolean has) {
+        return again || !has;
     }
 
     @Override
