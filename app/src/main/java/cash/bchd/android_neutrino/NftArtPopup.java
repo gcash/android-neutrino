@@ -45,7 +45,8 @@ final class NftArtPopup {
         int margin = screen.getResources().getDimensionPixelSize(R.dimen.tx_details_margin);
         int size = Math.min(layout.getWidth(), layout.getHeight()) - 2 * margin;
         ImageView image = view.findViewById(R.id.nftArtImage);
-        image.setImageBitmap(TokenIcons.nftBitmap(screen, category, commitment, size));
+        // Drawn off the main thread, as a large image takes a while to decode.
+        TokenIcons.showNft(image, category, commitment, size);
 
         PopupWindow popup = new PopupWindow(view, size, size, true);
         popup.setOutsideTouchable(true);
@@ -150,6 +151,8 @@ final class NftArtPopup {
                     if (!popup.isShowing()) {
                         return;
                     }
+                    // The smaller art, if it's still being drawn, doesn't replace this.
+                    TokenIcons.clear(image);
                     image.setImageDrawable(drawable);
                     if (drawable instanceof AnimatedImageDrawable) {
                         ((AnimatedImageDrawable) drawable).start();
