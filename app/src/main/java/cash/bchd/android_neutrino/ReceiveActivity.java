@@ -4,7 +4,6 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
@@ -19,6 +18,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -26,13 +26,19 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.Currency;
+import java.util.concurrent.CancellationException;
 
 import cash.bchd.android_neutrino.wallet.AddressListener;
+import cash.bchd.android_neutrino.wallet.Addresses;
 import cash.bchd.android_neutrino.wallet.Amount;
 import cash.bchd.android_neutrino.wallet.BitcoinPaymentURI;
 import cash.bchd.android_neutrino.wallet.ExchangeRates;
@@ -49,7 +55,6 @@ public class ReceiveActivity extends AppCompatActivity {
 
     boolean showingFiat = true;
     String fiatCurrency;
-    String lastAddress;
     TextInputEditText receiveAmountInput;
     TextView conversionRate;
     Network network;
@@ -58,6 +63,8 @@ public class ReceiveActivity extends AppCompatActivity {
     TextInputEditText memo;
     long totalReceived;
     PopupWindow requestPopup;
+    // The request for the address the popup shows, which closing the popup cancels.
+    private ListenableFuture<Addresses> addressRequest;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,7 +85,6 @@ public class ReceiveActivity extends AppCompatActivity {
         Bundle extras = intent.getExtras();
         if (extras != null) {
             fiatCurrency = extras.getString("fiatCurrency");
-            lastAddress = extras.getString("lastAddress");
         }
         receiveAmountInput = findViewById(R.id.receiveAmountInput);
         conversionRate = findViewById(R.id.receiveConversionRate);
@@ -249,44 +255,19 @@ public class ReceiveActivity extends AppCompatActivity {
         }
     }
 
+    // displayQRPopup shows the payment request in a popup: its URI and QR code, with the wallet's
+    // first unused address, asked for off the main thread, as a busy wallet answers late, with a
+    // spinner until it comes, and never one kept from before, which could have been paid.
     private void displayQRPopup() {
-        // The wallet that runs now, as the one that ran when the screen opened may have stopped
-        // since, and started again.
-        Wallet wallet = Wallet.getInstance();
-        boolean running = wallet != null && wallet.isRunning();
-        String lastAddr = "";
-        if (!running) {
-            lastAddr = lastAddress;
-            if (lastAddr.equals("")) {
-                Snackbar snackbar = Snackbar.make(receiveLayout, R.string.wallet_is_not_loaded_yet, Snackbar.LENGTH_LONG);
-                snackbar.show();
-                return;
-            }
-        }
-        LayoutInflater layoutInflater = (LayoutInflater) ReceiveActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View customView = layoutInflater.inflate(R.layout.requestpopup, receiveLayout, false);
-        PopupWindow popupWindow = new PopupWindow(customView, CoordinatorLayout.LayoutParams.WRAP_CONTENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT, true);
-        popupWindow.showAtLocation(findViewById(R.id.receiveLayout), Gravity.CENTER, 0, 0);
-        requestPopup = popupWindow;
-        popupWindow.setOutsideTouchable(true);
-        popupWindow.setFocusable(true);
-        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        int dimension = Math.min(metrics.widthPixels, metrics.heightPixels);
+
+        // The request is made before the popup opens, which then shows it, or not at all, with an
+        // amount that can't be read, as a fiat one before the rates came.
+        BitcoinPaymentURI.Builder builder = new BitcoinPaymentURI.Builder();
+        // A request without an amount, as for an empty field, lets the payer choose it.
+        Amount requestAmount = null;
         try {
-            String addr;
-            if (running) {
-                addr = wallet.currentAddress();
-            } else {
-                addr = lastAddr;
-            }
-            DisplayMetrics metrics = getResources().getDisplayMetrics();
-            int smallerDimension = Math.min(metrics.widthPixels, metrics.heightPixels);
-            final int finalDimension = smallerDimension;
-
-            BitcoinPaymentURI.Builder builder = new BitcoinPaymentURI.Builder();
-            builder.address(addr);
-
-            // A request without an amount, as for the field's 0, lets the payer choose it.
-            Amount requestAmount = null;
             if (receiveAmountInput.getText() != null && !receiveAmountInput.getText().toString().equals("")) {
                 double bchAmount = Double.valueOf(receiveAmountInput.getText().toString().replace(",", "."));
                 if (showingFiat) {
@@ -298,87 +279,137 @@ public class ReceiveActivity extends AppCompatActivity {
                     builder.amount(amount.toBCH());
                 }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            receiveAmountInput.setError(getString(R.string.invalid_amount));
+            return;
+        }
 
-            final Amount compareAmount = requestAmount;
+        if (label.getText() != null && !label.getText().toString().equals("")) {
+            builder.label(label.getText().toString());
+        }
 
-            if (label.getText() != null && !label.getText().toString().equals("")) {
-                builder.label(label.getText().toString());
+        if (memo.getText() != null && !memo.getText().toString().equals("")) {
+            builder.message(memo.getText().toString());
+        }
+
+        LayoutInflater layoutInflater = (LayoutInflater) ReceiveActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        View customView = layoutInflater.inflate(R.layout.requestpopup, receiveLayout, false);
+        PopupWindow popupWindow = new PopupWindow(customView, CoordinatorLayout.LayoutParams.WRAP_CONTENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT, true);
+        popupWindow.showAtLocation(findViewById(R.id.receiveLayout), Gravity.CENTER, 0, 0);
+        requestPopup = popupWindow;
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setFocusable(true);
+        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        popupWindow.setOnDismissListener(() -> {
+            if (addressRequest != null) {
+                addressRequest.cancel(true);
             }
+        });
 
-            if (memo.getText() != null && !memo.getText().toString().equals("")) {
-                builder.message(memo.getText().toString());
-            }
+        TextView helperText = customView.findViewById(R.id.uriHelpText);
+        helperText.setText(requestAmount != null ? getString(R.string.send_bch_to, requestAmount.toString())
+                : getString(R.string.send_any_bch_to));
 
-            BitcoinPaymentURI uri = builder.build();
+        askAddress(customView, popupWindow, builder, requestAmount, dimension);
+    }
 
-            Bitmap bitmap = QrCodes.encode(uri.getURI(), smallerDimension);
-            ImageView qrImage = customView.findViewById(R.id.requestQRCode);
+    // askAddress asks the wallet for its address, once one runs, and shows the request with it
+    // when it comes, or says that it couldn't get it, which a tap asks again.
+    private void askAddress(View popup, PopupWindow window, BitcoinPaymentURI.Builder builder,
+                            Amount requestAmount, int dimension) {
+        ProgressBar loading = popup.findViewById(R.id.requestQRLoading);
+        ImageView qrImage = popup.findViewById(R.id.requestQRCode);
+        TextView uriText = popup.findViewById(R.id.requestURi);
+        loading.setVisibility(View.VISIBLE);
+        qrImage.setImageDrawable(QrCodes.blank(dimension));
+        qrImage.setOnClickListener(null);
+        // As long as the request will be, unseen, so that the popup doesn't grow when it comes.
+        uriText.setText(builder.address(MainActivity.ADDRESS_SIZED).build().getURI());
+        uriText.setTextColor(Color.TRANSPARENT);
+        uriText.setOnClickListener(null);
 
-            qrImage.setImageBitmap(bitmap);
-
-            View.OnClickListener onClickListener = v -> copyToClipboard(uri.getURI());
-
-            qrImage.setOnClickListener(onClickListener);
-
-            TextView addrText = customView.findViewById(R.id.requestURi);
-            addrText.setText(uri.getURI());
-            addrText.setOnClickListener(onClickListener);
-
-            TextView helperText = customView.findViewById(R.id.uriHelpText);
-            helperText.setText(requestAmount != null ? getString(R.string.send_bch_to, requestAmount.toString())
-                    : getString(R.string.send_any_bch_to));
-
-            // A wallet that has yet to start can't tell of the payment.
-            if (wallet == null) {
-                return;
-            }
-            wallet.listenAddress(addr, new AddressListener() {
-                @Override
-                public void onPaymentReceived(long amount) {
-                    if (getApplicationContext() != null) {
-                        runOnUiThread(() -> {
-                            totalReceived += amount;
-                            if (compareAmount == null || totalReceived >= compareAmount.getSatoshis()) {
-                                Vibrations.buzz(getApplicationContext());
-                                CoinFlip.show(customView.findViewById(R.id.requestQRLayout));
-                            } else {
-                                TextView partialPayment = customView.findViewById(R.id.parialPayment);
-                                partialPayment.setVisibility(View.VISIBLE);
-
-                                TextView helperText1 = customView.findViewById(R.id.uriHelpText);
-                                Amount newAmt = new Amount(compareAmount.getSatoshis() - totalReceived);
-                                helperText1.setText(getString(R.string.send_bch_to, newAmt.toString()));
-
-                                builder.amount(newAmt.toBCH());
-
-                                BitcoinPaymentURI newUri = builder.build();
-
-                                Bitmap newBitmap = null;
-                                try {
-                                    newBitmap = QrCodes.encode(newUri.getURI(), finalDimension);
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                                ImageView qrImage1 = customView.findViewById(R.id.requestQRCode);
-
-                                qrImage1.setImageBitmap(newBitmap);
-
-                                qrImage1.setOnClickListener(v -> copyToClipboard(newUri.getURI()));
-
-                                TextView addrText1 = customView.findViewById(R.id.requestURi);
-                                addrText1.setText(newUri.getURI());
-                                addrText1.setOnClickListener(v -> copyToClipboard(newUri.getURI()));
-
-                                LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) helperText1.getLayoutParams();
-                                params.setMargins(params.leftMargin, -25, params.rightMargin, params.bottomMargin);
-                            }
-                        });
-                    }
+        ListenableFuture<Addresses> request = Wallet.currentAddressesAsync();
+        addressRequest = request;
+        Futures.addCallback(request, new FutureCallback<Addresses>() {
+            @Override
+            public void onSuccess(Addresses addresses) {
+                if (!window.isShowing() || request != addressRequest) {
+                    return;
                 }
-            });
+                loading.setVisibility(View.GONE);
+                builder.address(addresses.plain);
+                showRequest(popup, builder.build(), dimension);
+                listenForPayment(popup, addresses.plain, builder, requestAmount, dimension);
+            }
+
+            @Override
+            public void onFailure(@NonNull Throwable t) {
+                if (t instanceof CancellationException || !window.isShowing() || request != addressRequest) {
+                    return;
+                }
+                t.printStackTrace();
+                loading.setVisibility(View.GONE);
+                uriText.setTextColor(Color.BLACK);
+                uriText.setText(R.string.address_unavailable);
+                View.OnClickListener again = v -> askAddress(popup, window, builder, requestAmount, dimension);
+                uriText.setOnClickListener(again);
+                qrImage.setOnClickListener(again);
+            }
+        }, ContextCompat.getMainExecutor(this));
+    }
+
+    // showRequest shows the request's URI and its QR code, which tapping either copies.
+    private void showRequest(View popup, BitcoinPaymentURI uri, int dimension) {
+        ImageView qrImage = popup.findViewById(R.id.requestQRCode);
+        try {
+            qrImage.setImageBitmap(QrCodes.encode(uri.getURI(), dimension));
         } catch (Exception e) {
             e.printStackTrace();
         }
+        View.OnClickListener copy = v -> copyToClipboard(uri.getURI());
+        qrImage.setOnClickListener(copy);
+        TextView uriText = popup.findViewById(R.id.requestURi);
+        uriText.setTextColor(Color.BLACK);
+        uriText.setText(uri.getURI());
+        uriText.setOnClickListener(copy);
+    }
+
+    // listenForPayment celebrates a payment to the address that pays the request, or shows what's
+    // left to pay of it.
+    private void listenForPayment(View popup, String address, BitcoinPaymentURI.Builder builder,
+                                  Amount requestAmount, int dimension) {
+        Wallet wallet = Wallet.getInstance();
+        if (wallet == null) {
+            return;
+        }
+        wallet.listenAddress(address, new AddressListener() {
+            @Override
+            public void onPaymentReceived(long amount) {
+                if (getApplicationContext() != null) {
+                    runOnUiThread(() -> {
+                        totalReceived += amount;
+                        if (requestAmount == null || totalReceived >= requestAmount.getSatoshis()) {
+                            Vibrations.buzz(getApplicationContext());
+                            CoinFlip.show(popup.findViewById(R.id.requestQRLayout));
+                        } else {
+                            TextView partialPayment = popup.findViewById(R.id.parialPayment);
+                            partialPayment.setVisibility(View.VISIBLE);
+
+                            TextView helperText = popup.findViewById(R.id.uriHelpText);
+                            Amount newAmt = new Amount(requestAmount.getSatoshis() - totalReceived);
+                            helperText.setText(getString(R.string.send_bch_to, newAmt.toString()));
+
+                            builder.amount(newAmt.toBCH());
+                            showRequest(popup, builder.build(), dimension);
+
+                            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) helperText.getLayoutParams();
+                            params.setMargins(params.leftMargin, -25, params.rightMargin, params.bottomMargin);
+                        }
+                    });
+                }
+            }
+        });
     }
 
     private void copyToClipboard(String data) {

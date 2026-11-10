@@ -197,8 +197,6 @@ public class RestoreActivity extends AppCompatActivity {
         settings.clearLoadedIcons();
         TokenLabels.clear();
         TokenLabelFile.delete(this, network);
-        settings.setLastAddress("");
-        settings.setLastTokenAddress("");
         settings.setBackupReminder(false);
 
         // Stop the wallet, and delete its files once it has closed them, so

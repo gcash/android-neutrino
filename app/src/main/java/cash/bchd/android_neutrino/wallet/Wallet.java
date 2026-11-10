@@ -8,7 +8,9 @@ import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
 
 import java.io.File;
@@ -28,6 +30,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -102,6 +105,14 @@ public class Wallet implements Serializable {
                 thread.setDaemon(true);
                 return thread;
             });
+    // Asks for the wallet's current address, which can take a while when the wallet is busy, as
+    // during a sync, so never on the UI thread.
+    private static final ListeningExecutorService ADDRESSES = MoreExecutors.listeningDecorator(
+            Executors.newSingleThreadExecutor(r -> {
+                Thread thread = new Thread(r, "wallet-addresses");
+                thread.setDaemon(true);
+                return thread;
+            }));
     private static final long STREAM_FIRST_DELAY_MILLIS = 1000;
     private static final long STREAM_MAX_DELAY_MILLIS = 30000;
 
@@ -149,6 +160,52 @@ public class Wallet implements Serializable {
         for (Runnable listener : READY_LISTENERS) {
             listener.run();
         }
+    }
+
+    /**
+     * whenRunning returns the wallet once one is running: at once if one is, or once the next one
+     * has loaded, as when the app has just started or the wallet is starting again. Cancelling it
+     * stops waiting.
+     */
+    public static ListenableFuture<Wallet> whenRunning() {
+        return firstReady(() -> {
+            Wallet wallet = instance;
+            return wallet != null && wallet.isRunning() ? wallet : null;
+        });
+    }
+
+    /**
+     * firstReady returns what current gives once it gives something: at once if it does now, or
+     * when a wallet has loaded and it does then. Once it's done, or cancelled, it stops listening.
+     */
+    static <T> ListenableFuture<T> firstReady(Supplier<T> current) {
+        SettableFuture<T> ready = SettableFuture.create();
+        Runnable listener = () -> {
+            T value = current.get();
+            if (value != null) {
+                ready.set(value);
+            }
+        };
+        // Listening first, so that a wallet that loads after the check below isn't missed.
+        addReadyListener(listener);
+        ready.addListener(() -> removeReadyListener(listener), MoreExecutors.directExecutor());
+        listener.run();
+        return ready;
+    }
+
+    // readyListenerCount returns how many are waiting for a wallet to load, for tests.
+    static int readyListenerCount() {
+        return READY_LISTENERS.size();
+    }
+
+    /**
+     * currentAddressesAsync returns both forms of the current address of the wallet that runs,
+     * once one does, asked for off the UI thread. It has no deadline, as a wallet that's busy
+     * answers late, and cancelling it stops waiting.
+     */
+    public static ListenableFuture<Addresses> currentAddressesAsync() {
+        return Futures.transformAsync(whenRunning(), wallet -> ADDRESSES.submit(wallet::currentAddresses),
+                MoreExecutors.directExecutor());
     }
 
     public static Wallet getInstance() {

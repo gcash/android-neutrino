@@ -13,6 +13,7 @@ import cash.bchd.android_neutrino.wallet.TokenNft;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 
 public class SettingsTest {
@@ -41,7 +42,6 @@ public class SettingsTest {
         List<TokenBalance> tokens = Collections.singletonList(new TokenBalance("aa", 5, 1, 0,
                 Collections.singletonList(new TokenNft(TokenNft.Capability.MINTING, "01", "bb", 0, 1000))));
         mainnet.setLastTokens(tokens);
-        mainnet.setLastTokenAddress("zpm2qsznhks23z7629mms6s4cwef74vcwvrqekrq9w");
         mainnet.hideToken("aa");
         mainnet.hideToken("bb");
         mainnet.setWalletInitialized(true);
@@ -51,7 +51,6 @@ public class SettingsTest {
         assertEquals(EncryptionType.UNENCRYPTED, testnet4.getEncryptionType());
         assertEquals(0, testnet4.getLastBalance());
         assertEquals(Collections.emptyList(), testnet4.getLastTokens());
-        assertEquals("", testnet4.getLastTokenAddress());
         assertEquals(Collections.emptySet(), testnet4.getHiddenTokens());
         assertEquals(false, testnet4.getWalletInitialized());
         testnet4.setPeers("35.208.255.10");
@@ -60,9 +59,20 @@ public class SettingsTest {
         assertEquals("35.208.165.58", mainnet.getPeers());
         assertEquals(5000, mainnet.getLastBalance());
         assertEquals(tokens, mainnet.getLastTokens());
-        assertEquals("zpm2qsznhks23z7629mms6s4cwef74vcwvrqekrq9w", mainnet.getLastTokenAddress());
         assertEquals(new HashSet<>(Arrays.asList("aa", "bb")), mainnet.getHiddenTokens());
         assertEquals("35.208.255.10", testnet4.getPeers());
+    }
+
+    @Test
+    public void forgetsTheAddressItOnceKept() {
+        InMemoryPreferences prefs = new InMemoryPreferences();
+        prefs.edit().putString("LastAddress", "qpm2qsznhks23z7629mms6s4cwef74vcwvrqekrq9w")
+                .putString("LastTokenAddress", "zpm2qsznhks23z7629mms6s4cwef74vcwvrqekrq9w")
+                .putLong("LastBalance", 5000).apply();
+        Settings settings = new Settings(prefs, prefs, Network.MAINNET);
+        assertFalse(prefs.contains("LastAddress"));
+        assertFalse(prefs.contains("LastTokenAddress"));
+        assertEquals(5000, settings.getLastBalance());
     }
 
     @Test

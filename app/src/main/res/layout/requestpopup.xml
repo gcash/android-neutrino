@@ -11,16 +11,28 @@
 
     <!-- Takes the height that the text below leaves, so that the text shows also when the
          screen is short, as on a tablet held sideways. It spans the text's width, white
-         around a code made smaller. -->
-    <ImageView
-        android:id="@+id/requestQRCode"
-        android:contentDescription="@string/payment_request_qr_code"
+         around a code made smaller, with a spinner until the wallet gives the address. -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:adjustViewBounds="true"
-        android:background="@android:color/white"
-        android:scaleType="fitCenter" />
+        android:background="@android:color/white">
+
+        <ImageView
+            android:id="@+id/requestQRCode"
+            android:contentDescription="@string/payment_request_qr_code"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:adjustViewBounds="true"
+            android:scaleType="fitCenter" />
+
+        <ProgressBar
+            android:id="@+id/requestQRLoading"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/parialPayment"

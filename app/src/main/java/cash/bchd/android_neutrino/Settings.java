@@ -48,8 +48,10 @@ public class Settings {
     private static final String SEALED_MNEMONIC_KEY = "SealedMnemonic";
     private static final String LAST_BALANCE_KEY = "LastBalance";
     private static final String LAST_TOKENS_KEY = "LastTokens";
-    private static final String LAST_ADDRESS_KEY = "LastAddress";
-    private static final String LAST_TOKEN_ADDRESS_KEY = "LastTokenAddress";
+    // The address the app once kept to show while the wallet loaded, which could have been paid
+    // since, and is only removed now: an address shown is always the wallet's fresh one.
+    private static final String OLD_LAST_ADDRESS_KEY = "LastAddress";
+    private static final String OLD_LAST_TOKEN_ADDRESS_KEY = "LastTokenAddress";
     private static final String HIDDEN_TOKENS_KEY = "HiddenTokens";
     private static final String HIDDEN_ORDER_KEY = "HiddenTokensOrder";
     private static final String TO_FORGET_KEY = "TokensToForget";
@@ -85,6 +87,14 @@ public class Settings {
         this.prefs = prefs;
         this.network = network;
         instance = this;
+        forgetOldAddress(prefs);
+    }
+
+    // forgetOldAddress removes the address the app once kept from a network's wallet's settings.
+    private static void forgetOldAddress(SharedPreferences prefs) {
+        if (prefs.contains(OLD_LAST_ADDRESS_KEY) || prefs.contains(OLD_LAST_TOKEN_ADDRESS_KEY)) {
+            prefs.edit().remove(OLD_LAST_ADDRESS_KEY).remove(OLD_LAST_TOKEN_ADDRESS_KEY).apply();
+        }
     }
 
     /**
@@ -94,6 +104,11 @@ public class Settings {
     static Settings load(Context context) {
         SharedPreferences appPrefs = PreferenceManager.getDefaultSharedPreferences(context);
         Network network = Network.fromId(appPrefs.getString(NETWORK_KEY, Network.MAINNET.id));
+        // Each network's wallet's, not only this one's, as it stays on disk until it's removed.
+        for (Network each : Network.values()) {
+            forgetOldAddress(each == Network.MAINNET ? appPrefs
+                    : context.getSharedPreferences(walletPrefsName(each), Context.MODE_PRIVATE));
+        }
         SharedPreferences prefs = network == Network.MAINNET ? appPrefs
                 : context.getSharedPreferences(walletPrefsName(network), Context.MODE_PRIVATE);
         return new Settings(appPrefs, prefs, network);
@@ -221,24 +236,6 @@ public class Settings {
 
     String getFiatCurrency() {
         return appPrefs.getString(FIAT_CURRENCY_KEY, "usd");
-    }
-
-    void setLastAddress(String addr) {
-        putString(LAST_ADDRESS_KEY, addr);
-    }
-
-    String getLastAddress() {
-        return prefs.getString(LAST_ADDRESS_KEY, "");
-    }
-
-    // The token-aware form of the last address, which the QR code's popup shows as it shows the
-    // last address, until the wallet has loaded.
-    void setLastTokenAddress(String addr) {
-        putString(LAST_TOKEN_ADDRESS_KEY, addr);
-    }
-
-    String getLastTokenAddress() {
-        return prefs.getString(LAST_TOKEN_ADDRESS_KEY, "");
     }
 
     // The token IDs of the tokens the user hid, which the main screen leaves out. Restoring a

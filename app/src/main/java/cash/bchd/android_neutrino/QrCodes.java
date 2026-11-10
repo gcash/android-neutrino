@@ -2,6 +2,8 @@ package cash.bchd.android_neutrino;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
@@ -40,5 +42,16 @@ public final class QrCodes {
         Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
         return bitmap;
+    }
+
+    /**
+     * blank returns a white square of the size encode draws, to hold a code's room while its
+     * text is still being asked for, so that what shows it doesn't grow when the code comes.
+     */
+    public static Drawable blank(int size) {
+        GradientDrawable blank = new GradientDrawable();
+        blank.setColor(Color.WHITE);
+        blank.setSize(size, size);
+        return blank;
     }
 }
