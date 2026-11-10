@@ -65,8 +65,11 @@
                         android:textColor="@color/neonPurple"
                         android:textSize="40sp" />
 
+                    <!-- The amount starts empty, with a grey 0 that typing replaces, and the hint
+                         stays in the field rather than floating above it. -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/receiveAmountLayout"
+                        app:hintEnabled="false"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_toEndOf="@+id/receiveSymbolLabel"
@@ -77,8 +80,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="10dp"
+                            android:hint="@string/string_zero"
                             android:inputType="numberDecimal"
-                            android:text="@string/string_zero"
                             android:textColor="@color/neonPurple"
                             android:textColorHint="@color/grey"
                             android:textSize="40sp" />
