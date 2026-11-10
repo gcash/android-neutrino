@@ -175,12 +175,12 @@
                 android:layout_gravity="center"
                 android:layout_marginBottom="10dp" />
 
-            <LinearLayout
+            <!-- The spinner shows over the middle of the button while the wallet builds the
+                 payment: 25dp of margin, and half of what the button is taller than it. -->
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dip"
-                android:layout_weight="1"
-                android:gravity="center|bottom"
-                android:orientation="vertical">
+                android:layout_weight="1">
 
                 <Button
                     android:id="@+id/sendBtn"
@@ -193,7 +193,16 @@
                     android:textColor="@android:color/white"
                     android:textSize="20sp" />
 
-            </LinearLayout>
+                <ProgressBar
+                    android:id="@+id/sendProgress"
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="40dp"
+                    android:indeterminateTint="@android:color/white"
+                    android:translationZ="10dp"
+                    android:visibility="gone" />
+            </FrameLayout>
 
         </LinearLayout>
 

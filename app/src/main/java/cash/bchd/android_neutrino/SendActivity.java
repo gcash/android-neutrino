@@ -13,6 +13,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
@@ -30,10 +31,14 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -73,6 +78,19 @@ public class SendActivity extends AppCompatActivity {
     // gRPC, and shows only the result for the address as it stands.
     private final ExecutorService addressChecks = Executors.newSingleThreadExecutor();
     private final AtomicInteger addressEdits = new AtomicInteger();
+    // Asks the wallet for the balance and builds the payment off the main thread, as a busy
+    // wallet answers late, and the screen mustn't wait on it.
+    private final ListeningExecutorService walletCalls =
+            MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor());
+    private ListenableFuture<Long> balanceRequest;
+    // Whether the wallet is building the payment, which Send waits for.
+    private boolean preparing;
+    private Button sendButton;
+    private ProgressBar sendProgress;
+    private ToggleButton sendAllBtn;
+    private TextInputLayout addressLayout;
+    // How long to wait before asking a wallet that failed to answer for the balance again.
+    private static final long BALANCE_RETRY_MILLIS = 1000;
     Network network;
     TextView balanceTxtView;
     Amount balance;
@@ -114,16 +132,6 @@ public class SendActivity extends AppCompatActivity {
         }
 
         balanceTxtView = findViewById(R.id.sendBalance);
-        try {
-            balance = new Amount(Wallet.getInstance().balance());
-            if (network.hasFiat) {
-                balanceTxtView.setText(getString(R.string.balance_fiat_amount, ExchangeRates.getInstance().getFormattedAmountInFiat(balance, Currency.getInstance(fiatCurrency))));
-            } else {
-                balanceTxtView.setText(getString(R.string.balance_bch_amount, balance.toString()));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
         symbolLabel = findViewById(R.id.symbolLabel);
 
@@ -166,14 +174,12 @@ public class SendActivity extends AppCompatActivity {
             if (network.hasFiat && !savedInstanceState.getBoolean(STATE_SHOWING_FIAT, true)) {
                 showingFiat = false;
                 symbolLabel.setText("₿");
-                if (balance != null) {
-                    balanceTxtView.setText(getString(R.string.balance_bch_amount, balance.toString()));
-                }
             }
         }
+        showBalance();
 
         address = findViewById(R.id.addressInput);
-        TextInputLayout addressLayout = findViewById(R.id.addressLayout);
+        addressLayout = findViewById(R.id.addressLayout);
         addressLayout.setEndIconOnClickListener(v -> scanner.launch(null));
 
         memo = findViewById(R.id.memoInput);
@@ -199,114 +205,18 @@ public class SendActivity extends AppCompatActivity {
             }
         });
 
-        Button send = findViewById(R.id.sendBtn);
-        send.setOnClickListener(v -> {
-            TextInputLayout layout = addressLayout;
-            // The wallet that runs now, as the one that ran when the screen opened may have
-            // stopped since, and started again.
-            Wallet wallet = Wallet.getInstance();
-            if (wallet == null || !wallet.isRunning()) {
-                Snackbar.make(sendLayout, R.string.wallet_is_not_loaded_yet, Snackbar.LENGTH_LONG).show();
-                return;
-            }
-            try {
-                boolean inputError = false;
-                boolean valid = address.getText() != null && wallet.validateAddress(address.getText().toString());
-                if (!valid) {
-                    layout.setError(getString(R.string.invalid_bitcoin_cash_address));
-                    inputError = true;
-                } else {
-                    layout.setError(null);
-                }
-                Amount toSpend = null;
-                if (inputAmount.getText() != null && inputAmount.getText().toString().equals("")) {
-                    TextInputEditText etAmount = findViewById(R.id.amountInput);
-                    etAmount.setError(getString(R.string.invalid_amount));
-                    inputError = true;
-                }
-                if (inputError) {
-                    return;
-                }
+        sendButton = findViewById(R.id.sendBtn);
+        sendProgress = findViewById(R.id.sendProgress);
+        sendButton.setOnClickListener(v -> send());
 
-                if (inputAmount.getText() != null) {
-                    if (showingFiat) {
-                        double fiatAmount = Double.valueOf(inputAmount.getText().toString().replace(",", "."));
-                        toSpend = new Amount(ExchangeRates.getInstance().convertToBCH(fiatAmount, Currency.getInstance(fiatCurrency)));
-                    } else {
-                        toSpend = Amount.fromBCH(inputAmount.getText().toString());
-                    }
-                }
-
-                if (toSpend != null && (toSpend.getSatoshis() == 0 || toSpend.getSatoshis() > balance.getSatoshis())) {
-                    TextInputEditText etAmount = findViewById(R.id.amountInput);
-                    etAmount.setError(getString(R.string.invalid_amount));
-                    return;
-                }
-                byte[] serializedTx = null;
-                long txFee = 0;
-                List<Long> inputVals = null;
-                if (sendAll) {
-                    Api.SweepAccountResponse tx = wallet.sweepAccount(address.getText().toString(), satPerByte);
-                    serializedTx = tx.getSerializedTransaction().toByteArray();
-                    txFee = tx.getFee();
-                    inputVals = tx.getInputValuesList();
-                } else if (toSpend != null) {
-                    Api.CreateTransactionResponse tx = wallet.createTransaction(address.getText().toString(), toSpend.getSatoshis(), satPerByte);
-                    serializedTx = tx.getSerializedTransaction().toByteArray();
-                    txFee = tx.getFee();
-                    inputVals = tx.getInputValuesList();
-                }
-
-                String fiatFormatted = network.hasFiat ? ExchangeRates.getInstance().getFormattedAmountInFiat(toSpend, Currency.getInstance(fiatCurrency)) : "";
-                ArrayList<String> inputStrings = new ArrayList<>();
-
-                if (inputVals != null && !inputVals.isEmpty()) {
-                    for (Long val : inputVals) {
-                        inputStrings.add(String.valueOf(val));
-                    }
-                }
-
-                Intent intent1 = new Intent(getApplicationContext(), ConfirmationActivity.class);
-                intent1.putExtra("paymentAddress", address.getText().toString());
-                intent1.putExtra("amountBCH", toSpend.toString());
-                intent1.putExtra("amountFiat", fiatFormatted);
-                intent1.putExtra("fee", txFee);
-                intent1.putExtra("serializedTransaction", serializedTx);
-                intent1.putStringArrayListExtra("inputVals", inputStrings);
-
-                if (memo.getText() != null && !memo.getText().toString().equals("")) {
-                    intent1.putExtra("memo", memo.getText().toString());
-                }
-                if (label != null && !label.equals("")) {
-                    intent1.putExtra("label", label);
-                }
-                confirmationScreen.launch(intent1);
-            } catch (Exception e) {
-                // Say that the wallet can't be reached, as when it stopped or is starting again,
-                // or why bchwallet refused the transaction, such as a dust amount, when it did.
-                String message;
-                if (Status.fromThrowable(e).getCode() == Status.Code.UNAVAILABLE) {
-                    message = getString(R.string.wallet_is_not_loaded_yet);
-                } else {
-                    String reason = Wallet.reasonFor(e);
-                    message = reason != null
-                            ? getString(R.string.error_creating_transaction_reason, reason)
-                            : getString(R.string.error_creating_transaction);
-                }
-                Snackbar snackbar = Snackbar.make(sendLayout, message, Snackbar.LENGTH_LONG);
-                snackbar.setTextMaxLines(5);
-                snackbar.show();
-                e.printStackTrace();
-            }
-        });
-
-        ToggleButton sendAllBtn = findViewById(R.id.sendAllBtn);
+        sendAllBtn = findViewById(R.id.sendAllBtn);
         sendAllBtn.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
                 if (showingFiat) {
                     toggleBchFiat();
                 }
-                inputAmount.setText(balance.toString());
+                // Until the balance comes, as on a restored screen, which fills it in then.
+                inputAmount.setText(balance != null ? balance.toString() : "");
                 inputAmount.setEnabled(false);
                 updateAlternateAmount();
                 sendAll = true;
@@ -318,6 +228,8 @@ public class SendActivity extends AppCompatActivity {
                 inputAmount.setEnabled(true);
             }
         });
+
+        askBalance();
 
         // The link or payment request the screen was opened for is handled once: a recreated
         // screen has the fields it filled in, or went on to the confirmation screen.
@@ -350,9 +262,192 @@ public class SendActivity extends AppCompatActivity {
         }
     }
 
+    // showBalance shows the balance in the unit the amount is in, or that the wallet is still asked.
+    private void showBalance() {
+        if (balance == null) {
+            balanceTxtView.setText(R.string.balance_loading);
+            return;
+        }
+        if (showingFiat && network.hasFiat) {
+            try {
+                balanceTxtView.setText(getString(R.string.balance_fiat_amount, ExchangeRates.getInstance().getFormattedAmountInFiat(balance, Currency.getInstance(fiatCurrency))));
+                return;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        balanceTxtView.setText(getString(R.string.balance_bch_amount, balance.toString()));
+    }
+
+    // askBalance asks the wallet that runs, once one does, for the balance off the main thread, and
+    // shows it when it comes. Send and Send All wait for it, as both need it.
+    private void askBalance() {
+        ListenableFuture<Long> request = Futures.transformAsync(Wallet.whenRunning(),
+                wallet -> walletCalls.submit(wallet::balance), MoreExecutors.directExecutor());
+        balanceRequest = request;
+        updateSendable();
+        Futures.addCallback(request, new FutureCallback<Long>() {
+            @Override
+            public void onSuccess(Long satoshis) {
+                if (isDestroyed()) {
+                    return;
+                }
+                balance = new Amount(satoshis);
+                showBalance();
+                if (sendAll) {
+                    inputAmount.setText(balance.toString());
+                    updateAlternateAmount();
+                }
+                updateSendable();
+            }
+
+            @Override
+            public void onFailure(@NonNull Throwable t) {
+                if (t instanceof CancellationException || isDestroyed()) {
+                    return;
+                }
+                // The wallet stopped as it was asked, so the next one that runs is.
+                t.printStackTrace();
+                sendLayout.postDelayed(() -> {
+                    if (!isDestroyed()) {
+                        askBalance();
+                    }
+                }, BALANCE_RETRY_MILLIS);
+            }
+        }, ContextCompat.getMainExecutor(this));
+    }
+
+    // updateSendable has Send wait for the balance and for a payment being built, with its spinner
+    // on meanwhile, and Send All wait for the balance.
+    private void updateSendable() {
+        sendButton.setEnabled(balance != null && !preparing);
+        sendProgress.setVisibility(preparing ? View.VISIBLE : View.GONE);
+        sendAllBtn.setEnabled(balance != null);
+    }
+
+    // send checks what it can at once, then has the wallet check the address and build the payment
+    // off the main thread, and opens the confirmation screen with it.
+    private void send() {
+        if (preparing || balance == null) {
+            return;
+        }
+        // The wallet that runs now, as the one that ran when the screen opened may have stopped
+        // since, and started again.
+        Wallet wallet = Wallet.getInstance();
+        if (wallet == null || !wallet.isRunning()) {
+            Snackbar.make(sendLayout, R.string.wallet_is_not_loaded_yet, Snackbar.LENGTH_LONG).show();
+            return;
+        }
+        TextInputEditText etAmount = findViewById(R.id.amountInput);
+        Amount toSpend = null;
+        try {
+            if (inputAmount.getText() != null && !inputAmount.getText().toString().equals("")) {
+                if (showingFiat) {
+                    double fiatAmount = Double.valueOf(inputAmount.getText().toString().replace(",", "."));
+                    toSpend = new Amount(ExchangeRates.getInstance().convertToBCH(fiatAmount, Currency.getInstance(fiatCurrency)));
+                } else {
+                    toSpend = Amount.fromBCH(inputAmount.getText().toString());
+                }
+            }
+        } catch (Exception e) {
+            toSpend = null;
+        }
+        if (toSpend == null || toSpend.getSatoshis() == 0 || toSpend.getSatoshis() > balance.getSatoshis()) {
+            etAmount.setError(getString(R.string.invalid_amount));
+            // The address is told of too, as it's checked as it's typed.
+            checkAddress(true);
+            return;
+        }
+
+        String to = address.getText() == null ? "" : address.getText().toString();
+        boolean all = sendAll;
+        Amount spend = toSpend;
+        String memoText = memo.getText() == null ? "" : memo.getText().toString();
+        preparing = true;
+        updateSendable();
+        ListenableFuture<Intent> built = walletCalls.submit(() -> {
+            if (!wallet.validateAddress(to)) {
+                return null;
+            }
+            byte[] serializedTx;
+            long txFee;
+            List<Long> inputVals;
+            if (all) {
+                Api.SweepAccountResponse tx = wallet.sweepAccount(to, satPerByte);
+                serializedTx = tx.getSerializedTransaction().toByteArray();
+                txFee = tx.getFee();
+                inputVals = tx.getInputValuesList();
+            } else {
+                Api.CreateTransactionResponse tx = wallet.createTransaction(to, spend.getSatoshis(), satPerByte);
+                serializedTx = tx.getSerializedTransaction().toByteArray();
+                txFee = tx.getFee();
+                inputVals = tx.getInputValuesList();
+            }
+            String fiatFormatted = network.hasFiat ? ExchangeRates.getInstance().getFormattedAmountInFiat(spend, Currency.getInstance(fiatCurrency)) : "";
+            ArrayList<String> inputStrings = new ArrayList<>();
+            for (Long val : inputVals) {
+                inputStrings.add(String.valueOf(val));
+            }
+
+            Intent confirm = new Intent(getApplicationContext(), ConfirmationActivity.class);
+            confirm.putExtra("paymentAddress", to);
+            confirm.putExtra("amountBCH", spend.toString());
+            confirm.putExtra("amountFiat", fiatFormatted);
+            confirm.putExtra("fee", txFee);
+            confirm.putExtra("serializedTransaction", serializedTx);
+            confirm.putStringArrayListExtra("inputVals", inputStrings);
+            if (!memoText.equals("")) {
+                confirm.putExtra("memo", memoText);
+            }
+            if (label != null && !label.equals("")) {
+                confirm.putExtra("label", label);
+            }
+            return confirm;
+        });
+        Futures.addCallback(built, new FutureCallback<Intent>() {
+            @Override
+            public void onSuccess(Intent confirm) {
+                preparing = false;
+                if (isFinishing() || isDestroyed()) {
+                    return;
+                }
+                updateSendable();
+                if (confirm == null) {
+                    addressLayout.setError(getString(R.string.invalid_bitcoin_cash_address));
+                    return;
+                }
+                addressLayout.setError(null);
+                confirmationScreen.launch(confirm);
+            }
+
+            @Override
+            public void onFailure(@NonNull Throwable t) {
+                preparing = false;
+                if (t instanceof CancellationException || isFinishing() || isDestroyed()) {
+                    return;
+                }
+                updateSendable();
+                // Say that the wallet can't be reached, as when it stopped or is starting again,
+                // or why bchwallet refused the transaction, such as a dust amount, when it did.
+                String message;
+                if (Status.fromThrowable(t).getCode() == Status.Code.UNAVAILABLE) {
+                    message = getString(R.string.wallet_is_not_loaded_yet);
+                } else {
+                    String reason = Wallet.reasonFor(t);
+                    message = reason != null
+                            ? getString(R.string.error_creating_transaction_reason, reason)
+                            : getString(R.string.error_creating_transaction);
+                }
+                Snackbar snackbar = Snackbar.make(sendLayout, message, Snackbar.LENGTH_LONG);
+                snackbar.setTextMaxLines(5);
+                snackbar.show();
+                t.printStackTrace();
+            }
+        }, ContextCompat.getMainExecutor(this));
+    }
+
     public void toggleBchFiat() {
         if (showingFiat) {
-            balanceTxtView.setText(getString(R.string.balance_bch_amount, balance.toString()));
             symbolLabel.setText("₿");
 
             String amt = inputAmount.getText().toString().replace(",", ".");
@@ -366,10 +461,10 @@ public class SendActivity extends AppCompatActivity {
             }
 
             showingFiat = false;
+            showBalance();
             updateAlternateAmount();
         } else {
             try {
-                balanceTxtView.setText(getString(R.string.balance_fiat_amount, ExchangeRates.getInstance().getFormattedAmountInFiat(balance, Currency.getInstance(fiatCurrency))));
                 symbolLabel.setText(Currency.getInstance(fiatCurrency).getSymbol());
 
                 if (inputAmount.getText() != null) {
@@ -388,6 +483,7 @@ public class SendActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
             showingFiat = true;
+            showBalance();
             updateAlternateAmount();
         }
     }
@@ -570,6 +666,10 @@ public class SendActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         addressChecks.shutdownNow();
+        if (balanceRequest != null) {
+            balanceRequest.cancel(true);
+        }
+        walletCalls.shutdownNow();
         super.onDestroy();
     }
 
