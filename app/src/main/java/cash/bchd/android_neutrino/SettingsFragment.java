@@ -1,5 +1,6 @@
 package cash.bchd.android_neutrino;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -20,9 +21,13 @@ import androidx.preference.SwitchPreferenceCompat;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import cash.bchd.android_neutrino.tokens.TokenIcons;
 import cash.bchd.android_neutrino.wallet.Network;
@@ -48,6 +53,10 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     private WalletEventListener blockchainListener;
     private Runnable stopRescanListener;
 
+    // Asks the wallet where its chain is off the main thread, as a busy wallet answers late.
+    private static final ExecutorService CHAIN_ASKER = Executors.newSingleThreadExecutor();
+    private static final AtomicBoolean CHAIN_ASKING = new AtomicBoolean();
+
     @Override
     public void onDestroy() {
         Wallet wallet = Wallet.getInstance();
@@ -58,6 +67,46 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             stopRescanListener.run();
         }
         super.onDestroy();
+    }
+
+    // askChain asks the wallet where its chain is off the main thread, saves it, and shows it in
+    // the preference once it answers, if this screen is still there. While one ask waits on a
+    // busy wallet, another isn't queued behind it, and the screen isn't held meanwhile.
+    private void askChain() {
+        Wallet wallet = Wallet.getInstance();
+        if (wallet == null || !CHAIN_ASKING.compareAndSet(false, true)) {
+            return;
+        }
+        Settings saved = settings;
+        WeakReference<SettingsFragment> ref = new WeakReference<>(this);
+        CHAIN_ASKER.execute(() -> {
+            Api.NetworkResponse net;
+            try {
+                net = wallet.network();
+            } catch (Exception e) {
+                e.printStackTrace();
+                return;
+            } finally {
+                CHAIN_ASKING.set(false);
+            }
+            saved.setLastBlockHeight(net.getBestHeight());
+            saved.setLastBlockHash(net.getBestBlock());
+            saved.setScanHeight(net.getSyncedTo());
+            SettingsFragment fragment = ref.get();
+            Activity activity = fragment == null ? null : fragment.getActivity();
+            if (activity == null) {
+                return;
+            }
+            activity.runOnUiThread(() -> {
+                SettingsFragment shown = ref.get();
+                Preference blockchainPref = shown == null || !shown.isAdded() ? null : shown.findPreference("blockchain");
+                if (blockchainPref == null) {
+                    return;
+                }
+                String blockchainInfo = "Height: " + net.getBestHeight() + "\nHash: " + net.getBestBlock() + "\nScanned Through: " + net.getSyncedTo();
+                blockchainPref.setSummary(blockchainInfo);
+            });
+        });
     }
 
     @Override
@@ -72,33 +121,18 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
         if (rootKey == null) {
             activeScreen = "root";
-            try {
-                Api.NetworkResponse net = Wallet.getInstance().network();
-                settings.setLastBlockHeight(net.getBestHeight());
-                settings.setLastBlockHash(net.getBestBlock());
-                settings.setScanHeight(net.getSyncedTo());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
             if (settings==null) {
                 return;
             }
 
+            // What was saved of the chain at once, and what the wallet says when it answers.
             Preference blockchainPref = (Preference) findPreference("blockchain");
             String blockchainInfo = "Height: " + settings.getLastBlockHeight() + "\nHash: " + settings.getLastBlockHash() + "\nScanned Through: " + settings.getScanHeight();
             blockchainPref.setSummary(blockchainInfo);
-            blockchainPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-                    try {
-                        Api.NetworkResponse net = Wallet.getInstance().network();
-                        String blockchainInfo = "Height: " + net.getBestHeight() + "\nHash: " + net.getBestBlock() + "\nScanned Through: " + net.getSyncedTo();
-                        blockchainPref.setSummary(blockchainInfo);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    return false;
-                }
+            askChain();
+            blockchainPref.setOnPreferenceClickListener(preference -> {
+                askChain();
+                return false;
             });
 
             Preference backupPref = (Preference) findPreference("backup");
