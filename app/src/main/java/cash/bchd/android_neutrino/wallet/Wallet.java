@@ -70,8 +70,8 @@ public class Wallet implements Serializable {
     public final static String DEFAULT_PASSPHRASE = "LETMEIN";
 
     private HashMap<String, AddressListener> addressListeners = new HashMap<String, AddressListener>();
-    // The memos of the transactions the app sent, which the wallet doesn't have, by transaction.
-    private HashMap<ByteString, String> memos = new HashMap<ByteString, String>();
+    // The memos of the transactions the app sent, which the wallet doesn't have, by transaction ID.
+    private HashMap<String, String> memos = new HashMap<String, String>();
     // The listeners told of each new block, from any thread.
     private final List<WalletEventListener> blockchainListeners = new CopyOnWriteArrayList<>();
     // The listener of the screen that shows the wallet, which the notification streams tell of
@@ -643,7 +643,7 @@ public class Wallet implements Serializable {
                 .addTransactions(bs)
                 .build();
 
-        this.memos.put(bs, memo);
+        this.memos.put(txidOf(serializedTransaction), memo);
 
         return stub.postPayment(request);
     }
@@ -682,7 +682,7 @@ public class Wallet implements Serializable {
 
     public void publishTransaction(byte[] serializedTransaction, String memo) throws Exception {
         ByteString bs = ByteString.copyFrom(serializedTransaction);
-        this.memos.put(bs, memo);
+        this.memos.put(txidOf(serializedTransaction), memo);
         WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
         Api.PublishTransactionRequest request = Api.PublishTransactionRequest.newBuilder().setSignedTransaction(bs).build();
         Api.PublishTransactionResponse reply = stub.publishTransaction(request);
@@ -690,7 +690,7 @@ public class Wallet implements Serializable {
 
     public ListenableFuture<Api.PublishTransactionResponse> publishTransactionAsync(byte[] serializedTransaction, String memo) {
         ByteString bs = ByteString.copyFrom(serializedTransaction);
-        this.memos.put(bs, memo);
+        this.memos.put(txidOf(serializedTransaction), memo);
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
         Api.PublishTransactionRequest request = Api.PublishTransactionRequest.newBuilder().setSignedTransaction(bs).build();
         return stub.publishTransaction(request);
@@ -910,7 +910,11 @@ public class Wallet implements Serializable {
     // then makes the read asked for meanwhile, if one was.
     private void readAll(Map<WalletEventListener, Long> replies) {
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
-        Api.GetTransactionsRequest request = Api.GetTransactionsRequest.newBuilder().build();
+        // The list needs what the details say of each transaction, not its bytes, which the wallet
+        // would serialize again for each one of a long history.
+        Api.GetTransactionsRequest request = Api.GetTransactionsRequest.newBuilder()
+                .setOmitRawTransactions(true)
+                .build();
         ListenableFuture<Api.GetTransactionsResponse> reply = stub.getTransactions(request);
 
         Futures.addCallback(reply, new FutureCallback<Api.GetTransactionsResponse>() {
@@ -1107,7 +1111,7 @@ public class Wallet implements Serializable {
     }
 
     private TransactionData extractTransactionData(Api.TransactionDetails tx, int height, long timestamp) {
-        String memo = this.memos.get(tx.getTransaction());
+        String memo = this.memos.get(txidToString(tx.getHash()));
         return transactionData(tx, height, timestamp, memo != null ? memo : "");
     }
 
@@ -1162,6 +1166,20 @@ public class Wallet implements Serializable {
         byte[] txBytes = txid.toByteArray();
         reverse(txBytes);
         return BaseEncoding.base16().lowerCase().encode(txBytes);
+    }
+
+    /**
+     * txidOf returns the ID of a serialized transaction, its double SHA-256 as txidToString writes
+     * it, which keys the memos of the transactions the app sends.
+     */
+    static String txidOf(byte[] serializedTransaction) {
+        try {
+            MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
+            byte[] hash = sha256.digest(sha256.digest(serializedTransaction));
+            return txidToString(ByteString.copyFrom(hash));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("No SHA-256", e);
+        }
     }
 
     /**

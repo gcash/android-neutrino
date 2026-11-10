@@ -30,6 +30,20 @@ public class WalletTest {
     }
 
     @Test
+    public void namesATransactionByItsDoubleHash() {
+        // Bitcoin's genesis coinbase, whose ID is well known.
+        byte[] genesis = com.google.common.io.BaseEncoding.base16().lowerCase().decode(
+                "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff"
+                        + "4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c"
+                        + "6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e"
+                        + "6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828"
+                        + "e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c"
+                        + "702b6bf11d5fac00000000");
+        assertEquals("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b",
+                Wallet.txidOf(genesis));
+    }
+
+    @Test
     public void namesWhomASentTransactionPaid() {
         TransactionData tx = Wallet.transactionData(sent(PAYEE), 812345, 1761500000L, "lunch");
         assertFalse(tx.getIncoming());
