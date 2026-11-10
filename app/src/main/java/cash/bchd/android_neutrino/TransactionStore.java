@@ -26,8 +26,13 @@ public class TransactionStore {
     /**
      * LOCK is held to save, and by whoever reads the file to change it. Reading it alone needs no
      * lock, as a save replaces the file whole, which also leaves it whole if the app is killed.
+     * Deleting needs none either, as a restore does on the main thread, and a save of a large list
+     * can hold the lock for seconds: a save that sees a delete since it began throws its file away.
      */
     static final Object LOCK = new Object();
+
+    // Counts the deletes, for a save to tell one came while it saved.
+    private static final AtomicLong DELETES = new AtomicLong();
 
     // Counts the changes to the file, for a store to tell it's older.
     private static final AtomicLong SAVES = new AtomicLong();
@@ -92,9 +97,19 @@ public class TransactionStore {
         return transactions;
     }
 
-    public void save(Context context) throws Exception {
+    /**
+     * deletes returns how many deletes there were, for a save to tell one came while it saved.
+     */
+    static long deletes() {
+        return DELETES.get();
+    }
+
+    /**
+     * save saves the transactions to the file, unless a delete came since deletes counted them,
+     * and returns whether it did. A delete that comes as the file is renamed has it removed after.
+     */
+    boolean save(File file, long deletes) throws IOException {
         synchronized (LOCK) {
-            File file = context.getFileStreamPath(fileName);
             File tmp = new File(file.getPath() + ".tmp");
             boolean saved = false;
             try (FileOutputStream fos = new FileOutputStream(tmp);
@@ -102,11 +117,19 @@ public class TransactionStore {
                 os.writeObject(transactionDataSet);
                 os.flush();
                 fos.getFD().sync();
+                if (DELETES.get() != deletes) {
+                    return false;
+                }
                 saved = tmp.renameTo(file);
                 if (!saved) {
                     throw new IOException("Unable to save the transactions");
                 }
+                if (DELETES.get() != deletes) {
+                    file.delete();
+                    return false;
+                }
                 readAt = SAVES.incrementAndGet();
+                return true;
             } finally {
                 if (!saved) {
                     tmp.delete();
@@ -122,10 +145,11 @@ public class TransactionStore {
      */
     static TransactionStore merge(Context context, Network network, List<TransactionData> wallet) {
         synchronized (LOCK) {
+            long deletes = DELETES.get();
             TransactionStore store = new TransactionStore(context, network);
             store.setData(TransactionList.rebuild(store.getData(), wallet));
             try {
-                store.save(context);
+                store.save(context.getFileStreamPath(store.fileName), deletes);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -142,14 +166,21 @@ public class TransactionStore {
     }
 
     /**
-     * delete removes what's saved of a network's transactions.
+     * delete removes what's saved of a network's transactions. It doesn't wait for a save, which
+     * throws its file away instead.
      */
     static void delete(Context context, Network network) {
-        synchronized (LOCK) {
-            context.deleteFile(fileName(network));
-            context.deleteFile(fileName(network) + ".tmp");
-            SAVES.incrementAndGet();
-        }
+        delete(context.getFileStreamPath(fileName(network)));
+    }
+
+    /**
+     * delete removes the file of a store, and one being saved.
+     */
+    static void delete(File file) {
+        DELETES.incrementAndGet();
+        file.delete();
+        new File(file.getPath() + ".tmp").delete();
+        SAVES.incrementAndGet();
     }
 
     /**
