@@ -54,6 +54,20 @@ public class TransactionData implements Serializable, Comparable<TransactionData
         this.height = height;
     }
 
+    /**
+     * copy returns a transaction with the same fields, for one that's handed on again while what
+     * it was handed to before may still change its fiat amount.
+     */
+    public TransactionData copy() {
+        TransactionData copy = new TransactionData(txid, incoming, memo, amount, fiatAmount,
+                fiatCurrency, timestamp, toAddress, height);
+        copy.moreRecipients = moreRecipients;
+        copy.toYourself = toYourself;
+        copy.tokens = tokens == null ? null : new ArrayList<>(tokens);
+        copy.spendableAmount = spendableAmount;
+        return copy;
+    }
+
     public String getTxid() {
         return this.txid;
     }

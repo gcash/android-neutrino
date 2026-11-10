@@ -18,10 +18,13 @@ import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -78,6 +81,28 @@ public class Wallet implements Serializable {
 
     private int lastBlockHeight;
     private String lastBlockHash;
+
+    // The wallet's transactions as the app last read them all, kept up to date from the
+    // notifications, and what's under way with them, which historyLock guards: whether a read of
+    // them all is, and the listeners of one to make once it's done, as a read that began before a
+    // notification can miss what it told; and whether they're to be told, to which listener, and
+    // when they were told last, as they're told at most every HISTORY_GAP_NANOS.
+    private final Object historyLock = new Object();
+    private final TransactionHistory history = new TransactionHistory();
+    private boolean historyRead;
+    private final ReadQueue<WalletEventListener> reads = new ReadQueue<>();
+    private boolean historyToTell;
+    private WalletEventListener historyFor;
+    private long historyToldAt = System.nanoTime() - HISTORY_GAP_NANOS;
+    // How often at most the transactions are told while notifications keep coming, as during a
+    // sync, where each telling has the screens read and save them all.
+    private static final long HISTORY_GAP_NANOS = TimeUnit.SECONDS.toNanos(3);
+    // Tells the transactions, off the notifications' thread.
+    private static final ScheduledExecutorService HISTORY = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread thread = new Thread(r, "wallet-history");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     private static boolean running = false;
     // Those to tell when a wallet has loaded.
@@ -473,14 +498,29 @@ public class Wallet implements Serializable {
                 e.printStackTrace();
             }
         }
-        // The listener rebuilds its list from all of the wallet's transactions, which
-        // also drops the ones the wallet removed and moves the ones a reorg detached.
-        if (hasMinedTransactions || hasUnMinedTransactions || value.getDetachedBlocksCount() > 0) {
-            try {
-                getTransactions(listener);
-            } catch (Exception e) {
-                e.printStackTrace();
+        // The listener rebuilds its list from all of the wallet's transactions, which the
+        // notification brings up to date. A reorg has them all read again, as it moved the
+        // transactions of the blocks it detached, and so does a notification that comes before
+        // they were read, or as they're read.
+        boolean readAgain = value.getDetachedBlocksCount() > 0;
+        boolean changed = false;
+        if (!readAgain) {
+            synchronized (historyLock) {
+                if (historyRead && !reads.reading()) {
+                    changed = history.apply(value, this::extractTransactionData);
+                } else {
+                    readAgain = true;
+                }
             }
+        }
+        try {
+            if (readAgain) {
+                getTransactions(listener);
+            } else if (changed) {
+                tellHistory(listener);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -489,6 +529,11 @@ public class Wallet implements Serializable {
      * it may have missed notifications of them. It throws when the wallet doesn't answer.
      */
     public void refresh(WalletEventListener listener) throws Exception {
+        // A refresh is for notifications that may have been missed, so until its read is done,
+        // or if it fails before, the next notification reads them all too.
+        synchronized (historyLock) {
+            historyRead = false;
+        }
         Api.NetworkResponse net = network();
         listener.onBlock(net.getBestHeight(), net.getBestBlock());
         tellBalances(listener);
@@ -835,10 +880,37 @@ public class Wallet implements Serializable {
         return reply.getMnemonic();
     }
 
+    /**
+     * getTransactions reads all of the wallet's transactions and tells them to the listener. A
+     * read that's asked for while one is under way is made once that one's done, for all who
+     * asked meanwhile, as notifications can come many at once.
+     */
     public void getTransactions(WalletEventListener listener) throws Exception {
+        Map<WalletEventListener, Long> replies;
+        synchronized (historyLock) {
+            if (!reads.start(listener)) {
+                return;
+            }
+            replies = replyNumbers(Collections.singleton(listener));
+        }
+        readAll(replies);
+    }
+
+    // replyNumbers numbers the replies of a read for its listeners, under historyLock, so that a
+    // read's replies and the history told meanwhile come in the order they were made.
+    private static Map<WalletEventListener, Long> replyNumbers(Collection<WalletEventListener> listeners) {
+        Map<WalletEventListener, Long> replies = new LinkedHashMap<>();
+        for (WalletEventListener listener : listeners) {
+            replies.put(listener, listener.transactionReplies.next());
+        }
+        return replies;
+    }
+
+    // readAll reads all of the wallet's transactions, keeps them, and tells them to the listeners,
+    // then makes the read asked for meanwhile, if one was.
+    private void readAll(Map<WalletEventListener, Long> replies) {
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
         Api.GetTransactionsRequest request = Api.GetTransactionsRequest.newBuilder().build();
-        long replyNumber = listener.transactionReplies.next();
         ListenableFuture<Api.GetTransactionsResponse> reply = stub.getTransactions(request);
 
         Futures.addCallback(reply, new FutureCallback<Api.GetTransactionsResponse>() {
@@ -862,19 +934,115 @@ public class Wallet implements Serializable {
                 for (Api.TransactionDetails tx : result.getUnminedTransactionsList()) {
                     txs.add(extractTransactionData(tx, 0, tx.getTimestamp()));
                 }
+                // Its own copies, as the listeners set the fiat amounts of theirs.
+                List<TransactionData> kept = copiesOf(txs);
+                synchronized (historyLock) {
+                    history.replace(kept);
+                    historyRead = true;
+                }
                 int height = bestHeight;
-                listener.transactionReplies.deliver(replyNumber, () -> {
-                    if (!stopped) {
-                        listener.onGetTransactions(txs, height);
-                    }
-                });
+                boolean first = true;
+                for (Map.Entry<WalletEventListener, Long> replyTo : replies.entrySet()) {
+                    WalletEventListener listener = replyTo.getKey();
+                    // Each listener has its own, as it sets their fiat amounts.
+                    List<TransactionData> told = first ? txs : copiesOf(txs);
+                    first = false;
+                    listener.transactionReplies.deliver(replyTo.getValue(), () -> {
+                        if (!stopped) {
+                            listener.onGetTransactions(told, height);
+                        }
+                    });
+                }
+                readAllAgain();
             }
 
             @Override
             public void onFailure(Throwable t) {
                 t.printStackTrace();
+                // What the read was to bring in is missing, so the next notification reads them
+                // all rather than build on them.
+                synchronized (historyLock) {
+                    historyRead = false;
+                }
+                readAllAgain();
             }
         }, MoreExecutors.directExecutor());
+    }
+
+    // readAllAgain makes the read that was asked for while one was under way, if one was, or ends
+    // the reading.
+    private void readAllAgain() {
+        Map<WalletEventListener, Long> replies;
+        synchronized (historyLock) {
+            if (stopped) {
+                reads.stop();
+                return;
+            }
+            Set<WalletEventListener> next = reads.done();
+            if (next.isEmpty()) {
+                return;
+            }
+            replies = replyNumbers(next);
+        }
+        readAll(replies);
+    }
+
+    private static List<TransactionData> copiesOf(List<TransactionData> txs) {
+        List<TransactionData> copies = new ArrayList<>(txs.size());
+        for (TransactionData tx : txs) {
+            copies.add(tx.copy());
+        }
+        return copies;
+    }
+
+    // tellHistory tells the listener the wallet's transactions as the notifications brought them up
+    // to date, at once if they weren't told for a while, or else once a while has passed, along
+    // with whatever more notifications bring meanwhile.
+    private void tellHistory(WalletEventListener listener) {
+        synchronized (historyLock) {
+            historyFor = listener;
+            if (historyToTell) {
+                return;
+            }
+            historyToTell = true;
+            long wait = Math.max(0, historyToldAt + HISTORY_GAP_NANOS - System.nanoTime());
+            HISTORY.schedule(this::tellHistoryNow, wait, TimeUnit.NANOSECONDS);
+        }
+    }
+
+    private void tellHistoryNow() {
+        WalletEventListener listener;
+        List<TransactionData> txs;
+        long reply;
+        synchronized (historyLock) {
+            historyToTell = false;
+            historyToldAt = System.nanoTime();
+            listener = historyFor;
+            historyFor = null;
+            if (listener == null || stopped) {
+                return;
+            }
+            // A read of them all that's under way tells them as they are then, and the read after
+            // it tells this listener too, as the one under way can be another's.
+            if (reads.reading()) {
+                reads.start(listener);
+                return;
+            }
+            txs = history.copies();
+            reply = listener.transactionReplies.next();
+        }
+        int bestHeight = 0;
+        try {
+            bestHeight = network().getBestHeight();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        int height = bestHeight;
+        listener.transactionReplies.deliver(reply, () -> {
+            if (!stopped) {
+                listener.onGetTransactions(txs, height);
+            }
+        });
     }
 
     /**
@@ -927,8 +1095,9 @@ public class Wallet implements Serializable {
             }
 
         } else {
+            // The transactions a rescan finds come in the notifications, and all are read once
+            // it's finished.
             try {
-                getTransactions(listener);
                 tellBalances(listener);
                 listener.onScanProgress(value.getHeight());
             } catch (Exception e) {
