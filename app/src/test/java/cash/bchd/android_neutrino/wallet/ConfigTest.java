@@ -32,4 +32,12 @@ public class ConfigTest {
         config.setTokenMetadata("", "", new String[0], true, 0);
         assertTrue(config.getConfigData().contains("\nbcmrnftlimit=0\n"));
     }
+
+    @Test
+    public void servesProfilesOnlyWhenAsked() {
+        Config config = config(Network.MAINNET);
+        assertFalse(config.getConfigData().contains("profile="));
+        config.setProfile("127.0.0.1:6060");
+        assertTrue(config.getConfigData().contains("\nprofile=127.0.0.1:6060\n"));
+    }
 }

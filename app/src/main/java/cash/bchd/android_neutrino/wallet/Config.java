@@ -64,6 +64,8 @@ public class Config {
     // The most room the NFT types of collections take, in MB, or 0 for no limit.
     private int bcmrNftLimitMb = 1024;
     private boolean bcmrAutoLoad = true;
+    // Where the wallet serves its Go profiles, in a debug build only, or nothing.
+    private String profile = "";
 
     // The port of the wallet's gRPC server on 127.0.0.1. A random one is
     // picked for each start, so that the wallet still starts, and the app does
@@ -112,6 +114,15 @@ public class Config {
         this.bcmrGateways = gateways;
         this.bcmrAutoLoad = autoLoad;
         this.bcmrNftLimitMb = nftLimitMb;
+    }
+
+    /**
+     * setProfile has the wallet serve its Go profiles, such as what holds its memory, at the
+     * address, which a debug build gives so that `go tool pprof` can read them over
+     * `adb forward`.
+     */
+    public void setProfile(String address) {
+        this.profile = address;
     }
 
     /**
@@ -168,6 +179,9 @@ public class Config {
             configFileContents += "bcmrgateway=" + gateway + "\n";
         }
         configFileContents += "bcmrnftlimit=" + this.bcmrNftLimitMb + "\n";
+        if (!this.profile.equals("")) {
+            configFileContents += "profile=" + this.profile + "\n";
+        }
         return configFileContents;
     }
 

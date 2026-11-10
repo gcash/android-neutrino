@@ -2,6 +2,7 @@ package cash.bchd.android_neutrino;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.text.TextUtils;
@@ -26,6 +27,10 @@ import cash.bchd.android_neutrino.wallet.WalletEventListener;
  * app comes back after it stopped the wallet.
  */
 final class WalletStarter {
+
+    // Where a debug build's wallet serves its Go profiles: on this device only, which
+    // `adb forward tcp:6060 tcp:6060` reaches from a computer.
+    static final String PROFILE_ADDRESS = "127.0.0.1:6060";
 
     private WalletStarter() {
     }
@@ -57,6 +62,10 @@ final class WalletStarter {
         cfg.setTokenMetadata(BcmrFiles.hintsPath(context, settings.getNetwork()),
                 BcmrFiles.knownPath(context, settings.getNetwork()), settings.getIpfsGateways(),
                 settings.getTokenAutoLoad(), settings.getNftStorageMb());
+        // Only on this device, and only in a debug build.
+        if ((context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+            cfg.setProfile(PROFILE_ADDRESS);
+        }
         Wallet wallet = new Wallet(context, cfg);
         wallet.start();
         return wallet;
