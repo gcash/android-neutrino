@@ -33,6 +33,16 @@ public class ReadQueueTest {
     }
 
     @Test
+    public void handsOverWhoAskedWhileStillReading() {
+        ReadQueue<String> reads = new ReadQueue<>();
+        reads.start("main");
+        reads.start("token");
+        assertEquals(new LinkedHashSet<>(Collections.singletonList("token")), reads.takeQueued());
+        assertTrue(reads.reading());
+        assertFalse(reads.start("main"));
+    }
+
+    @Test
     public void stopsForAWalletThatStopped() {
         ReadQueue<String> reads = new ReadQueue<>();
         reads.start("main");

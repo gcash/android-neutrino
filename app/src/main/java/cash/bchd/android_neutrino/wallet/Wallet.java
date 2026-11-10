@@ -91,6 +91,10 @@ public class Wallet implements Serializable {
     private final TransactionHistory history = new TransactionHistory();
     private boolean historyRead;
     private final ReadQueue<WalletEventListener> reads = new ReadQueue<>();
+    // How many reads of them all failed in a row, which the next waits longer for.
+    private int failedReads;
+    private static final long FIRST_RETRY_MILLIS = 15_000;
+    private static final long MOST_RETRY_MILLIS = 300_000;
     private boolean historyToTell;
     private WalletEventListener historyFor;
     private long historyToldAt = System.nanoTime() - HISTORY_GAP_NANOS;
@@ -906,71 +910,115 @@ public class Wallet implements Serializable {
         return replies;
     }
 
-    // readAll reads all of the wallet's transactions, keeps them, and tells them to the listeners,
-    // then makes the read asked for meanwhile, if one was.
+    // readAll reads all of the wallet's transactions, a range of blocks at a time, off the
+    // notifications' thread, keeps them, and tells them to the listeners, then makes the read
+    // asked for meanwhile, if one was. A read that fails is made again later, for the listeners
+    // who asked meanwhile too, and the notifications that come before only wait for it.
     private void readAll(Map<WalletEventListener, Long> replies) {
-        WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
-        // The list needs what the details say of each transaction, not its bytes, which the wallet
-        // would serialize again for each one of a long history.
-        Api.GetTransactionsRequest request = Api.GetTransactionsRequest.newBuilder()
-                .setOmitRawTransactions(true)
-                .build();
-        ListenableFuture<Api.GetTransactionsResponse> reply = stub.getTransactions(request);
-
-        Futures.addCallback(reply, new FutureCallback<Api.GetTransactionsResponse>() {
-            @Override
-            public void onSuccess(Api.GetTransactionsResponse result) {
-                int bestHeight = 0;
-                try {
-                    bestHeight = network().getBestHeight();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                List<TransactionData> txs = new ArrayList<TransactionData>();
-                for (Api.BlockDetails block : result.getMinedTransactionsList()) {
-                    for (Api.TransactionDetails tx : block.getTransactionsList()) {
-                        txs.add(extractTransactionData(tx, block.getHeight(), block.getTimestamp()));
+        HISTORY.execute(() -> {
+            int bestHeight;
+            List<TransactionData> txs;
+            try {
+                bestHeight = network().getBestHeight();
+                txs = readPages(bestHeight);
+            } catch (Exception e) {
+                e.printStackTrace();
+                readFailed(replies.keySet());
+                return;
+            }
+            // Its own copies, as the listeners set the fiat amounts of theirs.
+            List<TransactionData> kept = copiesOf(txs);
+            synchronized (historyLock) {
+                history.replace(kept);
+                historyRead = true;
+                failedReads = 0;
+            }
+            boolean first = true;
+            for (Map.Entry<WalletEventListener, Long> replyTo : replies.entrySet()) {
+                WalletEventListener listener = replyTo.getKey();
+                // Each listener has its own, as it sets their fiat amounts.
+                List<TransactionData> told = first ? txs : copiesOf(txs);
+                first = false;
+                listener.transactionReplies.deliver(replyTo.getValue(), () -> {
+                    if (!stopped) {
+                        listener.onGetTransactions(told, bestHeight);
                     }
+                });
+            }
+            readAllAgain();
+        });
+    }
+
+    // readPages reads the wallet's transactions through the tip and the unmined ones, oldest
+    // first, in ranges of blocks whose replies fit what a reply may be.
+    private List<TransactionData> readPages(int tip) throws Exception {
+        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
+        List<TransactionData> txs = new ArrayList<>();
+        HistoryPages pages = new HistoryPages(tip);
+        while (!pages.done()) {
+            HistoryPages.Page page = pages.next();
+            // The list needs what the details say of each transaction, not its bytes, which the
+            // wallet would serialize again for each one of a long history.
+            Api.GetTransactionsRequest.Builder request = Api.GetTransactionsRequest.newBuilder()
+                    .setOmitRawTransactions(true)
+                    .setStartingBlockHeight(page.start);
+            if (!page.open) {
+                request.setEndingBlockHeight(page.end);
+            }
+            Api.GetTransactionsResponse reply;
+            try {
+                reply = stub.getTransactions(request.build());
+            } catch (StatusRuntimeException e) {
+                if (e.getStatus().getCode() == Status.Code.RESOURCE_EXHAUSTED && pages.smaller()) {
+                    continue;
                 }
+                throw e;
+            }
+            for (Api.BlockDetails block : reply.getMinedTransactionsList()) {
+                for (Api.TransactionDetails tx : block.getTransactionsList()) {
+                    txs.add(extractTransactionData(tx, block.getHeight(), block.getTimestamp()));
+                }
+            }
+            if (page.open) {
                 // An unmined transaction has the time the wallet received it, which stays the
                 // same when the list is fetched again.
-                for (Api.TransactionDetails tx : result.getUnminedTransactionsList()) {
+                for (Api.TransactionDetails tx : reply.getUnminedTransactionsList()) {
                     txs.add(extractTransactionData(tx, 0, tx.getTimestamp()));
                 }
-                // Its own copies, as the listeners set the fiat amounts of theirs.
-                List<TransactionData> kept = copiesOf(txs);
-                synchronized (historyLock) {
-                    history.replace(kept);
-                    historyRead = true;
-                }
-                int height = bestHeight;
-                boolean first = true;
-                for (Map.Entry<WalletEventListener, Long> replyTo : replies.entrySet()) {
-                    WalletEventListener listener = replyTo.getKey();
-                    // Each listener has its own, as it sets their fiat amounts.
-                    List<TransactionData> told = first ? txs : copiesOf(txs);
-                    first = false;
-                    listener.transactionReplies.deliver(replyTo.getValue(), () -> {
-                        if (!stopped) {
-                            listener.onGetTransactions(told, height);
-                        }
-                    });
-                }
-                readAllAgain();
             }
+            pages.read(page, reply.getSerializedSize());
+        }
+        return txs;
+    }
 
-            @Override
-            public void onFailure(Throwable t) {
-                t.printStackTrace();
-                // What the read was to bring in is missing, so the next notification reads them
-                // all rather than build on them.
-                synchronized (historyLock) {
-                    historyRead = false;
-                }
-                readAllAgain();
+    // readFailed has a read that failed made again later, for its listeners and those who asked
+    // meanwhile, waiting longer each time in a row, as a read that fails again at once, as one
+    // too large for a reply did, would only fail again and again.
+    private void readFailed(Set<WalletEventListener> listeners) {
+        long wait;
+        synchronized (historyLock) {
+            // What the read was to bring in is missing, so nothing builds on the history meanwhile.
+            historyRead = false;
+            if (stopped) {
+                reads.stop();
+                return;
             }
-        }, MoreExecutors.directExecutor());
+            failedReads++;
+            wait = Math.min(FIRST_RETRY_MILLIS << Math.min(failedReads - 1, 10), MOST_RETRY_MILLIS);
+        }
+        HISTORY.schedule(() -> {
+            Map<WalletEventListener, Long> replies;
+            synchronized (historyLock) {
+                if (stopped) {
+                    reads.stop();
+                    return;
+                }
+                Set<WalletEventListener> again = new LinkedHashSet<>(listeners);
+                again.addAll(reads.takeQueued());
+                replies = replyNumbers(again);
+            }
+            readAll(replies);
+        }, wait, TimeUnit.MILLISECONDS);
     }
 
     // readAllAgain makes the read that was asked for while one was under way, if one was, or ends

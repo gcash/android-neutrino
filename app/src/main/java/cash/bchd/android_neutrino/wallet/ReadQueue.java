@@ -42,6 +42,16 @@ final class ReadQueue<L> {
     }
 
     /**
+     * takeQueued returns the listeners who asked while the read was under way, and keeps the
+     * reading under way, as for a read that failed and is made again later for them too.
+     */
+    Set<L> takeQueued() {
+        Set<L> queued = new LinkedHashSet<>(again);
+        again.clear();
+        return queued;
+    }
+
+    /**
      * stop ends the reads, as for a wallet that stopped.
      */
     void stop() {
