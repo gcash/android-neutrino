@@ -1,10 +1,12 @@
 package cash.bchd.android_neutrino;
 
 import android.app.Application;
+import android.content.pm.ApplicationInfo;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.StrictMode;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.ProcessLifecycleOwner;
@@ -27,6 +29,9 @@ public class NeutrinoApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+            watchMainThread();
+        }
         // Before any screen, as Android can bring back any of them after it ended the app.
         TokenLabelFile.open(this, Settings.get(this).getNetwork());
         Handler main = new Handler(Looper.getMainLooper());
@@ -93,5 +98,23 @@ public class NeutrinoApp extends Application {
                 }, MoreExecutors.directExecutor());
             }
         });
+    }
+
+    /**
+     * watchMainThread has a debug build log, under StrictMode with where it came from, each read
+     * or write of a file or use of the network on the main thread, which can freeze the app, and
+     * each file or stream left open. It only logs, so a debug build runs on as a release would.
+     */
+    private static void watchMainThread() {
+        StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
+                .detectDiskReads()
+                .detectDiskWrites()
+                .detectNetwork()
+                .penaltyLog()
+                .build());
+        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                .detectLeakedClosableObjects()
+                .penaltyLog()
+                .build());
     }
 }
