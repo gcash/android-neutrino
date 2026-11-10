@@ -832,8 +832,11 @@ public class MainActivity extends CloseActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        // A token's screen comes back here when it hides the token.
+        // A token's screen comes back here when it hides the token. A screen that was stopped
+        // starts before it's given the new intent, so this offers the Undo, and onStart offers it
+        // for a screen that's made anew. Whichever comes first takes it.
         setIntent(intent);
+        offerUndoHide();
     }
 
     // The token whose hiding can still be undone, which isn't to be forgotten yet.
