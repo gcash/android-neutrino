@@ -51,10 +51,6 @@ final class WalletStarter {
             settings.setWalletBirthday(birthday);
         }
 
-        Migration migration = new Migration(settings.getRepoVersion());
-        int newRepoVersion = migration.MigrateUp(context);
-        settings.setRepoVersion(newRepoVersion);
-
         Config cfg = new Config(context.getDataDir().getPath(), settings.getNetwork(), !settings.getWalletInitialized(),
                 bchdIP.equals(""), settings.getBlocksOnly(), peersOnly ? peers : none, peersOnly ? none : peers,
                 settings.getBchdIP(), settings.getBchdUsername(),
@@ -68,7 +64,11 @@ final class WalletStarter {
             cfg.setProfile(PROFILE_ADDRESS);
         }
         Wallet wallet = new Wallet(context, cfg);
-        wallet.start();
+        // What an earlier version kept that this one can't use goes before the wallet starts.
+        Context app = context.getApplicationContext();
+        // The version is read as the start runs, so that a start queued behind another sees what
+        // that one migrated to.
+        wallet.start(() -> settings.setRepoVersion(new Migration(settings.getRepoVersion()).MigrateUp(app)));
         return wallet;
     }
 

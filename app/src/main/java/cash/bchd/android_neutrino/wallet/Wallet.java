@@ -55,6 +55,8 @@ public class Wallet implements Serializable {
     private static Wallet instance;
 
     private Config config;
+    // The application's, which writes the wallet's config as it starts.
+    private final Context context;
 
     private String getConfigFilePath;
     private final String host = "127.0.0.1";
@@ -165,21 +167,14 @@ public class Wallet implements Serializable {
      * path and appdatadir.
      */
     public Wallet(Context context, Config config) {
+        this.context = context.getApplicationContext();
         this.config = config;
         this.getConfigFilePath = config.getConfigFilePath();
         this.creds = new AuthCredentials(config.getAuthToken());
         this.channel = ManagedChannelBuilder.forAddress(this.host, config.getRpcPort()).usePlaintext()
                 .maxInboundMessageSize(MAX_REPLY_SIZE).build();
         instance = this;
-        try {
-            config.save(context);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         BitcoinPaymentURI.SCHEME = config.getNetwork().uriPrefix();
-
-        File directory = new File(config.getDataDir()+File.separator+config.getNetwork().id);
-        directory.mkdirs();
     }
 
     /**
@@ -1333,12 +1328,27 @@ public class Wallet implements Serializable {
     }
 
     /**
-     * Start will start the bchwallet daemon with the requested config options. It returns right
-     * away, and the daemon starts once any earlier wallet has shut down.
+     * Start will start the bchwallet daemon with the requested config options, having run before
+     * and written the daemon's config. It returns right away, and the daemon starts once any
+     * earlier wallet has shut down.
      */
-    public void start() {
+    public void start(Runnable before) {
         String configPath = this.getConfigFilePath;
-        started = lifecycle.submit(() -> mobile.Mobile.startWallet(configPath));
+        Config config = this.config;
+        Context context = this.context;
+        // Off the main thread, as each writes files, and once any earlier wallet has shut down,
+        // whose files they can change.
+        started = lifecycle.submit(() -> {
+            before.run();
+            try {
+                config.save(context);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            new File(config.getDataDir() + File.separator + config.getNetwork().id).mkdirs();
+            mobile.Mobile.startWallet(configPath);
+            return null;
+        });
     }
 
     /**
