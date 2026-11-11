@@ -1171,7 +1171,7 @@ public class Wallet implements Serializable {
         stub.rescanNotifications(request, new StreamObserver<Api.RescanNotificationsResponse>() {
             @Override
             public void onNext(Api.RescanNotificationsResponse value) {
-                onRescanNotification(value, listener);
+                onRescanProgress(value, listener);
             }
 
             @Override
@@ -1184,6 +1184,22 @@ public class Wallet implements Serializable {
 
             }
         });
+    }
+
+    // onRescanProgress tells a listener besides the main one how far a rescan got, and the tip
+    // once it's done. The main listener's stream reads the balances and the transactions, which
+    // a listener that only shows the progress, as Settings', has no use for, and asking for them
+    // for it too had each progress ask for the balances twice, and the end read them all twice.
+    private void onRescanProgress(Api.RescanNotificationsResponse value, WalletEventListener listener) {
+        try {
+            if (value.getFinished()) {
+                Api.NetworkResponse net = network();
+                listener.onBlock(net.getBestHeight(), net.getBestBlock());
+            }
+            listener.onScanProgress(value.getHeight());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void onRescanNotification(Api.RescanNotificationsResponse value, WalletEventListener listener) {
