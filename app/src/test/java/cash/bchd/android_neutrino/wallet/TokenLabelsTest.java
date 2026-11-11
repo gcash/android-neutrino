@@ -297,6 +297,25 @@ public class TokenLabelsTest {
     }
 
     @Test
+    public void aScreenThatGoesLeavesTheOneThatTookItsPlaceTold() {
+        int[] told = {0, 0};
+        Runnable below = () -> told[0]++;
+        Runnable above = () -> told[1]++;
+        TokenLabels.onLoad(below);
+        // A main screen opened on top takes it, and goes, after the one below came back.
+        TokenLabels.onLoad(above);
+        TokenLabels.onLoad(below);
+        TokenLabels.stopOnLoad(above);
+        try {
+            TokenLabels.load(Collections.singletonList(new TokenMeta(token().build())));
+            assertEquals(1, told[0]);
+            assertEquals(0, told[1]);
+        } finally {
+            TokenLabels.stopOnLoad(below);
+        }
+    }
+
+    @Test
     public void whatLoadsLetsGoOfWhatWasDrawn() {
         long before = TokenIcons.generation(CATEGORY);
         TokenLabels.load(Collections.singletonList(new TokenMeta(token().setLookAlike(true).build())));

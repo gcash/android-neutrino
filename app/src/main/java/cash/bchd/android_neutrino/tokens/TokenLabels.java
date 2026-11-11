@@ -130,8 +130,18 @@ public final class TokenLabels {
      * onLoad has the listener told when what was kept from the last run is loaded, on no
      * particular thread, or no one with null.
      */
-    public static void onLoad(Runnable listener) {
+    public static synchronized void onLoad(Runnable listener) {
         onLoad = listener;
+    }
+
+    /**
+     * stopOnLoad has no one told any more if the listener is the one told, and leaves another
+     * that took its place, as a screen opened on top of another took it, and goes first.
+     */
+    public static synchronized void stopOnLoad(Runnable listener) {
+        if (onLoad == listener) {
+            onLoad = null;
+        }
     }
 
     /**

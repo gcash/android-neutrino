@@ -161,6 +161,8 @@ public class MainActivity extends CloseActivity {
     // the listener it listens with.
     private Wallet wallet;
     private MainListener eventListener;
+    // Redraws the labels once those kept from the last run are loaded.
+    private final Runnable redrawOnLoad = () -> runOnUiThread(this::redrawLabels);
     // Shows the wallet's sync status while this activity is in front.
     private ScheduledExecutorService syncStatusPoller;
     // Set while the user is asked to let the app reach the local network, which the wallet's
@@ -319,7 +321,7 @@ public class MainActivity extends CloseActivity {
         mAdapter.stop();
         iconLoader.stop();
         pagesHandler.removeCallbacksAndMessages(null);
-        TokenLabels.onLoad(null);
+        TokenLabels.stopOnLoad(redrawOnLoad);
         MainListener.hide(this);
         super.onDestroy();
     }
@@ -492,7 +494,7 @@ public class MainActivity extends CloseActivity {
         super.onStart();
         if (settings != null) {
             // The labels kept from the last run can come after the screen shows.
-            TokenLabels.onLoad(() -> runOnUiThread(this::redrawLabels));
+            TokenLabels.onLoad(redrawOnLoad);
             TokenLabels.hold(settings.getHiddenTokens());
             // The tokens as the wallet last told them, and the transactions, without a token
             // that its screen hid since, or with one that Settings showed again.
