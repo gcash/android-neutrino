@@ -1,5 +1,7 @@
 package cash.bchd.android_neutrino;
 
+import android.widget.TextView;
+
 import androidx.recyclerview.widget.DiffUtil;
 
 import java.util.ArrayList;
@@ -50,6 +52,24 @@ final class TransactionRows {
             return 0;
         }
         return Math.max(0, Math.min(blockHeight - tx.getHeight() + 1, 10));
+    }
+
+    /**
+     * showStatus shows a row's status, with a dot before it until the transaction has ten
+     * confirmations: unconfirmed, then how many it has, and then what the row shows of it once
+     * it's confirmed, which can be nothing.
+     */
+    static void showStatus(TextView status, int confirmations, CharSequence confirmed) {
+        if (confirmations <= 0) {
+            status.setText(R.string.unconfirmed);
+            status.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.red_circle, 0, 0, 0);
+        } else if (confirmations < 10) {
+            status.setText(status.getResources().getQuantityString(R.plurals.confirmations, confirmations, confirmations));
+            status.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.yellow_circle, 0, 0, 0);
+        } else {
+            status.setText(confirmed);
+            status.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0);
+        }
     }
 
     /**

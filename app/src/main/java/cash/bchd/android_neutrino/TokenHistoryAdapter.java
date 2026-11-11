@@ -158,18 +158,7 @@ final class TokenHistoryAdapter extends RecyclerView.Adapter<TransactionAdapter.
         holder.bchAmount.setText(TokenTexts.changeOnTokenScreen(ctx, row.change));
         holder.bchAmount.setTextColor(ContextCompat.getColor(ctx, received ? R.color.darkGreen : R.color.neonPurple));
 
-        // The status shows a dot before it until the transaction has ten confirmations.
-        if (row.confirmations <= 0) {
-            holder.fiatAmount.setText(R.string.unconfirmed);
-            holder.fiatAmount.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.red_circle, 0, 0, 0);
-        } else if (row.confirmations < 10) {
-            holder.fiatAmount.setText(ctx.getResources().getQuantityString(R.plurals.confirmations,
-                    row.confirmations, row.confirmations));
-            holder.fiatAmount.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.yellow_circle, 0, 0, 0);
-        } else {
-            holder.fiatAmount.setText(null);
-            holder.fiatAmount.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0);
-        }
+        TransactionRows.showStatus(holder.fiatAmount, row.confirmations, null);
         holder.layout.setOnClickListener(v -> onClick.onClick(row.tx));
     }
 

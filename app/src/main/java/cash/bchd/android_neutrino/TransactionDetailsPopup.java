@@ -125,10 +125,7 @@ final class TransactionDetailsPopup {
         TextView status = customView.findViewById(R.id.txDetailsStatus);
         ImageView circle = customView.findViewById(R.id.confirmationCircle);
 
-        int confirmations = 0;
-        if (tx.getHeight() > 0) {
-            confirmations = blockHeight - tx.getHeight() + 1;
-        }
+        int confirmations = TransactionRows.confirmations(tx, blockHeight);
         if (confirmations <= 0) {
             status.setText(R.string.unconfirmed);
             circle.setImageResource(R.drawable.red_circle);

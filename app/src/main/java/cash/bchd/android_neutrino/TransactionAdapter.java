@@ -142,18 +142,8 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         String bch = new Amount(tx.getAmount()).withSymbol();
         holder.bchAmount.setText(bch);
 
-        // The status shows a dot before it until the transaction has ten confirmations.
-        int confirmations = TransactionRows.confirmations(tx, blockHeight);
-        if (confirmations <= 0) {
-            holder.fiatAmount.setText(R.string.unconfirmed);
-            holder.fiatAmount.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.red_circle, 0, 0, 0);
-        } else if (confirmations < 10) {
-            holder.fiatAmount.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.yellow_circle, 0, 0, 0);
-            holder.fiatAmount.setText(ctx.getResources().getQuantityString(R.plurals.confirmations, confirmations, confirmations));
-        } else {
-            holder.fiatAmount.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0);
-            holder.fiatAmount.setText(tx.getFiatAmount());
-        }
+        // Once confirmed, what it was worth.
+        TransactionRows.showStatus(holder.fiatAmount, TransactionRows.confirmations(tx, blockHeight), tx.getFiatAmount());
 
         holder.txMemo.setEllipsize(TextUtils.TruncateAt.END);
         if (tx.getIncoming()) {
@@ -202,19 +192,10 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         holder.bchAmount.setText(TokenTexts.change(ctx, first));
         holder.bchAmount.setTextColor(ContextCompat.getColor(ctx, received ? R.color.darkGreen : R.color.neonPurple));
 
-        int confirmations = TransactionRows.confirmations(tx, blockHeight);
-        if (confirmations <= 0) {
-            holder.fiatAmount.setText(R.string.unconfirmed);
-            holder.fiatAmount.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.red_circle, 0, 0, 0);
-        } else if (confirmations < 10) {
-            holder.fiatAmount.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.yellow_circle, 0, 0, 0);
-            holder.fiatAmount.setText(ctx.getResources().getQuantityString(R.plurals.confirmations, confirmations, confirmations));
-        } else {
-            holder.fiatAmount.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0);
-            long spendable = tx.getSpendableAmount();
-            String bch = Math.abs(spendable) >= TokenBalance.FLOOR ? new Amount(spendable).withSymbol() : null;
-            holder.fiatAmount.setText(bch);
-        }
+        // Once confirmed, the BCH the tokens carry above the floor, if any.
+        long spendable = tx.getSpendableAmount();
+        String bch = Math.abs(spendable) >= TokenBalance.FLOOR ? new Amount(spendable).withSymbol() : null;
+        TransactionRows.showStatus(holder.fiatAmount, TransactionRows.confirmations(tx, blockHeight), bch);
     }
 
     // rowTitle returns what to call what a row leads with: the NFT if the transaction moved just
