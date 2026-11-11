@@ -1492,7 +1492,7 @@ public class MainActivity extends CloseActivity {
         }
 
         @Override
-        public void onGetTransactions(List<TransactionData> txs, int blockHeight) {
+        public void onGetTransactions(List<TransactionData> txs) {
             // This isn't the UI thread, and the file can be large: a rescan's replies would each
             // hold up the screen.
             String fiatCurrency = settings.getFiatCurrency();

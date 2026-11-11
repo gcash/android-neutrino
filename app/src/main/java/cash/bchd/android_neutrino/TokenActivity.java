@@ -712,7 +712,7 @@ public class TokenActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onGetTransactions(List<TransactionData> txs, int blockHeight) {
+        public void onGetTransactions(List<TransactionData> txs) {
             TokenActivity screen = this.screen.get();
             if (screen == null) {
                 return;

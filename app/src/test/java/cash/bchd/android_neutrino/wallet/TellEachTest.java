@@ -19,14 +19,14 @@ public class TellEachTest {
         List<List<TransactionData>> lists = new ArrayList<>();
         WalletEventListener throwing = new WalletEventListener() {
             @Override
-            public void onGetTransactions(List<TransactionData> txs, int blockHeight) {
+            public void onGetTransactions(List<TransactionData> txs) {
                 told.add("throwing");
                 throw new NullPointerException("a saved entry without a fiat amount");
             }
         };
         WalletEventListener other = new WalletEventListener() {
             @Override
-            public void onGetTransactions(List<TransactionData> txs, int blockHeight) {
+            public void onGetTransactions(List<TransactionData> txs) {
                 told.add("other");
                 lists.add(txs);
             }
@@ -37,7 +37,7 @@ public class TellEachTest {
         List<TransactionData> read = Collections.singletonList(
                 new TransactionData("a", true, "", 1000, "$0.01", "usd", 1600000000L, "", 1));
 
-        Wallet.tellEach(replies, read, 100, () -> false);
+        Wallet.tellEach(replies, read, () -> false);
 
         assertEquals(List.of("throwing", "other"), told);
         // The second has its own copies.
@@ -49,13 +49,13 @@ public class TellEachTest {
         List<String> told = new ArrayList<>();
         WalletEventListener listener = new WalletEventListener() {
             @Override
-            public void onGetTransactions(List<TransactionData> txs, int blockHeight) {
+            public void onGetTransactions(List<TransactionData> txs) {
                 told.add("told");
             }
         };
         Map<WalletEventListener, Long> replies = Collections.singletonMap(listener, listener.transactionReplies.next());
 
-        Wallet.tellEach(replies, Collections.emptyList(), 100, () -> true);
+        Wallet.tellEach(replies, Collections.emptyList(), () -> true);
 
         assertEquals(Collections.emptyList(), told);
     }

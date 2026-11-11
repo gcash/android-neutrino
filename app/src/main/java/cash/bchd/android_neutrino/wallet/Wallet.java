@@ -959,7 +959,7 @@ public class Wallet {
                     historyRead = true;
                     failedReads = 0;
                 }
-                tellEach(told, txs, bestHeight, () -> stopped);
+                tellEach(told, txs, () -> stopped);
             } finally {
                 readAllAgain();
             }
@@ -971,8 +971,7 @@ public class Wallet {
      * their fiat amounts, unless the wallet stopped or the listener was told of a later read. A
      * listener that throws is no reason for the others not to be told.
      */
-    static void tellEach(Map<WalletEventListener, Long> replies, List<TransactionData> read, int bestHeight,
-                         BooleanSupplier stopped) {
+    static void tellEach(Map<WalletEventListener, Long> replies, List<TransactionData> read, BooleanSupplier stopped) {
         boolean first = true;
         for (Map.Entry<WalletEventListener, Long> replyTo : replies.entrySet()) {
             WalletEventListener listener = replyTo.getKey();
@@ -983,7 +982,7 @@ public class Wallet {
                     return;
                 }
                 try {
-                    listener.onGetTransactions(told, bestHeight);
+                    listener.onGetTransactions(told);
                 } catch (RuntimeException e) {
                     e.printStackTrace();
                 }
@@ -1129,16 +1128,9 @@ public class Wallet {
             txs = history.copies();
             reply = listener.transactionReplies.next();
         }
-        int bestHeight = 0;
-        try {
-            bestHeight = network().getBestHeight();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        int height = bestHeight;
         listener.transactionReplies.deliver(reply, () -> {
             if (!stopped) {
-                listener.onGetTransactions(txs, height);
+                listener.onGetTransactions(txs);
             }
         });
     }
