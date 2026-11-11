@@ -32,9 +32,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -86,8 +88,19 @@ public final class TokenIcons {
     // the memory the app may use, as every screen shows the same few and drawing them is slow.
     private static final DrawnImages<Bitmap> DRAWN = new DrawnImages<>(Runtime.getRuntime().maxMemory() / 8,
             Bitmap::getByteCount);
-    // Draws the images off the main thread.
-    private static final ExecutorService DRAWER = Executors.newFixedThreadPool(2);
+    // Draws the images off the main thread, the ones asked for last first, as those are of the
+    // rows that show now, rather than of rows a fling went past.
+    private static final ExecutorService DRAWER = new java.util.concurrent.ThreadPoolExecutor(2, 2,
+            0, TimeUnit.MILLISECONDS, new java.util.concurrent.LinkedBlockingDeque<Runnable>() {
+                @Override
+                public boolean offer(Runnable task) {
+                    return offerFirst(task);
+                }
+            });
+    // The image each view wants now, by its key, which a drawing it no longer wants skips, for the
+    // threads that draw. It doesn't keep the views.
+    private static final Map<ImageView, String> WANTED =
+            Collections.synchronizedMap(new java.util.WeakHashMap<>());
     // Removes the images of tokens the user hid, one after another.
     private static final ExecutorService FORGETTER = Executors.newSingleThreadExecutor();
 
@@ -247,6 +260,7 @@ public final class TokenIcons {
      */
     public static void showIdenticon(ImageView view, String category, int size) {
         view.setTag(R.id.image_key, null);
+        WANTED.remove(view);
         view.setImageBitmap(identicon(category, size));
     }
 
@@ -267,6 +281,7 @@ public final class TokenIcons {
      */
     public static void clear(ImageView view) {
         view.setTag(R.id.image_key, null);
+        WANTED.remove(view);
     }
 
     // show puts the image of the key on the view, drawn at once if it was before, and else off the
@@ -275,6 +290,7 @@ public final class TokenIcons {
     private static void show(ImageView view, String key, String category, int size, Drawing drawing,
                              String... scopes) {
         view.setTag(R.id.image_key, key);
+        WANTED.put(view, key);
         Bitmap drawn = DRAWN.get(key);
         if (drawn != null) {
             view.setImageBitmap(drawn);
@@ -282,7 +298,26 @@ public final class TokenIcons {
         }
         view.setImageBitmap(identicon(category, size));
         long[] seen = DRAWN.generations(scopes);
+        draw(new java.lang.ref.WeakReference<>(view), key, category, size, drawing, scopes, seen);
+    }
+
+    // Main holds the main thread's handler, made when it's first used, as tests have no main thread.
+    private static final class Main {
+        static final android.os.Handler HANDLER = new android.os.Handler(android.os.Looper.getMainLooper());
+    }
+
+    // draw draws the image off the main thread and puts it on the view, if the view still wants it
+    // then. It holds the view only weakly, as a fling queues many, so that a screen that went isn't
+    // kept until they're done.
+    private static void draw(java.lang.ref.WeakReference<ImageView> wants, String key, String category, int size,
+                             Drawing drawing, String[] scopes, long[] seen) {
         DRAWER.execute(() -> {
+            // A view that went, or was given another image since, as a recycled row, needs none.
+            ImageView target = wants.get();
+            if (target == null || !key.equals(WANTED.get(target))) {
+                return;
+            }
+            target = null;
             Bitmap image;
             try {
                 image = drawing.draw();
@@ -294,8 +329,9 @@ public final class TokenIcons {
                 return;
             }
             boolean current = DRAWN.putIfCurrent(key, image, scopes, seen);
-            view.post(() -> {
-                if (!key.equals(view.getTag(R.id.image_key))) {
+            Main.HANDLER.post(() -> {
+                ImageView view = wants.get();
+                if (view == null || !key.equals(view.getTag(R.id.image_key))) {
                     return;
                 }
                 if (current) {
