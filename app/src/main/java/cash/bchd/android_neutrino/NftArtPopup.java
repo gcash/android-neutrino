@@ -8,6 +8,8 @@ import android.graphics.drawable.AnimatedImageDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,6 +25,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 
 import cash.bchd.android_neutrino.tokens.TokenIcons;
 import cash.bchd.android_neutrino.wallet.Wallet;
@@ -33,6 +36,8 @@ import cash.bchd.android_neutrino.wallet.Wallet;
  * megabytes, and which is kept in the cache for the next time.
  */
 final class NftArtPopup {
+
+    private static final Handler MAIN = new Handler(Looper.getMainLooper());
 
     private NftArtPopup() {
     }
@@ -79,6 +84,9 @@ final class NftArtPopup {
         return popup;
     }
 
+    // fetch downloads the full file and saves it, whether the popup is still open when it comes or
+    // not, as the user asked for it, and opening the popup again then shows it at once. The popup
+    // and its screen are held only weakly meanwhile, as the download has no deadline of its own.
     private static void fetch(Activity screen, ViewGroup layout, View view, PopupWindow popup, String category,
                               boolean moves, String uri, File file, int size) {
         Wallet wallet = Wallet.getInstance();
@@ -88,10 +96,10 @@ final class NftArtPopup {
             }
             return;
         }
-        View loading = view.findViewById(R.id.nftArtLoading);
-        loading.setVisibility(View.VISIBLE);
+        view.findViewById(R.id.nftArtLoading).setVisibility(View.VISIBLE);
         int side = Math.min(screen.getResources().getDisplayMetrics().widthPixels,
                 screen.getResources().getDisplayMetrics().heightPixels);
+        Shown shown = new Shown(screen, layout, view, popup);
         Futures.addCallback(wallet.tokenIconAsync(uri, true), new FutureCallback<byte[]>() {
             @Override
             public void onSuccess(byte[] data) {
@@ -102,30 +110,61 @@ final class NftArtPopup {
                     e.printStackTrace();
                 }
                 boolean done = saved;
-                view.post(() -> {
-                    loading.setVisibility(View.GONE);
-                    if (done && popup.isShowing()) {
-                        showFull(screen, layout, view, popup, file, size);
+                MAIN.post(() -> shown.then((s, l, v, p) -> {
+                    v.findViewById(R.id.nftArtLoading).setVisibility(View.GONE);
+                    if (done && p.isShowing()) {
+                        showFull(s, l, v, p, file, size);
                     } else if (moves) {
-                        failed(screen, layout, view, popup);
+                        failed(s, l, v, p);
                     }
-                });
+                }));
             }
 
             @Override
             public void onFailure(Throwable t) {
                 // What's saved of the art stays, which is the art at a smaller size.
                 boolean busy = Wallet.gatewaysBusy(t);
-                view.post(() -> {
-                    loading.setVisibility(View.GONE);
-                    if (busy && popup.isShowing()) {
-                        Snackbar.make(layout, R.string.gateways_busy, Snackbar.LENGTH_LONG).show();
+                MAIN.post(() -> shown.then((s, l, v, p) -> {
+                    v.findViewById(R.id.nftArtLoading).setVisibility(View.GONE);
+                    if (busy && p.isShowing()) {
+                        Snackbar.make(l, R.string.gateways_busy, Snackbar.LENGTH_LONG).show();
                     } else if (moves) {
-                        failed(screen, layout, view, popup);
+                        failed(s, l, v, p);
                     }
-                });
+                }));
             }
         }, MoreExecutors.directExecutor());
+    }
+
+    // Shown is the popup and the screen it shows on, held weakly, so that a download that ends
+    // after they're gone keeps neither, and does only what saves the file.
+    private static final class Shown {
+        interface Then {
+            void run(Activity screen, ViewGroup layout, View view, PopupWindow popup);
+        }
+
+        private final WeakReference<Activity> screen;
+        private final WeakReference<ViewGroup> layout;
+        private final WeakReference<View> view;
+        private final WeakReference<PopupWindow> popup;
+
+        Shown(Activity screen, ViewGroup layout, View view, PopupWindow popup) {
+            this.screen = new WeakReference<>(screen);
+            this.layout = new WeakReference<>(layout);
+            this.view = new WeakReference<>(view);
+            this.popup = new WeakReference<>(popup);
+        }
+
+        // then runs on the main thread with them, if they're all still there.
+        void then(Then then) {
+            Activity s = screen.get();
+            ViewGroup l = layout.get();
+            View v = view.get();
+            PopupWindow p = popup.get();
+            if (s != null && l != null && v != null && p != null && !s.isDestroyed()) {
+                then.run(s, l, v, p);
+            }
+        }
     }
 
     // showFull shows the file: a video, muted and over and over, or else an image or an animation,
