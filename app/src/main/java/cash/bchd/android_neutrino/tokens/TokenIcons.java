@@ -78,6 +78,9 @@ public final class TokenIcons {
 
     // Counts what was saved, for a screen to tell that it drew older images.
     private static final AtomicLong VERSION = new AtomicLong();
+    // Held as a save keeps its files and as a forget removes them, so that neither comes between
+    // the other's steps.
+    private static final Object FILES = new Object();
     // Counts the forgets, which alone make saved images unsaved.
     private static final AtomicLong FORGOTTEN = new AtomicLong();
 
@@ -403,13 +406,14 @@ public final class TokenIcons {
             // A download that ended after the token was hidden would keep what was forgotten.
             return false;
         }
-        boolean saved = save(file(context, category), data, largestShown(context));
-        if (saved) {
+        boolean saved = save(category, file(context, category), data, largestShown(context), () -> {
             try {
                 Files.write(iconSourceFile(context, category).toPath(), uri.getBytes(StandardCharsets.UTF_8));
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        });
+        if (saved) {
             forgetDrawn(category);
         }
         return saved;
@@ -483,24 +487,23 @@ public final class TokenIcons {
             return false;
         }
         boolean moves = moves(data);
-        boolean saved = save(nftFile(context, category, commitment), data, NFT_SIDE);
-        if (saved) {
+        boolean saved = save(category, nftFile(context, category, commitment), data, NFT_SIDE, () -> {
             try {
                 Files.write(sourceFile(context, category, commitment).toPath(), uri.getBytes(StandardCharsets.UTF_8));
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-        if (saved && moves) {
-            try {
-                motionMarker(context, category, commitment).createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
+            if (moves) {
+                try {
+                    motionMarker(context, category, commitment).createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                // Still art that took the place of art that moved doesn't.
+                motionMarker(context, category, commitment).delete();
             }
-        } else if (saved) {
-            // Still art that took the place of art that moved doesn't.
-            motionMarker(context, category, commitment).delete();
-        }
+        });
         if (saved) {
             // Only this NFT's, as the others' art and the icon are as they were.
             DRAWN.removeStartingWith(nftScope(category, commitment));
@@ -637,7 +640,7 @@ public final class TokenIcons {
         // An SVG is drawn at the side to show, as it's shown as an image.
         Bitmap drawn = bounds.outWidth <= 0 ? svg(data, maxSide) : null;
         if (drawn != null) {
-            return saveDrawn(file, dir, drawn, maxSide);
+            return saveDrawn(category, file, dir, drawn, maxSide);
         }
         boolean image = bounds.outWidth > 0 && !canAnimate(data);
         if (bounds.outWidth > 0 && !(image ? usableFull(bounds.outWidth, bounds.outHeight)
@@ -657,7 +660,7 @@ public final class TokenIcons {
             } else if (!shrink(data, bounds, maxSide, out)) {
                 return false;
             }
-            saved = tmp.renameTo(file);
+            saved = keep(category, tmp, file, null);
         } catch (IOException e) {
             return false;
         } finally {
@@ -697,8 +700,10 @@ public final class TokenIcons {
      * token's files' names starts with its token ID.
      */
     public static void forgetAll(Context context, java.util.Collection<String> categories) {
-        forget(new java.util.HashSet<>(categories), new File(context.getFilesDir(), ICON_DIR),
-                new File(context.getCacheDir(), MOTION_DIR));
+        synchronized (FILES) {
+            forget(new java.util.HashSet<>(categories), new File(context.getFilesDir(), ICON_DIR),
+                    new File(context.getCacheDir(), MOTION_DIR));
+        }
         for (String category : categories) {
             forgetDrawn(category);
         }
@@ -768,7 +773,7 @@ public final class TokenIcons {
     }
 
     // saveDrawn keeps an image drawn for full art as a PNG, as saveFull keeps the others.
-    private static boolean saveDrawn(File file, File dir, Bitmap drawn, int maxSide) {
+    private static boolean saveDrawn(String category, File file, File dir, Bitmap drawn, int maxSide) {
         File tmp;
         try {
             tmp = File.createTempFile("motion", ".tmp", dir);
@@ -777,7 +782,7 @@ public final class TokenIcons {
         }
         boolean saved = false;
         try (FileOutputStream out = new FileOutputStream(tmp)) {
-            saved = write(drawn, maxSide, Bitmap.CompressFormat.PNG, out) && tmp.renameTo(file);
+            saved = write(drawn, maxSide, Bitmap.CompressFormat.PNG, out) && keep(category, tmp, file, null);
         } catch (IOException e) {
             return false;
         } finally {
@@ -890,7 +895,7 @@ public final class TokenIcons {
         return context.getResources().getDimensionPixelSize(R.dimen.nft_screen_icon);
     }
 
-    private static boolean save(File file, byte[] data, int maxSide) {
+    private static boolean save(String category, File file, byte[] data, int maxSide, Runnable with) {
         // A video keeps its first frame, as lists show images, and an SVG is drawn, as Android
         // can't, and kept as a PNG, which keeps what it leaves clear.
         Bitmap frame = null;
@@ -933,7 +938,7 @@ public final class TokenIcons {
             } else if (!shrink(data, bounds, maxSide, out)) {
                 return false;
             }
-            saved = tmp.renameTo(file);
+            saved = keep(category, tmp, file, with);
         } catch (IOException e) {
             return false;
         } finally {
@@ -945,6 +950,22 @@ public final class TokenIcons {
             VERSION.incrementAndGet();
         }
         return saved;
+    }
+
+    // keep renames a save's written file into place, and does what goes with it, unless the token
+    // was hidden since the save began, under the lock that a forget of tokens' files holds, so that
+    // a forget either removes what a save kept, or comes first, and the save keeps nothing. A save
+    // checked only as it began, so that one that ended after the forget kept the token's images.
+    static boolean keep(String category, File tmp, File file, Runnable with) {
+        synchronized (FILES) {
+            if (TokenLabels.hidden(category) || !tmp.renameTo(file)) {
+                return false;
+            }
+            if (with != null) {
+                with.run();
+            }
+            return true;
+        }
     }
 
     /**

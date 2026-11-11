@@ -245,4 +245,29 @@ public class TokenIconsTest {
         assertTrue(writing.exists());
         assertTrue(kept.exists());
     }
+
+    @Test
+    public void keepsNothingOfATokenHiddenAsItWasSaved() throws IOException {
+        File dir = folder.newFolder("keep");
+        String category = "ab".repeat(32);
+        File tmp = new File(dir, "icon1.tmp");
+        File file = new File(dir, category);
+        assertTrue(tmp.createNewFile());
+        java.util.concurrent.atomic.AtomicInteger with = new java.util.concurrent.atomic.AtomicInteger();
+
+        // Hidden once the save had written its file, as when its download ended after the hide.
+        TokenLabels.hold(java.util.Collections.singleton(category));
+        try {
+            assertFalse(TokenIcons.keep(category, tmp, file, with::incrementAndGet));
+        } finally {
+            TokenLabels.hold(java.util.Collections.emptySet());
+        }
+        assertFalse(file.exists());
+        assertEquals(0, with.get());
+
+        assertTrue(TokenIcons.keep(category, tmp, file, with::incrementAndGet));
+        assertTrue(file.exists());
+        assertFalse(tmp.exists());
+        assertEquals(1, with.get());
+    }
 }
