@@ -65,12 +65,11 @@ public class TransactionStore {
     public TransactionStore(Context context, Network network) {
         fileName = fileName(network);
         readAt = SAVES.get();
-        try {
-            FileInputStream fis = context.openFileInput(fileName);
-            ObjectInputStream is = new ObjectInputStream(fis);
+        // Both closed whether the file reads or not, as an unreadable one, read on each merge, left
+        // a file open each time.
+        try (FileInputStream fis = context.openFileInput(fileName);
+             ObjectInputStream is = new ObjectInputStream(fis)) {
             transactionDataSet = read(is);
-            is.close();
-            fis.close();
         } catch (FileNotFoundException | NotSerializableException e) {
             // Ignore file not found
         } catch (Exception e) {
