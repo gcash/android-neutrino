@@ -59,13 +59,22 @@ final class NftArtPopup {
 
         if (uri != null) {
             File file = TokenIcons.fullFile(screen, category, commitment, uri);
-            if (file.exists()) {
-                showFull(screen, layout, view, popup, file, size);
-            } else {
+            // Off the main thread, as it reads the art's files.
+            new Thread(() -> {
+                boolean saved = file.exists();
                 // Art that moves has nothing to show for it but a still, which needs saying.
-                boolean moves = TokenIcons.moves(screen, category, commitment, uri);
-                fetch(screen, layout, view, popup, category, moves, uri, file, size);
-            }
+                boolean moves = !saved && TokenIcons.moves(screen, category, commitment, uri);
+                view.post(() -> {
+                    if (!popup.isShowing()) {
+                        return;
+                    }
+                    if (saved) {
+                        showFull(screen, layout, view, popup, file, size);
+                    } else {
+                        fetch(screen, layout, view, popup, category, moves, uri, file, size);
+                    }
+                });
+            }, "nft-art").start();
         }
         return popup;
     }
@@ -119,50 +128,65 @@ final class NftArtPopup {
         }, MoreExecutors.directExecutor());
     }
 
-    // showFull shows the file: a video, muted and over and over, or else an image or an animation.
+    // showFull shows the file: a video, muted and over and over, or else an image or an animation,
+    // which it reads and decodes off the main thread, as it can be large.
     private static void showFull(Activity screen, ViewGroup layout, View view, PopupWindow popup, File file, int size) {
-        if (TokenIcons.isVideo(file)) {
-            VideoView video = view.findViewById(R.id.nftArtVideo);
-            video.setVisibility(View.VISIBLE);
-            video.setOnPreparedListener(player -> {
-                player.setVolume(0, 0);
-                player.setLooping(true);
-            });
-            video.setOnErrorListener((player, what, extra) -> {
-                file.delete();
-                failed(screen, layout, view, popup);
-                return true;
-            });
-            // It plays muted, so it leaves whatever else is playing alone.
-            video.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE);
-            video.setVideoPath(file.getPath());
-            video.start();
-            return;
-        }
-        ImageView image = view.findViewById(R.id.nftArtImage);
         new Thread(() -> {
-            try {
-                Drawable drawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(file),
-                        (decoder, info, source) -> {
-                            int[] fitted = TokenIcons.fitted(info.getSize().getWidth(), info.getSize().getHeight(), size);
-                            decoder.setTargetSize(fitted[0], fitted[1]);
-                        });
+            if (TokenIcons.isVideo(file)) {
                 view.post(() -> {
-                    if (!popup.isShowing()) {
-                        return;
-                    }
-                    // The smaller art, if it's still being drawn, doesn't replace this.
-                    TokenIcons.clear(image);
-                    image.setImageDrawable(drawable);
-                    if (drawable instanceof AnimatedImageDrawable) {
-                        ((AnimatedImageDrawable) drawable).start();
+                    if (popup.isShowing()) {
+                        play(screen, layout, view, popup, file);
                     }
                 });
-            } catch (IOException | RuntimeException | OutOfMemoryError e) {
-                file.delete();
-                view.post(() -> failed(screen, layout, view, popup));
+                return;
             }
+            decode(screen, layout, view, popup, file, size);
         }, "nft-art").start();
+    }
+
+    // play plays the video, muted and over and over.
+    private static void play(Activity screen, ViewGroup layout, View view, PopupWindow popup, File file) {
+        VideoView video = view.findViewById(R.id.nftArtVideo);
+        video.setVisibility(View.VISIBLE);
+        video.setOnPreparedListener(player -> {
+            player.setVolume(0, 0);
+            player.setLooping(true);
+        });
+        video.setOnErrorListener((player, what, extra) -> {
+            file.delete();
+            failed(screen, layout, view, popup);
+            return true;
+        });
+        // It plays muted, so it leaves whatever else is playing alone.
+        video.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE);
+        video.setVideoPath(file.getPath());
+        video.start();
+    }
+
+    // decode shows the image or animation, which it decodes on the thread it's called on.
+    private static void decode(Activity screen, ViewGroup layout, View view, PopupWindow popup, File file, int size) {
+        ImageView image = view.findViewById(R.id.nftArtImage);
+        try {
+            Drawable drawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(file),
+                    (decoder, info, source) -> {
+                        int[] fitted = TokenIcons.fitted(info.getSize().getWidth(), info.getSize().getHeight(), size);
+                        decoder.setTargetSize(fitted[0], fitted[1]);
+                    });
+            view.post(() -> {
+                if (!popup.isShowing()) {
+                    return;
+                }
+                // The smaller art, if it's still being drawn, doesn't replace this.
+                TokenIcons.clear(image);
+                image.setImageDrawable(drawable);
+                if (drawable instanceof AnimatedImageDrawable) {
+                    ((AnimatedImageDrawable) drawable).start();
+                }
+            });
+        } catch (IOException | RuntimeException | OutOfMemoryError e) {
+            file.delete();
+            view.post(() -> failed(screen, layout, view, popup));
+        }
     }
 
     private static void failed(Activity screen, ViewGroup layout, View view, PopupWindow popup) {

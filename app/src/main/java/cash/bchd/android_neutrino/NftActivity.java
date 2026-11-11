@@ -83,6 +83,12 @@ public class NftActivity extends AppCompatActivity {
         return thread;
     });
     private PopupWindow artPopup;
+    // Reads where the NFT's saved art came from, and whether it moves, off the main thread.
+    private static final ExecutorService ART_CHECKER = Executors.newSingleThreadExecutor();
+    // The URI of the art to show large, and the one to fetch it in full from, as last checked, or
+    // null while there is none to show.
+    private String artUri;
+    private String fullUri;
 
     /**
      * open opens the screen of one of the token's NFTs.
@@ -255,26 +261,50 @@ public class NftActivity extends AppCompatActivity {
         } else {
             TokenIcons.showNft(icon, category, commitment, size);
         }
-        String uri = artUri();
-        boolean moves = uri != null && TokenIcons.moves(this, category, commitment, uri);
-        findViewById(R.id.nftPlay).setVisibility(moves ? View.VISIBLE : View.GONE);
-        // It's only a button with art to open, and what a reader says is what a tap does.
-        View artView = findViewById(R.id.nftArt);
-        artView.setClickable(uri != null);
-        artView.setContentDescription(uri == null ? null : getString(moves ? R.string.nft_play : R.string.nft_art_open));
+        checkArt();
+    }
+
+    // checkArt finds off the main thread, as it reads the art's files, what art there is to show
+    // large, and shows whether it plays. It's only a button with art to open, and what a reader
+    // says is what a tap does.
+    private void checkArt() {
+        Context app = getApplicationContext();
+        String category = this.category;
+        String commitment = this.commitment;
+        WeakReference<NftActivity> ref = new WeakReference<>(this);
+        ART_CHECKER.execute(() -> {
+            String uri = artUri(app, category, commitment);
+            boolean moves = uri != null && TokenIcons.moves(app, category, commitment, uri);
+            String full = uri == null ? null : fullUri(app, category, commitment, uri);
+            NftActivity screen = ref.get();
+            if (screen == null) {
+                return;
+            }
+            screen.runOnUiThread(() -> {
+                if (screen.isDestroyed()) {
+                    return;
+                }
+                screen.artUri = uri;
+                screen.fullUri = full;
+                screen.findViewById(R.id.nftPlay).setVisibility(moves ? View.VISIBLE : View.GONE);
+                View artView = screen.findViewById(R.id.nftArt);
+                artView.setClickable(uri != null);
+                artView.setContentDescription(uri == null ? null
+                        : screen.getString(moves ? R.string.nft_play : R.string.nft_art_open));
+            });
+        });
     }
 
     // artUri returns the URI of the art to show large, if the NFT's art is there to show: what
     // moves, or else the full image, or else the icon. Some NFTs have only one of them.
-    private String artUri() {
+    private static String artUri(Context context, String category, String commitment) {
         TokenMeta token = TokenLabels.get(category);
         TokenMeta.NftType type = token == null || commitment == null ? null : token.nftType(commitment);
-        if (type == null || !TokenIcons.showing(category) || TokenLabels.isLookAlike(category)
-                || !TokenIcons.hasNft(this, category, commitment)) {
+        if (type == null || !TokenIcons.showing(category) || !TokenIcons.hasNft(context, category, commitment)) {
             return null;
         }
         boolean icon = !type.iconUri.isEmpty();
-        if (icon && (type.imageUri.isEmpty() || TokenIcons.moves(this, category, commitment, type.iconUri))) {
+        if (icon && (type.imageUri.isEmpty() || TokenIcons.moves(context, category, commitment, type.iconUri))) {
             return type.iconUri;
         }
         return type.imageUri.isEmpty() ? null : type.imageUri;
@@ -282,19 +312,18 @@ public class NftActivity extends AppCompatActivity {
 
     // fullUri returns the URI to fetch the art in full from, or null if what's saved is that file,
     // so that a still image isn't downloaded twice.
-    private String fullUri(String uri) {
+    private static String fullUri(Context context, String category, String commitment, String uri) {
         TokenMeta token = TokenLabels.get(category);
         TokenMeta.NftType type = token == null ? null : token.nftType(commitment);
         boolean thumbnail = type != null && (type.iconUri.isEmpty() || uri.equals(type.iconUri));
-        return thumbnail && !TokenIcons.moves(this, category, commitment, uri)
-                && TokenIcons.savedFrom(this, category, commitment, uri) ? null : uri;
+        return thumbnail && !TokenIcons.moves(context, category, commitment, uri)
+                && TokenIcons.savedFrom(context, category, commitment, uri) ? null : uri;
     }
 
-    // openArt shows the art large, if it's there to show.
+    // openArt shows the art large, if it's there to show, as last checked.
     private void openArt() {
-        String uri = artUri();
-        if (uri != null && (artPopup == null || !artPopup.isShowing())) {
-            artPopup = NftArtPopup.show(this, layout, category, commitment, fullUri(uri));
+        if (artUri != null && (artPopup == null || !artPopup.isShowing())) {
+            artPopup = NftArtPopup.show(this, layout, category, commitment, fullUri);
         }
     }
 
