@@ -857,16 +857,8 @@ public class MainActivity extends CloseActivity {
     public void onResume() {
         super.onResume();
         maybeSendDonationReminder();
-        if (exchangeRates != null) {
-            try {
-                TextView fiatBalanceView = findViewById(R.id.fiatBalanceView);
-                Amount amt = new Amount(settings.getLastBalance());
-                String formatted = exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(settings.getFiatCurrency()));
-                fiatBalanceView.setText(formatted);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        // What the balance is worth now, if there is a rate yet.
+        showBalance(settings.getLastBalance());
         if (Wallet.getInstance() != null && Wallet.getInstance().isRunning()) {
             openLaunchPayment();
         }
