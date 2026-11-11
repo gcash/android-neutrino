@@ -29,7 +29,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -762,9 +761,19 @@ public final class TokenIcons {
         if (files == null) {
             return;
         }
-        Arrays.sort(files, Comparator.comparingLong(File::lastModified).reversed());
+        // Newest first, by the times as read once: another save's trim or a forget can remove a
+        // file meanwhile, whose time then reads as 0, and a sort whose order changes as it sorts
+        // can throw.
+        long[] modified = new long[files.length];
+        Integer[] order = new Integer[files.length];
+        for (int i = 0; i < files.length; i++) {
+            modified[i] = files[i].lastModified();
+            order[i] = i;
+        }
+        Arrays.sort(order, (a, b) -> Long.compare(modified[b], modified[a]));
         long total = 0;
-        for (File file : files) {
+        for (int i : order) {
+            File file = files[i];
             total += file.length();
             if (total > MAX_MOTION_SIZE && !file.equals(keep)) {
                 file.delete();

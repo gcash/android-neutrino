@@ -270,4 +270,33 @@ public class TokenIconsTest {
         assertFalse(tmp.exists());
         assertEquals(1, with.get());
     }
+
+    @Test
+    public void trimmingReadsEachFilesTimeOnce() throws IOException {
+        // A file that another trim or a forget removes as this one sorts reads as 0, so a sort
+        // that reads the times as it goes can find its order changing, and throw.
+        java.util.concurrent.atomic.AtomicInteger reads = new java.util.concurrent.atomic.AtomicInteger();
+        File art = new File(folder.newFolder("motion2").getPath()) {
+            @Override
+            public File[] listFiles(java.io.FilenameFilter filter) {
+                File[] files = super.listFiles(filter);
+                File[] counted = new File[files.length];
+                for (int i = 0; i < files.length; i++) {
+                    counted[i] = new File(files[i].getPath()) {
+                        @Override
+                        public long lastModified() {
+                            reads.incrementAndGet();
+                            return super.lastModified();
+                        }
+                    };
+                }
+                return counted;
+            }
+        };
+        for (int i = 0; i < 40; i++) {
+            assertTrue(new File(art, "art" + i).createNewFile());
+        }
+        TokenIcons.trimMotion(art, null);
+        assertEquals(40, reads.get());
+    }
 }
