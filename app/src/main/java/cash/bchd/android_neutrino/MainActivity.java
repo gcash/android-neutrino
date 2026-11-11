@@ -25,7 +25,6 @@ import android.transition.TransitionManager;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -122,10 +121,12 @@ public class MainActivity extends CloseActivity {
     final OnBackPressedCallback closeMenuOnBack = new OnBackPressedCallback(false) {
         @Override
         public void handleOnBackPressed() {
-            toggleFABMenu();
+            closeFABMenu();
         }
     };
     long lastDown;
+    // Whether the menu was open when the menu button was pressed.
+    boolean openOnDown;
     CoordinatorLayout mCLayout;
     ImageView qrImage;
     TextView addrText;
@@ -333,32 +334,34 @@ public class MainActivity extends CloseActivity {
     private void listenForMenuSlides() {
         fab.setOnTouchListener((v, event) -> {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                toggleFABMenu();
+                openOnDown = isFabOpen;
+                showFABMenu();
                 lastDown = System.currentTimeMillis();
             } else if (event.getAction() == MotionEvent.ACTION_UP) {
-                toggleFABMenu();
                 if (System.currentTimeMillis() - lastDown < 500) {
+                    // A tap: the menu as it was before the press, which the click toggles.
+                    if (!openOnDown) {
+                        closeFABMenu();
+                    }
                     v.performClick();
                 } else {
-                    if (inViewInBounds(fabQR, (int) event.getRawX(), (int) event.getRawY())) {
+                    closeFABMenu();
+                    int x = (int) event.getRawX();
+                    int y = (int) event.getRawY();
+                    if (inViewInBounds(fabQR, x, y)) {
                         displayQRPopup(true);
-                        toggleFABMenu();
                     }
-                    if (inViewInBounds(fabScan, (int) event.getRawX(), (int) event.getRawY())) {
+                    if (inViewInBounds(fabScan, x, y)) {
                         displayQRScanner();
-                        toggleFABMenu();
                     }
-                    if (inViewInBounds(fabSend, (int) event.getRawX(), (int) event.getRawY())) {
+                    if (inViewInBounds(fabSend, x, y)) {
                         openSendActivity();
-                        toggleFABMenu();
                     }
-                    if (inViewInBounds(fabReceive, (int) event.getRawX(), (int) event.getRawY())) {
+                    if (inViewInBounds(fabReceive, x, y)) {
                         openReceiveActivity();
-                        toggleFABMenu();
                     }
-                    if (inViewInBounds(fabSettings, (int) event.getRawX(), (int) event.getRawY())) {
+                    if (inViewInBounds(fabSettings, x, y)) {
                         openSettingsActivity();
-                        toggleFABMenu();
                     }
                 }
             }
@@ -532,7 +535,7 @@ public class MainActivity extends CloseActivity {
     }
 
     private void openSendActivity() {
-        toggleFABMenu();
+        closeFABMenu();
         Intent intent = new Intent(this, SendActivity.class);
         intent.putExtra("fiatCurrency", this.settings.getFiatCurrency());
         intent.putExtra("feePerByte", this.settings.getFeePerByte());
@@ -540,7 +543,7 @@ public class MainActivity extends CloseActivity {
     }
 
     private void openReceiveActivity() {
-        toggleFABMenu();
+        closeFABMenu();
         Intent intent = new Intent(this, ReceiveActivity.class);
         intent.putExtra("fiatCurrency", this.settings.getFiatCurrency());
         intent.putExtra("defaultLabel", this.settings.getDefaultLabel());
@@ -549,13 +552,13 @@ public class MainActivity extends CloseActivity {
     }
 
     private void openSettingsActivity() {
-        toggleFABMenu();
+        closeFABMenu();
         Intent intent = new Intent(this, SettingsActivity.class);
         startActivity(intent);
     }
 
     private void displayQRScanner() {
-        toggleFABMenu();
+        closeFABMenu();
         scanner.launch(null);
     }
 
@@ -570,7 +573,7 @@ public class MainActivity extends CloseActivity {
     // with a spinner until it comes, and never one kept from before, which could have been paid.
     private void displayQRPopup(boolean fromMenu) {
         if (fromMenu) {
-            toggleFABMenu();
+            closeFABMenu();
         }
         LayoutInflater layoutInflater = (LayoutInflater) MainActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View customView = layoutInflater.inflate(R.layout.qrpopup, mCLayout, false);
@@ -708,7 +711,6 @@ public class MainActivity extends CloseActivity {
     }
 
     private void toggleFABMenu() {
-        toggleRotation(fab);
         if (!isFabOpen) {
             showFABMenu();
         } else {
@@ -719,6 +721,7 @@ public class MainActivity extends CloseActivity {
     private void showFABMenu() {
         isFabOpen = true;
         closeMenuOnBack.setEnabled(true);
+        fab.setRotation(45.0f);
         fabSettings.animate().translationY(-getResources().getDimension(R.dimen.standard_65));
         fabReceive.animate().translationY(-getResources().getDimension(R.dimen.standard_120));
         fabSend.animate().translationY(-getResources().getDimension(R.dimen.standard_175));
@@ -729,16 +732,13 @@ public class MainActivity extends CloseActivity {
     private void closeFABMenu() {
         isFabOpen = false;
         closeMenuOnBack.setEnabled(false);
+        fab.setRotation(0.0f);
         fabSettings.animate().translationY(0);
         fabReceive.animate().translationY(0);
         fabSend.animate().translationY(0);
         fabScan.animate().translationY(0);
         fabQR.animate().translationY(0);
         fab.bringToFront();
-    }
-
-    protected void toggleRotation(View v) {
-        v.setRotation(isFabOpen ? 0.0f : 45.0f);
     }
 
     public static void sendViewToBack(final View child) {
@@ -851,13 +851,6 @@ public class MainActivity extends CloseActivity {
                         snackbar.show();
                     }
                 });
-    }
-
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
     }
 
     @Override

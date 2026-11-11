@@ -152,8 +152,7 @@ public class SendActivity extends AppCompatActivity {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 amountField.updateConversion();
                 if (inputAmount.getText() != null && !inputAmount.getText().toString().equals("")) {
-                    TextInputEditText etAmount = findViewById(R.id.amountInput);
-                    etAmount.setError(null);
+                    inputAmount.setError(null);
                 }
             }
         });
@@ -333,7 +332,6 @@ public class SendActivity extends AppCompatActivity {
             Snackbar.make(sendLayout, R.string.no_exchange_rate, Snackbar.LENGTH_LONG).show();
             return;
         }
-        TextInputEditText etAmount = findViewById(R.id.amountInput);
         Amount toSpend = null;
         try {
             if (inputAmount.getText() != null && !inputAmount.getText().toString().equals("")) {
@@ -348,7 +346,7 @@ public class SendActivity extends AppCompatActivity {
             toSpend = null;
         }
         if (toSpend == null || toSpend.getSatoshis() == 0 || toSpend.getSatoshis() > balance.getSatoshis()) {
-            etAmount.setError(getString(R.string.invalid_amount));
+            inputAmount.setError(getString(R.string.invalid_amount));
             // The address is told of too, as it's checked as it's typed.
             checkAddress(true);
             return;
@@ -587,11 +585,10 @@ public class SendActivity extends AppCompatActivity {
                 if (edit != addressEdits.get() || isFinishing()) {
                     return;
                 }
-                TextInputLayout layout = findViewById(R.id.addressLayout);
                 if (valid) {
-                    layout.setError(null);
+                    addressLayout.setError(null);
                 } else if (showInvalid) {
-                    layout.setError(getString(R.string.invalid_bitcoin_cash_address));
+                    addressLayout.setError(getString(R.string.invalid_bitcoin_cash_address));
                 }
             });
         });
