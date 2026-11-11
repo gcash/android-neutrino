@@ -118,7 +118,9 @@ public class Wallet implements Serializable {
         return thread;
     });
 
-    private static boolean running = false;
+    // Whether this wallet loaded and runs, which a stop ends, also of a load under way. It's the
+    // wallet's own, as a stopped one isn't running whatever another does.
+    private volatile boolean running;
     // Those to tell when a wallet has loaded.
     private static final Set<Runnable> READY_LISTENERS = new CopyOnWriteArraySet<>();
 
@@ -307,7 +309,12 @@ public class Wallet implements Serializable {
                     WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(channel).withCallCredentials(creds);
                     return stub.ping(Api.PingRequest.newBuilder().build());
                 });
-                running = true;
+                synchronized (this) {
+                    if (stopped) {
+                        return;
+                    }
+                    running = true;
+                }
                 listener.onWalletReady();
                 tellBalances(listener);
                 // The notifications first, so that a payment that comes as the history is read is
