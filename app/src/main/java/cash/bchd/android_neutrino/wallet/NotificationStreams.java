@@ -59,6 +59,9 @@ final class NotificationStreams {
 
     private final Object lock = new Object();
     private boolean stopped;
+    // How many streams ended and wait to be subscribed again. Both end together when their
+    // connection closes, and one refresh, once the last is back, covers what both missed.
+    private int waiting;
     private final Stream transactions;
     private final Stream rescans;
 
@@ -171,6 +174,7 @@ final class NotificationStreams {
             }
             delay = stream.delayMillis;
             stream.delayMillis = Math.min(stream.delayMillis * 2, maxDelayMillis);
+            waiting++;
         }
         warn.accept(stream.name + " ended (" + status + "), subscribing again in " + delay + " ms");
         scheduler.schedule(() -> {
@@ -180,10 +184,16 @@ final class NotificationStreams {
                 }
             }
             stream.subscribe.run();
+            synchronized (lock) {
+                if (--waiting > 0) {
+                    return;
+                }
+            }
             try {
                 handler.refresh();
                 synchronized (lock) {
-                    stream.delayMillis = firstDelayMillis;
+                    transactions.delayMillis = firstDelayMillis;
+                    rescans.delayMillis = firstDelayMillis;
                 }
             } catch (Exception e) {
                 warn.accept(stream.name + " started again, but refreshing failed: " + e);

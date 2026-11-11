@@ -222,6 +222,23 @@ public class NotificationStreamsTest {
     }
 
     @Test
+    public void refreshesOnceWhenBothStreamsEnd() throws Exception {
+        streams.start();
+        StreamObserver<Api.TransactionNotificationsResponse> transactions = take(wallet.transactions);
+        StreamObserver<Api.RescanNotificationsResponse> rescans = take(wallet.rescans);
+
+        // A closed connection ends both, and each refreshing read the whole history.
+        transactions.onError(Status.UNAVAILABLE.asRuntimeException());
+        rescans.onError(Status.UNAVAILABLE.asRuntimeException());
+        take(wallet.transactions);
+        take(wallet.rescans);
+        take(handler.refreshes);
+        Thread.sleep(5 * MAX_DELAY_MILLIS);
+        settle();
+        assertNull(handler.refreshes.poll());
+    }
+
+    @Test
     public void staysStoppedOnceStopped() throws Exception {
         streams.start();
         StreamObserver<Api.TransactionNotificationsResponse> transactions = take(wallet.transactions);
