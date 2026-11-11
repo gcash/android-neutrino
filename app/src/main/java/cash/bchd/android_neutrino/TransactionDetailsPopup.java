@@ -13,6 +13,8 @@ import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
+import androidx.core.content.ContextCompat;
+
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -68,16 +70,15 @@ final class TransactionDetailsPopup {
             customView.findViewById(R.id.txDetailsAmountSpace).setVisibility(View.GONE);
         }
 
-        // A row for each token the transaction moved: its icon, what to call it and how much, then
-        // a row for each of its NFTs with its art.
+        // A row for the fungible amount of each token the transaction moved, with the token's icon,
+        // and one for each of its NFTs, with its art, each saying what came or went on the right.
         LinearLayout tokens = customView.findViewById(R.id.txDetailsTokens);
-        int iconSize = ctx.getResources().getDimensionPixelSize(R.dimen.token_details_icon);
-        int nftIconSize = ctx.getResources().getDimensionPixelSize(R.dimen.tx_details_nft_icon);
+        int iconSize = ctx.getResources().getDimensionPixelSize(R.dimen.tx_details_token_icon);
         List<Runnable> draws = new ArrayList<>();
         Map<String, List<ImageView>> artViews = new HashMap<>();
         NftArt art = new NftArt(ctx, (category, commitment) -> {
             for (ImageView view : artViews.getOrDefault(category + "-" + commitment, Collections.emptyList())) {
-                TokenIcons.showListNft(view, category, commitment, nftIconSize);
+                TokenIcons.showListNft(view, category, commitment, iconSize);
             }
         });
         // A stranger's transaction can hold any number, and each row draws an image.
@@ -85,19 +86,19 @@ final class TransactionDetailsPopup {
         // The tokens whose NFTs have rows, which the names are asked for.
         Set<String> nftTokens = new HashSet<>();
         for (TokenChange change : tx.getTokens()) {
+            String amount = TokenTexts.details(ctx, change);
+            // The NFTs' rows say which token they're of, so the token has a row of its own only
+            // for what they don't say.
+            boolean nftRows = !change.nftsReceived().isEmpty() || !change.nftsSent().isEmpty();
+            boolean tokenRow = !amount.isEmpty() || !nftRows;
             if (rows >= MAX_NFT_ROWS) {
-                rows += 1 + change.nftsReceived().size() + change.nftsSent().size();
+                rows += (tokenRow ? 1 : 0) + change.nftsReceived().size() + change.nftsSent().size();
                 continue;
             }
-            rows++;
-            View row = LayoutInflater.from(ctx).inflate(R.layout.txdetails_token_row, tokens, false);
-            ImageView icon = row.findViewById(R.id.txDetailsTokenIcon);
-            TokenIcons.showListIcon(icon, change.category, iconSize);
-            TextView id = row.findViewById(R.id.txDetailsTokenId);
-            TokenLabels.showTitle(id, change.category, TokenLabels.listTitle(change.category), false);
-            TextView amount = row.findViewById(R.id.txDetailsTokenChange);
-            amount.setText(TokenTexts.details(ctx, change));
-            tokens.addView(row);
+            if (tokenRow) {
+                rows++;
+                addToken(ctx, tokens, change, amount, iconSize);
+            }
             for (String commitment : change.nftsReceived()) {
                 if (rows++ < MAX_NFT_ROWS) {
                     addNft(ctx, tokens, change.category, commitment, true, art, artViews, draws);
@@ -166,31 +167,68 @@ final class TransactionDetailsPopup {
         return popupWindow;
     }
 
-    private static void addMore(Context ctx, LinearLayout tokens, int more) {
-        View row = LayoutInflater.from(ctx).inflate(R.layout.txdetails_nft_row, tokens, false);
-        row.findViewById(R.id.txDetailsNftIcon).setVisibility(View.GONE);
-        TextView text = row.findViewById(R.id.txDetailsNftName);
-        text.setText(ctx.getResources().getQuantityString(R.plurals.tx_details_more_nfts, more, more));
-        tokens.addView(row);
+    // addToken adds the row of a token's fungible amount: its icon, what to call it, with its
+    // symbol under, and the amount.
+    private static void addToken(Context ctx, LinearLayout tokens, TokenChange change, String amount, int iconSize) {
+        View row = LayoutInflater.from(ctx).inflate(R.layout.txdetails_token_row, tokens, false);
+        TokenIcons.showListIcon(row.findViewById(R.id.txDetailsTokenIcon), change.category, iconSize);
+        TokenLabels.showTitle(row.findViewById(R.id.txDetailsTokenTitle), change.category,
+                TokenLabels.listTitle(change.category), false);
+        showSubtitle(row.findViewById(R.id.txDetailsTokenSubtitle), TokenLabels.listSymbol(change.category));
+        showChange(ctx, row.findViewById(R.id.txDetailsTokenChange), amount,
+                change.amount != 0 ? change.amount > 0 : change.nfts > 0);
+        addRow(ctx, tokens, row);
     }
 
-    // addNft adds the row of an NFT, and what draws it, as its name and art can come later.
+    private static void addMore(Context ctx, LinearLayout tokens, int more) {
+        View row = LayoutInflater.from(ctx).inflate(R.layout.txdetails_token_row, tokens, false);
+        row.findViewById(R.id.txDetailsTokenIcon).setVisibility(View.GONE);
+        TextView text = row.findViewById(R.id.txDetailsTokenTitle);
+        text.setText(ctx.getResources().getQuantityString(R.plurals.tx_details_more_nfts, more, more));
+        addRow(ctx, tokens, row);
+    }
+
+    // addNft adds the row of an NFT, and what draws it, as its name and art can come later: its art,
+    // its name, with its token's under, and whether it came or went.
     private static void addNft(Context ctx, LinearLayout tokens, String category, String commitment, boolean in,
                                NftArt art, Map<String, List<ImageView>> artViews, List<Runnable> draws) {
-        View row = LayoutInflater.from(ctx).inflate(R.layout.txdetails_nft_row, tokens, false);
-        ImageView icon = row.findViewById(R.id.txDetailsNftIcon);
-        TextView name = row.findViewById(R.id.txDetailsNftName);
-        int size = ctx.getResources().getDimensionPixelSize(R.dimen.tx_details_nft_icon);
+        View row = LayoutInflater.from(ctx).inflate(R.layout.txdetails_token_row, tokens, false);
+        ImageView icon = row.findViewById(R.id.txDetailsTokenIcon);
+        TextView name = row.findViewById(R.id.txDetailsTokenTitle);
+        TextView token = row.findViewById(R.id.txDetailsTokenSubtitle);
+        int size = ctx.getResources().getDimensionPixelSize(R.dimen.tx_details_token_icon);
         artViews.computeIfAbsent(category + "-" + commitment, key -> new ArrayList<>()).add(icon);
+        showChange(ctx, row.findViewById(R.id.txDetailsTokenChange), TokenTexts.nftChange(ctx, in), in);
+        token.setVisibility(View.VISIBLE);
         Runnable draw = () -> {
             TokenIcons.showListNft(icon, category, commitment, size);
-            name.setText(in ? TokenTexts.nftIn(ctx, category, commitment) : TokenTexts.nftOut(ctx, category, commitment));
+            name.setText(TokenTexts.nftTitle(ctx, category, commitment));
+            TokenLabels.showTitle(token, category, TokenLabels.listTitle(category), false);
             if (!Settings.get(ctx).getHiddenTokens().contains(category)) {
                 art.request(category, commitment);
             }
         };
         draw.run();
         draws.add(draw);
+        addRow(ctx, tokens, row);
+    }
+
+    private static void showSubtitle(TextView view, String text) {
+        view.setText(text);
+        view.setVisibility(text == null ? View.GONE : View.VISIBLE);
+    }
+
+    // showChange shows what came in the list's green, and what went in its purple.
+    private static void showChange(Context ctx, TextView view, String text, boolean in) {
+        view.setText(text);
+        view.setTextColor(ContextCompat.getColor(ctx, in ? R.color.darkGreen : R.color.neonPurple));
+    }
+
+    // addRow adds a row of the tokens, under a thin line if it isn't the first.
+    private static void addRow(Context ctx, LinearLayout tokens, View row) {
+        if (tokens.getChildCount() > 0) {
+            LayoutInflater.from(ctx).inflate(R.layout.txdetails_token_divider, tokens, true);
+        }
         tokens.addView(row);
     }
 

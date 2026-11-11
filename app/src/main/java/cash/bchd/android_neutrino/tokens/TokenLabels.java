@@ -249,6 +249,18 @@ public final class TokenLabels {
     }
 
     /**
+     * listSymbol returns the token's symbol where no badge shows, or null: only if the token is
+     * trusted and its amounts show it, as a symbol that copies another's doesn't.
+     */
+    public static String listSymbol(String category) {
+        if (!trusted(category)) {
+            return null;
+        }
+        TokenMeta token = TOKENS.get(category);
+        return token.reservedSymbol || token.knownSymbol || token.symbol.isEmpty() ? null : token.symbol;
+    }
+
+    /**
      * showTitle shows what to call a token: a name in the screen's font, or a short ID in monospace,
      * as its digits are all there is to tell it by. A bold one stays bold.
      */

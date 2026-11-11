@@ -229,14 +229,10 @@
     <string name="swapped_nft">Swapped NFT</string>
     <string name="nft_description">Description</string>
     <string name="nft_attributes">Attributes</string>
-    <!-- An NFT that came to the wallet, or that it sent, in a transaction's details, with its
-         commitment if it has one. -->
-    <string name="nft_in">+NFT</string>
-    <string name="nft_in_with">+NFT %1$s</string>
-    <string name="nft_out">-NFT</string>
-    <string name="nft_out_with">-NFT %1$s</string>
-    <string name="nft_in_named">+%1$s</string>
-    <string name="nft_out_named">-%1$s</string>
+    <!-- An NFT without a name to trust, in a transaction's details, with its commitment if it
+         has one. -->
+    <string name="nft_untitled">NFT</string>
+    <string name="nft_with_commitment">NFT %1$s</string>
     <string name="token_sent">Sent</string>
     <string name="send_all_leaves_tokens">Send All sends the BCH you can spend. The wallet\'s CashTokens stay here, with the %1$s BCH they carry, as this app can\'t send tokens yet. Keep this wallet\'s recovery phrase to keep them.</string>
     <string name="restore_loses_tokens">This wallet also holds CashTokens, with %1$s BCH. They\'re lost too unless you have this wallet\'s recovery phrase.</string>

@@ -3,8 +3,6 @@ package cash.bchd.android_neutrino;
 import android.content.Context;
 import android.text.TextUtils;
 
-import androidx.annotation.StringRes;
-
 import java.math.BigInteger;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -41,8 +39,7 @@ final class TokenTexts {
      * screen, which leaves room for the row's date.
      */
     static String changeOnTokenScreen(Context ctx, TokenChange change) {
-        String amount = change.amount == 0 ? null
-                : (change.amount > 0 ? "+" : "") + TokenLabels.number(change.category, BigInteger.valueOf(change.amount));
+        String amount = change.amount == 0 ? null : signedNumber(change.category, change.amount);
         String nfts = nftsChange(ctx, change);
         if (amount == null) {
             return nfts;
@@ -62,12 +59,13 @@ final class TokenTexts {
 
     /**
      * details says how the transaction changed the token apart from the NFTs that have rows of their
-     * own: its fungible amount, or how many NFTs for a change saved before the app kept which.
+     * own: its fungible amount, without the symbol, which the row has under the token's name, or
+     * how many NFTs for a change saved before the app kept which.
      */
     static String details(Context ctx, TokenChange change) {
         List<String> lines = new ArrayList<>();
         if (change.amount != 0) {
-            lines.add(signed(change.category, change.amount));
+            lines.add(signedNumber(change.category, change.amount));
         }
         if (change.nfts != 0 && change.nftsReceived().isEmpty() && change.nftsSent().isEmpty()) {
             lines.add(nfts(ctx, change.nfts));
@@ -76,27 +74,23 @@ final class TokenTexts {
     }
 
     /**
-     * nftIn says an NFT came, by its name if it has one to trust, or else its commitment.
+     * nftTitle says what to call an NFT in the transaction's details: its name if it has one to
+     * trust, or else its commitment.
      */
-    static String nftIn(Context ctx, String category, String commitment) {
-        return nftLine(ctx, category, commitment, R.string.nft_in, R.string.nft_in_with, R.string.nft_in_named);
+    static String nftTitle(Context ctx, String category, String commitment) {
+        String name = TokenLabels.listNftName(category, commitment);
+        if (name != null) {
+            return name;
+        }
+        return commitment.isEmpty() ? ctx.getString(R.string.nft_untitled)
+                : ctx.getString(R.string.nft_with_commitment, NftAdapter.shortCommitment(commitment));
     }
 
     /**
-     * nftOut says an NFT went, as nftIn says one came.
+     * nftChange says that an NFT came or went.
      */
-    static String nftOut(Context ctx, String category, String commitment) {
-        return nftLine(ctx, category, commitment, R.string.nft_out, R.string.nft_out_with, R.string.nft_out_named);
-    }
-
-    private static String nftLine(Context ctx, String category, String commitment, @StringRes int bare,
-                                  @StringRes int withCommitment, @StringRes int named) {
-        String name = TokenLabels.listNftName(category, commitment);
-        if (name != null) {
-            return ctx.getString(named, name);
-        }
-        return commitment.isEmpty() ? ctx.getString(bare)
-                : ctx.getString(withCommitment, NftAdapter.shortCommitment(commitment));
+    static String nftChange(Context ctx, boolean in) {
+        return nfts(ctx, in ? 1 : -1);
     }
 
     private static String nfts(Context ctx, int nfts) {
@@ -105,6 +99,10 @@ final class TokenTexts {
 
     private static String signed(String category, long n) {
         return (n > 0 ? "+" : "") + TokenLabels.listAmount(category, BigInteger.valueOf(n));
+    }
+
+    private static String signedNumber(String category, long n) {
+        return (n > 0 ? "+" : "") + TokenLabels.number(category, BigInteger.valueOf(n));
     }
 
     private static String signed(long n) {
