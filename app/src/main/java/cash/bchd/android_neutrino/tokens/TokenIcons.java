@@ -36,6 +36,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import cash.bchd.android_neutrino.R;
 
@@ -726,21 +728,26 @@ public final class TokenIcons {
     // any time or memory: its size, and the number of the elements that draw others again.
     private static final int MAX_SVG_SIZE = 256 << 10;
     private static final int MAX_SVG_USES = 64;
+    // A use element, with a namespace prefix or none, as the parser sees one either way.
+    private static final Pattern SVG_USE = Pattern.compile("<(?:[A-Za-z_][\\w.-]*:)?use[\\s/>]");
+    // A character reference, by which a stranger's file can spell what the checks look for.
+    private static final Pattern CHAR_REF = Pattern.compile("&#(?:x([0-9A-Fa-f]{1,6})|([0-9]{1,7}));");
 
     /**
      * cheapSvg returns whether an SVG is one to draw: small, with no entities, which can grow
      * without limit, no data: images, which decode at any size, and few elements that draw others.
+     * It looks at the text as the parser reads it, with its character references, and in any case.
      */
     static boolean cheapSvg(byte[] data) {
         if (data.length > MAX_SVG_SIZE) {
             return false;
         }
-        String text = new String(data, StandardCharsets.UTF_8);
-        if (text.contains("<!ENTITY") || text.contains("data:")) {
+        String text = withCharRefs(new String(data, StandardCharsets.UTF_8)).toLowerCase(Locale.ROOT);
+        if (text.contains("<!entity") || text.contains("data:")) {
             return false;
         }
         int uses = 0;
-        for (int i = text.indexOf("<use"); i >= 0; i = text.indexOf("<use", i + 4)) {
+        for (Matcher use = SVG_USE.matcher(text); use.find(); ) {
             if (++uses > MAX_SVG_USES) {
                 return false;
             }
@@ -748,8 +755,29 @@ public final class TokenIcons {
         return true;
     }
 
+    // withCharRefs returns the text with its numeric character references as the characters they
+    // stand for, or as U+FFFD for one that stands for none.
+    private static String withCharRefs(String text) {
+        Matcher ref = CHAR_REF.matcher(text);
+        StringBuilder out = new StringBuilder(text.length());
+        int last = 0;
+        while (ref.find()) {
+            int code = ref.group(1) != null ? Integer.parseInt(ref.group(1), 16) : Integer.parseInt(ref.group(2));
+            out.append(text, last, ref.start());
+            if (Character.isValidCodePoint(code)) {
+                out.appendCodePoint(code);
+            } else {
+                out.append('\uFFFD');
+            }
+            last = ref.end();
+        }
+        return out.append(text, last, text.length()).toString();
+    }
+
     // svg draws an SVG at up to the side, in its proportions, or returns null if it isn't one
-    // or can't be drawn. Nothing it names elsewhere is fetched, as no resolver is set for it.
+    // or can't be drawn. Nothing it names elsewhere is fetched, as no resolver is set for it. The
+    // library draws each element within the one around it, so elements nested deep enough, or that
+    // draw each other, overflow the stack, which would end the app on every start that asks again.
     private static Bitmap svg(byte[] data, int maxSide) {
         if (!looksLikeSvg(data) || !cheapSvg(data)) {
             return null;
@@ -772,7 +800,7 @@ public final class TokenIcons {
             svg.setDocumentHeight(fitted[1]);
             svg.renderToCanvas(new Canvas(image));
             return image;
-        } catch (SVGParseException | RuntimeException | OutOfMemoryError e) {
+        } catch (SVGParseException | RuntimeException | OutOfMemoryError | StackOverflowError e) {
             return null;
         }
     }

@@ -178,6 +178,17 @@ public class TokenIconsTest {
         assertFalse(TokenIcons.cheapSvg("<!DOCTYPE svg [<!ENTITY a \"aa\">]><svg/>".getBytes(utf8)));
         assertFalse(TokenIcons.cheapSvg("<svg><image href=\"data:image/png;base64,AA\"/></svg>".getBytes(utf8)));
         assertFalse(TokenIcons.cheapSvg(("<svg>" + "<use href=\"#a\"/>".repeat(65) + "</svg>").getBytes(utf8)));
+        // As the parser reads them: uses with a namespace prefix, data: and an entity spelled with
+        // character references or in another case.
+        assertFalse(TokenIcons.cheapSvg(("<svg xmlns:s=\"http://www.w3.org/2000/svg\">"
+                + "<s:use href=\"#a\"/>".repeat(65) + "</svg>").getBytes(utf8)));
+        assertFalse(TokenIcons.cheapSvg(("<svg>" + "<use\nhref=\"#a\"/>".repeat(65) + "</svg>").getBytes(utf8)));
+        assertFalse(TokenIcons.cheapSvg("<svg><image href=\"data&#58;image/png;base64,AA\"/></svg>".getBytes(utf8)));
+        assertFalse(TokenIcons.cheapSvg("<svg><image href=\"data&#x3A;image/png;base64,AA\"/></svg>".getBytes(utf8)));
+        assertFalse(TokenIcons.cheapSvg("<svg><image href=\"DATA:image/png;base64,AA\"/></svg>".getBytes(utf8)));
+        assertFalse(TokenIcons.cheapSvg("<!DOCTYPE svg [<!entity a \"aa\">]><svg/>".getBytes(utf8)));
+        // What only looks like them, and references that stand for nothing, are no reason.
+        assertTrue(TokenIcons.cheapSvg(("<svg>" + "<user/>".repeat(65) + "<text>&#169; &#xFFFFFFF; metadata</text></svg>").getBytes(utf8)));
     }
 
     @Test
