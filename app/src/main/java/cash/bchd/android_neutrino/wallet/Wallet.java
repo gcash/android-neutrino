@@ -79,8 +79,8 @@ public class Wallet implements Serializable {
     private volatile WalletEventListener mainListener;
     private NotificationStreams streams;
 
-    private int lastBlockHeight;
-    private String lastBlockHash;
+    // The best block of the wallet's chain that the listeners were told.
+    private final ChainTip tip = new ChainTip();
 
     // The wallet's transactions as the app last read them all, kept up to date from the
     // notifications, and what's under way with them, which historyLock guards: whether a read of
@@ -397,10 +397,8 @@ public class Wallet implements Serializable {
         setMainListener(listener);
         try {
             Api.NetworkResponse network = network();
-            lastBlockHeight = network.getBestHeight();
-            lastBlockHash = network.getBestBlock();
-
-            listener.onBlock(lastBlockHeight, lastBlockHash);
+            tip.move(network.getBestHeight(), network.getBestBlock());
+            listener.onBlock(network.getBestHeight(), network.getBestBlock());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -437,6 +435,27 @@ public class Wallet implements Serializable {
     }
 
     /**
+     * tellTip tells the listeners the best block of the wallet's chain, if it moved. A
+     * notification's blocks can't say it, as recovery's are old ones it found the wallet's
+     * transactions in, which became the tip when the app had none, as after a reorg or when the
+     * wallet couldn't say it yet, and showed too few confirmations until the next new block.
+     */
+    private void tellTip() {
+        Api.NetworkResponse network;
+        try {
+            network = network();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+        if (tip.move(network.getBestHeight(), network.getBestBlock())) {
+            for (WalletEventListener blockchainListener : blockchainListeners) {
+                blockchainListener.onBlock(network.getBestHeight(), network.getBestBlock());
+            }
+        }
+    }
+
+    /**
      * setMainListener has the notification streams tell the listener, the one of the screen that
      * shows the wallet, in place of the listener before it, and returns whether it replaced one.
      * A screen that comes back in front of another one that had taken them takes them back.
@@ -456,19 +475,11 @@ public class Wallet implements Serializable {
 
     private void onTransactionNotification(Api.TransactionNotificationsResponse value) {
         List<Api.BlockDetails> blocks = value.getAttachedBlocksList();
-        if (value.getDetachedBlocksCount() > 0) {
-            lastBlockHeight = 0;
+        if (!blocks.isEmpty() || value.getDetachedBlocksCount() > 0) {
+            tellTip();
         }
         boolean hasMinedTransactions = false;
         for (Api.BlockDetails block : blocks) {
-            if (block.getHeight() > lastBlockHeight) {
-                lastBlockHeight = block.getHeight();
-                lastBlockHash = txidToString(block.getHash());
-
-                for (WalletEventListener blockchainListener : blockchainListeners) {
-                    blockchainListener.onBlock(lastBlockHeight, lastBlockHash);
-                }
-            }
             if (block.getTransactionsCount() > 0) {
                 hasMinedTransactions = true;
                 for (Api.TransactionDetails tx : block.getTransactionsList()) {
