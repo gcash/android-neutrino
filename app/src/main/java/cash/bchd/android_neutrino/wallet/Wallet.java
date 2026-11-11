@@ -99,6 +99,8 @@ public class Wallet implements Serializable {
     // again, which bring what it gives up to date, and the listener to tell of them.
     private final PendingNotifications pending = new PendingNotifications();
     private WalletEventListener pendingFor;
+    // A listener whose tell came while a read of them all was under way, which it tells once done.
+    private WalletEventListener tellAfterRead;
     // How many reads of them all failed in a row, which the next waits longer for.
     private int failedReads;
     private static final long FIRST_RETRY_MILLIS = 15_000;
@@ -951,23 +953,26 @@ public class Wallet implements Serializable {
                 // date with the notifications that came meanwhile, which a listener that didn't
                 // ask for the read is told of too.
                 List<TransactionData> kept = copiesOf(txs);
-                WalletEventListener alsoTell = null;
+                // The read's listeners, and those to tell besides, each with a reply of its own:
+                // the one whose notifications it applied, and one whose turn came during it.
+                Map<WalletEventListener, Long> told = new LinkedHashMap<>(replies);
                 synchronized (historyLock) {
                     history.replace(kept);
                     if (pending.applyTo(history, this::extractTransactionData)) {
                         txs = history.copies();
-                        if (pendingFor != null && !replies.containsKey(pendingFor)) {
-                            alsoTell = pendingFor;
+                        if (pendingFor != null && !told.containsKey(pendingFor)) {
+                            told.put(pendingFor, pendingFor.transactionReplies.next());
                         }
                     }
+                    if (tellAfterRead != null && !told.containsKey(tellAfterRead)) {
+                        told.put(tellAfterRead, tellAfterRead.transactionReplies.next());
+                    }
                     pendingFor = null;
+                    tellAfterRead = null;
                     historyRead = true;
                     failedReads = 0;
                 }
-                tellEach(replies, txs, bestHeight, () -> stopped);
-                if (alsoTell != null) {
-                    tellHistory(alsoTell);
-                }
+                tellEach(told, txs, bestHeight, () -> stopped);
             } finally {
                 readAllAgain();
             }
@@ -1052,6 +1057,7 @@ public class Wallet implements Serializable {
             if (stopped) {
                 reads.stop();
                 pending.clear();
+                tellAfterRead = null;
                 return;
             }
             failedReads++;
@@ -1080,6 +1086,7 @@ public class Wallet implements Serializable {
             if (stopped) {
                 reads.stop();
                 pending.clear();
+                tellAfterRead = null;
                 return;
             }
             Set<WalletEventListener> next = reads.done();
@@ -1126,10 +1133,10 @@ public class Wallet implements Serializable {
             if (listener == null || stopped) {
                 return;
             }
-            // A read of them all that's under way tells them as they are then, and the read after
-            // it tells this listener too, as the one under way can be another's.
+            // A read of them all that's under way tells them as they are once it's done, and tells
+            // this listener too, if it's another's, rather than have them all read again after it.
             if (reads.reading()) {
-                reads.start(listener);
+                tellAfterRead = listener;
                 return;
             }
             txs = history.copies();
