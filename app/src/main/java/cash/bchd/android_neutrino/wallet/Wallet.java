@@ -33,6 +33,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
@@ -82,6 +83,8 @@ public class Wallet implements Serializable {
 
     // The best block of the wallet's chain that the listeners were told.
     private final ChainTip tip = new ChainTip();
+    // Whether the wallet's load began.
+    private final AtomicBoolean loading = new AtomicBoolean();
 
     // The wallet's transactions as the app last read them all, kept up to date from the
     // notifications, and what's under way with them, which historyLock guards: whether a read of
@@ -262,9 +265,14 @@ public class Wallet implements Serializable {
      * loadWallet waits in the background for the daemon to start, creates the wallet from the
      * mnemonic, or a new one if it is empty, when it does not exist yet, and starts listening for
      * the wallet's events once it is loaded. If the daemon stops or the wallet can't be created,
-     * for example because the mnemonic is invalid, the listener's onWalletError is called.
+     * for example because the mnemonic is invalid, the listener's onWalletError is called. A
+     * wallet loads once, with the listener its load began with, so it returns whether this call
+     * began it, which a main screen recreated meanwhile doesn't.
      */
-    public void loadWallet(WalletEventListener listener, String mnemonic) {
+    public boolean loadWallet(WalletEventListener listener, String mnemonic) {
+        if (!loading.compareAndSet(false, true)) {
+            return false;
+        }
         Thread thread = new Thread(() -> {
             try {
                 Future<?> start = started;
@@ -310,6 +318,7 @@ public class Wallet implements Serializable {
             }
         }, "wallet-load");
         thread.start();
+        return true;
     }
 
     private interface DaemonCall<T> {

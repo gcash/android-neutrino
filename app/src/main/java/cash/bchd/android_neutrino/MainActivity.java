@@ -158,7 +158,7 @@ public class MainActivity extends CloseActivity {
     // The wallet this activity listens to the events of, which it started or found running, and
     // the listener it listens with.
     private Wallet wallet;
-    private WalletEventListener eventListener;
+    private MainListener eventListener;
     // Shows the wallet's sync status while this activity is in front.
     private ScheduledExecutorService syncStatusPoller;
     // Set while the user is asked to let the app reach the local network, which the wallet's
@@ -318,6 +318,7 @@ public class MainActivity extends CloseActivity {
         iconLoader.stop();
         pagesHandler.removeCallbacksAndMessages(null);
         TokenLabels.onLoad(null);
+        MainListener.hide(this);
         super.onDestroy();
     }
 
@@ -374,23 +375,82 @@ public class MainActivity extends CloseActivity {
         }
         if (current != wallet) {
             // A wallet this activity doesn't listen to yet: the one it started, one started
-            // while the activity was in the background, or the one that kept running while
-            // the activity was recreated.
+            // while the activity was in the background, or the one that kept running or loading
+            // while the activity was recreated, which tells the listener its load began with.
             wallet = current;
-            new StartWalletTask(this).execute(current);
-        } else if (eventListener != null && current.setMainListener(eventListener)) {
-            // Another main screen, opened on top of this one, took the wallet's notifications
-            // and is gone: this one takes them back, and catches up on what it missed.
-            Wallet attached = current;
-            WalletEventListener listener = eventListener;
-            new Thread(() -> {
-                try {
-                    attached.refresh(listener);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }, "wallet-refresh").start();
+            eventListener = MainListener.of(current, this);
+            MainListener.show(this);
+            if (current.loadWallet(eventListener, settings.getMnemonic())) {
+                return;
+            }
         }
+        attach(current);
+    }
+
+    // attach has the wallet, loaded or loading, tell this screen's listener once it runs, in place
+    // of a token's screen's or the one of its start after a stop, and catch it up on what those
+    // were told meanwhile. The listener had the notifications otherwise, and kept what they told.
+    private void attach(Wallet current) {
+        MainListener listener = eventListener;
+        Futures.addCallback(Wallet.whenRunning(), new FutureCallback<Wallet>() {
+            @Override
+            public void onSuccess(Wallet running) {
+                if (running != current || !running.setMainListener(listener)) {
+                    return;
+                }
+                new Thread(() -> {
+                    try {
+                        running.refresh(listener);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }, "wallet-refresh").start();
+            }
+
+            @Override
+            public void onFailure(@NonNull Throwable t) {
+            }
+        }, MoreExecutors.directExecutor());
+    }
+
+    // walletReady runs what follows the wallet's load, once a load, on the main screen that shows.
+    private void walletReady() {
+        openLaunchPayment();
+        upgradeWalletPassphrase();
+        forgetHiddenTokens();
+    }
+
+    // showBalance shows the balance, and what it's worth if there is a rate.
+    private void showBalance(long bal) {
+        Amount amt = new Amount(bal);
+        TextView bchBalanceView = findViewById(R.id.bchBalanceView);
+        bchBalanceView.setText(getString(R.string.bch_amount, amt.toString()));
+        if (settings.getNetwork().hasFiat) {
+            String fiatAmount = ExchangeRates.formattedOrEmpty(amt, Currency.getInstance(settings.getFiatCurrency()));
+            if (!fiatAmount.isEmpty()) {
+                TextView fiatBalanceView = findViewById(R.id.fiatBalanceView);
+                fiatBalanceView.setText(fiatAmount);
+            }
+        }
+    }
+
+    // showStore shows the transactions of the store the wallet's were saved to.
+    private void showStore(TransactionStore store) {
+        txStore = store;
+        // A transaction added at the top goes above the first row shown, so the list scrolls to
+        // show it when it showed the newest before. With nothing added it stays put, as the user
+        // can be scrolling.
+        LinearLayoutManager rows = mainPages.rows(MainPages.ACTIVITY);
+        boolean atTop = rows == null || rows.findFirstVisibleItemPosition() <= 0;
+        List<TransactionData> shown = mAdapter.getData();
+        List<TransactionData> list = TransactionList.withoutHidden(store.getData(), settings.getHiddenTokens());
+        boolean newTop = TransactionRows.newTop(shown, list);
+        mAdapter.setNewData(list);
+        showTokens(settings.getLastTokens());
+        if (atTop && newTop && rows != null) {
+            rows.scrollToPosition(0);
+        }
+        showBchPlease();
     }
 
     // mayStartWallet returns whether the wallet can start now. Android 17 and newer let the app
@@ -448,6 +508,10 @@ public class MainActivity extends CloseActivity {
             // Start the wallet if it stopped while the app was in the background, or listen to
             // the one that WalletCloser started again while another screen was in front.
             createWallet();
+            // What the wallet told while another main screen showed, which the listener kept.
+            MainListener.show(this);
+            showBalance(settings.getLastBalance());
+            mAdapter.setBlockHeight(settings.getLastBlockHeight());
             offerUndoHide();
         }
     }
@@ -1302,187 +1366,152 @@ public class MainActivity extends CloseActivity {
         notificationManager.notify(id, notification);
     }
 
-    // StartWalletTask loads the started wallet and shows its balance and transactions. The
-    // wallet calls the listener on background threads, so the listener updates the views on
-    // the UI thread.
-    private static class StartWalletTask {
-        private final WeakReference<MainActivity> mainActivityRef;
-        // The wallet's settings, which outlive the screen.
-        private final Settings settings;
+    // MainListener listens to a wallet for the main screen. It keeps what the wallet tells, its
+    // balance, tokens, tip and transactions, in the wallet's settings and its saved transactions,
+    // whichever screen is in front, and shows it on the main screen that shows, if one does. A
+    // wallet has one, which each main screen shares, as Android can recreate the screen while
+    // the wallet loads or runs, and the wallet tells the listener its load began with: a screen
+    // that loaded it again read its whole history again, ran what follows a load again, and could
+    // leave the wallet telling the screen it replaced. What follows a load runs once, on the main
+    // screen that shows then, or the next one to show.
+    private static final class MainListener extends WalletEventListener {
+        // Used on the main thread only. Its context is the application's, which lives as long.
+        @SuppressLint("StaticFieldLeak")
+        private static MainListener current;
+        private static WeakReference<MainActivity> shown = new WeakReference<>(null);
 
-        StartWalletTask(MainActivity mainActivity) {
-            mainActivityRef = new WeakReference<>(mainActivity);
-            settings = mainActivity.settings;
+        private final Wallet wallet;
+        private final Settings settings;
+        private final Context app;
+        private final Handler main = new Handler(Looper.getMainLooper());
+        // Whether the wallet loaded while no main screen showed.
+        private boolean readyUnshown;
+
+        private MainListener(Wallet wallet, Settings settings, Context app) {
+            this.wallet = wallet;
+            this.settings = settings;
+            this.app = app;
         }
 
-        void execute(Wallet wallet) {
-            try {
-                WalletEventListener listener = new WalletEventListener() {
-                    @Override
-                    public void onWalletReady() {
-                        MainActivity mainActivity = mainActivityRef.get();
-                        if (mainActivity == null) {
-                            // no can do if we no longer have a reference to MainActivity.
-                            // perhaps print a warning.
-                            return;
-                        }
-                        mainActivity.runOnUiThread(() -> {
-                            mainActivity.openLaunchPayment();
-                            mainActivity.upgradeWalletPassphrase();
-                            mainActivity.forgetHiddenTokens();
-                        });
-                    }
-
-                    @Override
-                    public void onWalletError(String message) {
-                        MainActivity mainActivity = mainActivityRef.get();
-                        if (mainActivity == null) {
-                            return;
-                        }
-                        mainActivity.runOnUiThread(() -> {
-                            Snackbar snackbar = Snackbar.make(mainActivity.mCLayout,
-                                    mainActivity.getString(R.string.wallet_error, message), Snackbar.LENGTH_INDEFINITE);
-                            snackbar.show();
-                        });
-                    }
-
-                    @Override
-                    public void onBalanceChange(long bal) {
-                        MainActivity mainActivity = mainActivityRef.get();
-                        if (mainActivity == null) {
-                            // no can do if we no longer have a reference to MainActivity.
-                            // perhaps print a warning.
-                            return;
-                        }
-                        if (mainActivity.getApplicationContext() != null) {
-                            mainActivity.settings.setLastBalance(bal);
-                            mainActivity.runOnUiThread(() -> {
-                                Amount amt = new Amount(bal);
-                                TextView bchBalanceView = mainActivity.findViewById(R.id.bchBalanceView);
-                                bchBalanceView.setText(mainActivity.getString(R.string.bch_amount, amt.toString()));
-                                if (mainActivity.exchangeRates != null) {
-                                    try {
-                                        String fiatAmount = mainActivity.exchangeRates.getFormattedAmountInFiat(amt, Currency.getInstance(mainActivity.settings.getFiatCurrency()));
-                                        TextView fiatBalanceView = mainActivity.findViewById(R.id.fiatBalanceView);
-                                        fiatBalanceView.setText(fiatAmount);
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                                if (bal > 0) {
-                                    mainActivity.maybeSendBackupReminder();
-                                }
-                            });
-                        }
-                    }
-
-                    @Override
-                    public void onTokenBalances(List<TokenBalance> tokens) {
-                        MainActivity mainActivity = mainActivityRef.get();
-                        if (mainActivity == null) {
-                            return;
-                        }
-                        mainActivity.settings.setLastTokens(tokens);
-                        mainActivity.runOnUiThread(() -> mainActivity.showTokens(tokens));
-                    }
-
-                    // A new wallet's recovery phrase is kept before the wallet is created, and
-                    // whether the screen is still there or not, as it can't be had again.
-                    @Override
-                    public void onCreatingWallet(String seed) {
-                        settings.setMnemonic(seed);
-                    }
-
-                    @Override
-                    public void onWalletCreated() {
-                        settings.setWalletInitialized(true);
-                    }
-
-                    @Override
-                    public void onGetTransactions(List<TransactionData> txs, int blockHeight) {
-                        MainActivity mainActivity = mainActivityRef.get();
-                        if (mainActivity == null) {
-                            return;
-                        }
-                        // This isn't the UI thread, and the file can be large: a rescan's replies
-                        // would each hold up the screen.
-                        String fiatCurrency = mainActivity.settings.getFiatCurrency();
-                        for (TransactionData tx : txs) {
-                            tx.setFiatCurrency(fiatCurrency);
-                            String formattedFiat = "";
-                            if (mainActivity.exchangeRates != null) {
-                                try {
-                                    formattedFiat = mainActivity.exchangeRates.getFormattedAmountInFiat(new Amount(tx.shownAmount()), Currency.getInstance(fiatCurrency));
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                            tx.setFiatAmount(formattedFiat);
-                        }
-                        // The wallet's transactions, which drops the ones it no longer has, such as
-                        // one a double spend replaced. The store keeps all of them, and the list
-                        // leaves out those of hidden tokens.
-                        TransactionStore store = TransactionStore.merge(mainActivity.getApplicationContext(),
-                                mainActivity.settings.getNetwork(), txs);
-                        mainActivity.runOnUiThread(() -> {
-                            MainActivity mainActivity2 = mainActivityRef.get();
-                            if (mainActivity2 == null) {
-                                return;
-                            }
-                            mainActivity2.txStore = store;
-                            // A transaction added at the top goes above the first row shown, so
-                            // the list scrolls to show it when it showed the newest before. With
-                            // nothing added it stays put, as the user can be scrolling.
-                            LinearLayoutManager rows = mainActivity2.mainPages.rows(MainPages.ACTIVITY);
-                            boolean atTop = rows == null || rows.findFirstVisibleItemPosition() <= 0;
-                            List<TransactionData> shown = mainActivity2.mAdapter.getData();
-                            List<TransactionData> list = TransactionList.withoutHidden(store.getData(),
-                                    mainActivity2.settings.getHiddenTokens());
-                            boolean newTop = TransactionRows.newTop(shown, list);
-                            mainActivity2.mAdapter.setNewData(list);
-                            mainActivity2.showTokens(mainActivity2.settings.getLastTokens());
-                            if (atTop && newTop && rows != null) {
-                                rows.scrollToPosition(0);
-                            }
-                            mainActivity2.showBchPlease();
-                        });
-                    }
-
-                    @Override
-                    public void onBlock(int blockHeight, String blockHash) {
-                        MainActivity mainActivity = mainActivityRef.get();
-                        if (mainActivity == null) {
-                            return;
-                        }
-                        if (mainActivity.getApplicationContext() != null) {
-                            mainActivity.runOnUiThread(() -> {
-                                MainActivity mainActivity2 = mainActivityRef.get();
-                                if (mainActivity2 == null) {
-                                    return;
-                                }
-                                mainActivity2.mAdapter.setBlockHeight(blockHeight);
-                                mainActivity2.showTokens(mainActivity2.settings.getLastTokens());
-                                mainActivity2.settings.setLastBlockHeight(blockHeight);
-                                mainActivity2.settings.setLastBlockHash(blockHash);
-                            });
-                        }
-                    }
-
-                    @Override
-                    public void onScanProgress(int height) {
-                        MainActivity mainActivity = mainActivityRef.get();
-                        mainActivity.settings.setScanHeight(height);
-                    }
-                };
-                MainActivity mainActivity = mainActivityRef.get();
-                if (mainActivity == null) {
-                    return;
-                }
-                mainActivity.eventListener = listener;
-                wallet.loadWallet(listener, mainActivity.settings.getMnemonic());
-            } catch (Exception e) {
-                e.printStackTrace();
+        // of returns the listener of the wallet, which the screen's settings are of.
+        static MainListener of(Wallet wallet, MainActivity activity) {
+            if (current == null || current.wallet != wallet) {
+                current = new MainListener(wallet, activity.settings, activity.getApplicationContext());
             }
+            return current;
+        }
+
+        // show has the listener show what the wallet tells on the screen, which shows now, and
+        // runs what follows a load, if the wallet loaded while none showed.
+        static void show(MainActivity activity) {
+            shown = new WeakReference<>(activity);
+            if (current != null && current.readyUnshown && current.wallet == activity.wallet) {
+                current.readyUnshown = false;
+                activity.walletReady();
+            }
+        }
+
+        // hide has the listener stop showing what the wallet tells on the screen, which is gone.
+        static void hide(MainActivity activity) {
+            if (shown.get() == activity) {
+                shown.clear();
+            }
+        }
+
+        // shown returns the main screen that shows what this wallet tells, or null.
+        private MainActivity shown() {
+            MainActivity activity = shown.get();
+            return activity != null && activity.wallet == wallet ? activity : null;
+        }
+
+        // onUi runs the change on the main thread, on the main screen that shows then, if one does.
+        private void onUi(java.util.function.Consumer<MainActivity> change) {
+            main.post(() -> {
+                MainActivity activity = shown();
+                if (activity != null) {
+                    change.accept(activity);
+                }
+            });
+        }
+
+        @Override
+        public void onWalletReady() {
+            main.post(() -> {
+                MainActivity activity = shown();
+                if (activity == null) {
+                    readyUnshown = true;
+                } else {
+                    activity.walletReady();
+                }
+            });
+        }
+
+        @Override
+        public void onWalletError(String message) {
+            onUi(activity -> Snackbar.make(activity.mCLayout,
+                    activity.getString(R.string.wallet_error, message), Snackbar.LENGTH_INDEFINITE).show());
+        }
+
+        @Override
+        public void onBalanceChange(long bal) {
+            settings.setLastBalance(bal);
+            onUi(activity -> {
+                activity.showBalance(bal);
+                if (bal > 0) {
+                    activity.maybeSendBackupReminder();
+                }
+            });
+        }
+
+        @Override
+        public void onTokenBalances(List<TokenBalance> tokens) {
+            settings.setLastTokens(tokens);
+            onUi(activity -> activity.showTokens(tokens));
+        }
+
+        // A new wallet's recovery phrase is kept before the wallet is created, and whether a
+        // screen shows or not, as it can't be had again.
+        @Override
+        public void onCreatingWallet(String seed) {
+            settings.setMnemonic(seed);
+        }
+
+        @Override
+        public void onWalletCreated() {
+            settings.setWalletInitialized(true);
+        }
+
+        @Override
+        public void onGetTransactions(List<TransactionData> txs, int blockHeight) {
+            // This isn't the UI thread, and the file can be large: a rescan's replies would each
+            // hold up the screen.
+            String fiatCurrency = settings.getFiatCurrency();
+            Network network = settings.getNetwork();
+            for (TransactionData tx : txs) {
+                tx.setFiatCurrency(fiatCurrency);
+                tx.setFiatAmount(network.hasFiat
+                        ? ExchangeRates.formattedOrEmpty(new Amount(tx.shownAmount()), Currency.getInstance(fiatCurrency)) : "");
+            }
+            // The wallet's transactions, which drops the ones it no longer has, such as one a
+            // double spend replaced. The store keeps all of them, and the list leaves out those of
+            // hidden tokens.
+            TransactionStore store = TransactionStore.merge(app, network, txs);
+            onUi(activity -> activity.showStore(store));
+        }
+
+        @Override
+        public void onBlock(int blockHeight, String blockHash) {
+            settings.setLastBlockHeight(blockHeight);
+            settings.setLastBlockHash(blockHash);
+            onUi(activity -> {
+                activity.mAdapter.setBlockHeight(blockHeight);
+                activity.showTokens(activity.settings.getLastTokens());
+            });
+        }
+
+        @Override
+        public void onScanProgress(int height) {
+            settings.setScanHeight(height);
         }
     }
 }
