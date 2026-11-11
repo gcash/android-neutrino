@@ -64,6 +64,8 @@ public class ReceiveActivity extends AppCompatActivity {
     PopupWindow requestPopup;
     // The request for the address the popup shows, which closing the popup cancels.
     private ListenableFuture<Addresses> addressRequest;
+    // Stops the request popup's listening for payments to its address, or null.
+    private Runnable listening;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -231,6 +233,7 @@ public class ReceiveActivity extends AppCompatActivity {
             if (addressRequest != null) {
                 addressRequest.cancel(true);
             }
+            stopListening();
         });
 
         TextView helperText = customView.findViewById(R.id.uriHelpText);
@@ -309,33 +312,43 @@ public class ReceiveActivity extends AppCompatActivity {
         if (wallet == null) {
             return;
         }
-        wallet.listenAddress(address, new AddressListener() {
+        stopListening();
+        AddressListener listener = new AddressListener() {
             @Override
             public void onPaymentReceived(long amount) {
-                if (getApplicationContext() != null) {
-                    runOnUiThread(() -> {
-                        totalReceived += amount;
-                        if (requestAmount == null || totalReceived >= requestAmount.getSatoshis()) {
-                            Vibrations.buzz(getApplicationContext());
-                            CoinFlip.show(popup.findViewById(R.id.requestQRLayout));
-                        } else {
-                            TextView partialPayment = popup.findViewById(R.id.parialPayment);
-                            partialPayment.setVisibility(View.VISIBLE);
+                runOnUiThread(() -> {
+                    totalReceived += amount;
+                    if (requestAmount == null || totalReceived >= requestAmount.getSatoshis()) {
+                        Vibrations.buzz(getApplicationContext());
+                        CoinFlip.show(popup.findViewById(R.id.requestQRLayout));
+                    } else {
+                        TextView partialPayment = popup.findViewById(R.id.parialPayment);
+                        partialPayment.setVisibility(View.VISIBLE);
 
-                            TextView helperText = popup.findViewById(R.id.uriHelpText);
-                            Amount newAmt = new Amount(requestAmount.getSatoshis() - totalReceived);
-                            helperText.setText(getString(R.string.send_bch_to, newAmt.toString()));
+                        TextView helperText = popup.findViewById(R.id.uriHelpText);
+                        Amount newAmt = new Amount(requestAmount.getSatoshis() - totalReceived);
+                        helperText.setText(getString(R.string.send_bch_to, newAmt.toString()));
 
-                            builder.amount(newAmt.toBCH());
-                            showRequest(popup, builder.build(), dimension);
+                        builder.amount(newAmt.toBCH());
+                        showRequest(popup, builder.build(), dimension);
 
-                            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) helperText.getLayoutParams();
-                            params.setMargins(params.leftMargin, -25, params.rightMargin, params.bottomMargin);
-                        }
-                    });
-                }
+                        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) helperText.getLayoutParams();
+                        params.setMargins(params.leftMargin, -25, params.rightMargin, params.bottomMargin);
+                    }
+                });
             }
-        });
+        };
+        wallet.listenAddress(address, listener);
+        listening = () -> wallet.stopListening(address, listener);
+    }
+
+    // stopListening stops the request popup's listening for payments, as its listener holds the
+    // screen, and a payment to the address once it closed is no payment toward the request.
+    private void stopListening() {
+        if (listening != null) {
+            listening.run();
+            listening = null;
+        }
     }
 
     private void copyToClipboard(String data) {

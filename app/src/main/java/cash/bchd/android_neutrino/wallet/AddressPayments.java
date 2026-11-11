@@ -26,6 +26,14 @@ final class AddressPayments {
     }
 
     /**
+     * stop stops telling the listener of the payments to the address, unless another took its
+     * place, as a popup that closed listens no more, and its listener holds its screen.
+     */
+    void stop(String address, AddressListener listener) {
+        listeners.remove(address, listener);
+    }
+
+    /**
      * tell tells the listeners of the wallet's outputs in the transactions to their addresses
      * that they weren't told of.
      */

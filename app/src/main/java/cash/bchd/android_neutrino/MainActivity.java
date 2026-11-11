@@ -133,6 +133,8 @@ public class MainActivity extends CloseActivity {
     // them, which closing the popup cancels.
     private Addresses popupAddresses;
     private ListenableFuture<Addresses> addressRequest;
+    // Stops the address popup's listening for payments to its address, or null.
+    private Runnable listening;
     PopupWindow qrPopup;
     TransactionStore txStore;
     TransactionAdapter mAdapter;
@@ -579,6 +581,7 @@ public class MainActivity extends CloseActivity {
             if (addressRequest != null) {
                 addressRequest.cancel(true);
             }
+            stopListening();
         });
         qrPopup = popupWindow;
         qrImage = customView.findViewById(R.id.qrCodeView);
@@ -601,6 +604,15 @@ public class MainActivity extends CloseActivity {
         askAddresses(customView, popupWindow, forms);
     }
 
+    // stopListening stops the address popup's listening for payments, as its listener holds the
+    // screen, and a payment to the address once it closed is no news to celebrate.
+    private void stopListening() {
+        if (listening != null) {
+            listening.run();
+            listening = null;
+        }
+    }
+
     // askAddresses asks the wallet for both forms of its address, once one runs, and shows them in
     // the popup when they come, or says that it couldn't get them, which a tap asks again.
     private void askAddresses(View popup, PopupWindow window, TabLayout forms) {
@@ -621,17 +633,18 @@ public class MainActivity extends CloseActivity {
                 if (wallet == null) {
                     return;
                 }
-                wallet.listenAddress(addresses.plain, new AddressListener() {
+                stopListening();
+                AddressListener listener = new AddressListener() {
                     @Override
                     public void onPaymentReceived(long amount) {
-                        if (getApplicationContext() != null) {
-                            runOnUiThread(() -> {
-                                Vibrations.buzz(getApplicationContext());
-                                CoinFlip.show(popup.findViewById(R.id.qrCodeLayout));
-                            });
-                        }
+                        runOnUiThread(() -> {
+                            Vibrations.buzz(getApplicationContext());
+                            CoinFlip.show(popup.findViewById(R.id.qrCodeLayout));
+                        });
                     }
-                });
+                };
+                wallet.listenAddress(addresses.plain, listener);
+                listening = () -> wallet.stopListening(addresses.plain, listener);
             }
 
             @Override

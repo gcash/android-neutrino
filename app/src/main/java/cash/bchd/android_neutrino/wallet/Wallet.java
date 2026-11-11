@@ -574,6 +574,14 @@ public class Wallet implements Serializable {
         addressPayments.listen(address, listener);
     }
 
+    /**
+     * stopListening stops telling the listener of the payments to the address, as for a popup that
+     * closed.
+     */
+    public void stopListening(String address, AddressListener listener) {
+        addressPayments.stop(address, listener);
+    }
+
     public void listenBlockchain(WalletEventListener listener) {
         blockchainListeners.add(listener);
     }

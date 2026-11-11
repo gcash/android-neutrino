@@ -46,4 +46,33 @@ public class AddressPaymentsTest {
         payments.tell(Collections.singletonList(tx(3, "b", 5000L)));
         assertEquals(List.of(60_000_000L, 1000L, 2000L), told);
     }
+
+    @Test
+    public void tellsNoListenerThatStopped() {
+        AddressPayments payments = new AddressPayments();
+        List<String> told = new ArrayList<>();
+        AddressListener closed = new AddressListener() {
+            @Override
+            public void onPaymentReceived(long amount) {
+                told.add("closed");
+            }
+        };
+        AddressListener open = new AddressListener() {
+            @Override
+            public void onPaymentReceived(long amount) {
+                told.add("open");
+            }
+        };
+        payments.listen("a", closed);
+        payments.stop("a", closed);
+        payments.tell(Collections.singletonList(tx(1, "a", 1000L)));
+        assertEquals(Collections.emptyList(), told);
+
+        // One that stops after another took its place leaves that one listening.
+        payments.listen("a", closed);
+        payments.listen("a", open);
+        payments.stop("a", closed);
+        payments.tell(Collections.singletonList(tx(2, "a", 1000L)));
+        assertEquals(Collections.singletonList("open"), told);
+    }
 }
