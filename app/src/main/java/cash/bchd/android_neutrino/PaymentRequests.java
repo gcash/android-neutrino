@@ -120,7 +120,7 @@ final class PaymentRequests {
         }
         Amount totalAmt = new Amount(totalSatoshis);
         String fiatFormatted = wallet.getNetwork().hasFiat
-                ? ExchangeRates.getInstance().getFormattedAmountInFiat(totalAmt, Currency.getInstance(fiatCurrency)) : "";
+                ? ExchangeRates.formattedOrEmpty(totalAmt, Currency.getInstance(fiatCurrency)) : "";
         if (totalSatoshis > wallet.balance()) {
             throw new InsufficientFundsException();
         }

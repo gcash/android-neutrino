@@ -41,6 +41,9 @@
     <string name="error_creating_transaction">Error creating transaction.</string>
     <string name="error_creating_transaction_reason">Error creating transaction: %1$s</string>
     <string name="invalid_amount">INVALID AMOUNT</string>
+    <!-- When an amount can't be entered in the fiat currency, as the app has no exchange rate
+         for it yet. -->
+    <string name="no_exchange_rate">No exchange rate yet. Enter the amount in BCH.</string>
     <string name="invalid_bitcoin_cash_address">INVALID BITCOIN CASH ADDRESS</string>
     <plurals name="network_fee_sat_per_byte">
         <item quantity="one">Network Fee: %1$d sat/byte</item>

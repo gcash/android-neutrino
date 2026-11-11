@@ -328,6 +328,11 @@ public class SendActivity extends AppCompatActivity {
             Snackbar.make(sendLayout, R.string.wallet_is_not_loaded_yet, Snackbar.LENGTH_LONG).show();
             return;
         }
+        if (amountField.leaveFiatWithoutRate()) {
+            showBalance();
+            Snackbar.make(sendLayout, R.string.no_exchange_rate, Snackbar.LENGTH_LONG).show();
+            return;
+        }
         TextInputEditText etAmount = findViewById(R.id.amountInput);
         Amount toSpend = null;
         try {
@@ -373,7 +378,8 @@ public class SendActivity extends AppCompatActivity {
                 txFee = tx.getFee();
                 inputVals = tx.getInputValuesList();
             }
-            String fiatFormatted = network.hasFiat ? ExchangeRates.getInstance().getFormattedAmountInFiat(spend, Currency.getInstance(fiatCurrency)) : "";
+            // Its fiat value only goes with it, so a payment in BCH needs no rate.
+            String fiatFormatted = network.hasFiat ? ExchangeRates.formattedOrEmpty(spend, Currency.getInstance(fiatCurrency)) : "";
             ArrayList<String> inputStrings = new ArrayList<>();
             for (Long val : inputVals) {
                 inputStrings.add(String.valueOf(val));
@@ -436,9 +442,13 @@ public class SendActivity extends AppCompatActivity {
         }, ContextCompat.getMainExecutor(this));
     }
 
-    // toggleBchFiat switches the amount to the other unit, and the balance with it.
+    // toggleBchFiat switches the amount to the other unit, and the balance with it, or says
+    // there is no rate to switch to the fiat currency with yet.
     private void toggleBchFiat() {
-        amountField.toggle();
+        if (!amountField.toggle()) {
+            Snackbar.make(sendLayout, R.string.no_exchange_rate, Snackbar.LENGTH_LONG).show();
+            return;
+        }
         showBalance();
     }
 

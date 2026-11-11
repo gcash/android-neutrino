@@ -154,6 +154,40 @@ public class ExchangeRates {
         return rate;
     }
 
+    /**
+     * hasRate returns whether there is a rate for the currency yet, which there isn't before the
+     * rates were fetched, as when the phone started offline, or for a currency they leave out.
+     */
+    public static boolean hasRate(Currency currencyCode) {
+        ExchangeRates rates = instance;
+        if (rates == null) {
+            return false;
+        }
+        try {
+            rates.rate(currencyCode);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * formattedOrEmpty returns what the amount is worth in the currency, with its symbol, or
+     * nothing if there is no rate for it yet, for where the fiat value only goes with an amount in
+     * BCH, which needs none.
+     */
+    public static String formattedOrEmpty(Amount bchAmount, Currency currencyCode) {
+        ExchangeRates rates = instance;
+        if (rates == null) {
+            return "";
+        }
+        try {
+            return rates.getFormattedAmountInFiat(bchAmount, currencyCode);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
     public String getFormattedAmountInFiat(Amount bchAmount, Currency currencyCode) throws Exception {
         return currencyCode.getSymbol() + getAmountInFiat(bchAmount, currencyCode);
     }

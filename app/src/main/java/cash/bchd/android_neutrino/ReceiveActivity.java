@@ -109,7 +109,11 @@ public class ReceiveActivity extends AppCompatActivity {
         amountField = new AmountField(this, receiveAmountInput, findViewById(R.id.receiveSymbolLabel), toggle,
                 findViewById(R.id.receiveConversionRate), network, fiatCurrency,
                 savedInstanceState == null || savedInstanceState.getBoolean(STATE_SHOWING_FIAT, true));
-        toggle.setOnClickListener(v -> amountField.toggle());
+        toggle.setOnClickListener(v -> {
+            if (!amountField.toggle()) {
+                Snackbar.make(receiveLayout, R.string.no_exchange_rate, Snackbar.LENGTH_LONG).show();
+            }
+        });
 
         receiveAmountInput.addTextChangedListener(new TextWatcher() {
 
@@ -183,6 +187,10 @@ public class ReceiveActivity extends AppCompatActivity {
         // The request is made before the popup opens, which then shows it, or not at all, with an
         // amount that can't be read, as a fiat one before the rates came.
         BitcoinPaymentURI.Builder builder = new BitcoinPaymentURI.Builder();
+        if (amountField.leaveFiatWithoutRate()) {
+            Snackbar.make(receiveLayout, R.string.no_exchange_rate, Snackbar.LENGTH_LONG).show();
+            return;
+        }
         // A request without an amount, as for an empty field, lets the payer choose it.
         Amount requestAmount = null;
         try {
