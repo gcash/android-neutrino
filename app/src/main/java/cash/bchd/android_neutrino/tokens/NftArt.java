@@ -13,6 +13,8 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import cash.bchd.android_neutrino.wallet.TokenMeta;
 import cash.bchd.android_neutrino.wallet.Wallet;
@@ -34,6 +36,8 @@ public final class NftArt {
     }
 
     private static final Handler HANDLER = new Handler(Looper.getMainLooper());
+    // Reads whether art is saved already, off the main thread, as it reads the art's files.
+    private static final ExecutorService CHECKER = Executors.newSingleThreadExecutor();
     private final Context context;
     // Let go of once stopped, as it holds its screen, and a download can take any time to end.
     private Loaded done;
@@ -45,7 +49,7 @@ public final class NftArt {
     // The tokens whose images the user asked for, whose art goes ahead of what loads by itself.
     private final Set<String> byUser = new HashSet<>();
     // The art found saved from the URI the registry names, by token, NFT and URI, so that each
-    // row that shows it doesn't read its source file again.
+    // row that shows it isn't checked again.
     private final TokenIcons.SavedChecks savedChecked = new TokenIcons.SavedChecks();
     private boolean stopped;
 
@@ -63,10 +67,8 @@ public final class NftArt {
         // A look-alike's art wouldn't show, so nothing should reach its host. Art saved from
         // another URI than the registry names now is loaded again.
         String uri = uri(category, commitment);
-        if (!TokenIcons.showing(category) || TokenLabels.isLookAlike(category) || uri == null
-                || TokenIcons.knownSaved(savedChecked, TokenIcons.version(), key(category, commitment) + " " + uri,
-                        () -> TokenIcons.hasNft(context, category, commitment)
-                                && TokenIcons.savedFrom(context, category, commitment, uri))
+        if (!TokenIcons.showing(category) || uri == null
+                || savedChecked.has(key(category, commitment) + " " + uri, TokenIcons.forgotten())
                 || !asked.add(key(category, commitment))) {
             return;
         }
@@ -79,9 +81,7 @@ public final class NftArt {
      */
     public void requestIcon(String category, String uri) {
         // An icon saved from another URI than the registry names now is loaded again.
-        if (TokenIcons.knownSaved(savedChecked, TokenIcons.version(), category + " " + uri,
-                () -> TokenIcons.iconSavedFrom(context, category, uri))
-                || !asked.add(category)) {
+        if (savedChecked.has(category + " " + uri, TokenIcons.forgotten()) || !asked.add(category)) {
             return;
         }
         waiting.addFirst(new String[]{category, null, uri});
@@ -135,19 +135,33 @@ public final class NftArt {
             String[] next = waiting.pollFirst();
             String category = next[0];
             String commitment = next[1];
-            // What was waiting may no longer be wanted, or known, or already be there, and the
-            // token may have turned out to be a look-alike, whose host nothing should reach. What
-            // can't load now can be asked for again.
+            // What was waiting may no longer be wanted, or known, and the token may have turned
+            // out to be a look-alike, whose host nothing should reach. What can't load now can be
+            // asked for again.
             String uri = commitment == null ? next[2] : uri(category, commitment);
-            boolean there = commitment != null && TokenIcons.hasNft(context, category, commitment)
-                    && TokenIcons.savedFrom(context, category, commitment, uri);
-            if (uri == null || !TokenIcons.showing(category) || TokenLabels.isLookAlike(category) || there
-                    || wallet == null || !wallet.isRunning()) {
+            if (uri == null || !TokenIcons.showing(category) || wallet == null || !wallet.isRunning()) {
                 asked.remove(key(category, commitment));
                 continue;
             }
-            load(wallet.tokenIconAsync(uri, byUser.contains(category)), category, commitment, uri);
+            boolean forUser = byUser.contains(category);
+            CHECKER.execute(() -> loadUnlessSaved(wallet, category, commitment, uri, forUser));
         }
+    }
+
+    // loadUnlessSaved loads the art, off the main thread, unless it's saved from the URI already,
+    // which the screen then knows, and checks no more.
+    private void loadUnlessSaved(Wallet wallet, String category, String commitment, String uri, boolean forUser) {
+        long forgotten = TokenIcons.forgotten();
+        boolean there = commitment == null ? TokenIcons.iconSavedFrom(context, category, uri)
+                : TokenIcons.hasNft(context, category, commitment) && TokenIcons.savedFrom(context, category, commitment, uri);
+        if (there) {
+            HANDLER.post(() -> {
+                savedChecked.add(key(category, commitment) + " " + uri, forgotten);
+                asked.remove(key(category, commitment));
+            });
+            return;
+        }
+        load(wallet.tokenIconAsync(uri, forUser), category, commitment, uri);
     }
 
     private void load(ListenableFuture<byte[]> data, String category, String commitment, String uri) {

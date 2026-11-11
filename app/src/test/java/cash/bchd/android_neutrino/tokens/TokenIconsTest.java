@@ -208,29 +208,21 @@ public class TokenIconsTest {
     }
 
     @Test
-    public void readsWhetherArtIsSavedOnceFound() {
+    public void keepsWhatWasFoundSavedUntilAForget() {
         TokenIcons.SavedChecks found = new TokenIcons.SavedChecks();
-        java.util.concurrent.atomic.AtomicInteger reads = new java.util.concurrent.atomic.AtomicInteger();
-        java.util.function.BooleanSupplier saved = () -> {
-            reads.incrementAndGet();
-            return true;
-        };
-        for (int i = 0; i < 3; i++) {
-            assertTrue(TokenIcons.knownSaved(found, 1, "aa-01 ipfs://one", saved));
-        }
-        assertEquals(1, reads.get());
+        assertFalse(found.has("aa-01 ipfs://one", 0));
+        found.add("aa-01 ipfs://one", 0);
+        assertTrue(found.has("aa-01 ipfs://one", 0));
+        // Another URI is no art saved from this one.
+        assertFalse(found.has("aa-01 ipfs://two", 0));
 
-        // Another URI is read, and what isn't saved is read each time, as a load can save it.
-        for (int i = 0; i < 2; i++) {
-            assertFalse(TokenIcons.knownSaved(found, 1, "aa-01 ipfs://two", () -> {
-                reads.incrementAndGet();
-                return false;
-            }));
-        }
-        assertEquals(3, reads.get());
-
-        // Once the images changed, as when a token's were forgotten, what was found is read again.
-        assertTrue(TokenIcons.knownSaved(found, 2, "aa-01 ipfs://one", saved));
-        assertEquals(4, reads.get());
+        // A forget, which can have removed it, has it checked again.
+        assertFalse(found.has("aa-01 ipfs://one", 1));
+        // What was found before a forget that came since isn't kept.
+        found.add("aa-01 ipfs://one", 0);
+        assertFalse(found.has("aa-01 ipfs://one", 1));
+        // What was found after it is, also when it's told before the forget was seen.
+        found.add("aa-01 ipfs://one", 2);
+        assertTrue(found.has("aa-01 ipfs://one", 2));
     }
 }

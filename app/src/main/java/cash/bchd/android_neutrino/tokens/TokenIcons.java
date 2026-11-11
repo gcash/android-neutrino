@@ -76,6 +76,8 @@ public final class TokenIcons {
 
     // Counts what was saved, for a screen to tell that it drew older images.
     private static final AtomicLong VERSION = new AtomicLong();
+    // Counts the forgets, which alone make saved images unsaved.
+    private static final AtomicLong FORGOTTEN = new AtomicLong();
 
     private static volatile boolean showAll;
     private static volatile Set<String> chosen = Collections.emptySet();
@@ -383,33 +385,45 @@ public final class TokenIcons {
     }
 
     /**
-     * SavedChecks is the art a screen found saved from its URI, as of a version of the images.
+     * SavedChecks is the art a screen found saved from its URI, by a key of its token, NFT and
+     * URI. Only forgetting tokens' images makes saved art unsaved, so what was found holds until
+     * the next forget, whatever was saved meanwhile. It's for one thread.
      */
     static final class SavedChecks {
         private final Set<String> keys = new java.util.HashSet<>();
-        private long version;
+        private long forgotten;
+
+        /**
+         * has returns whether the art was found saved since the forgets counted.
+         */
+        boolean has(String key, long forgotten) {
+            if (forgotten > this.forgotten) {
+                keys.clear();
+                this.forgotten = forgotten;
+            }
+            return keys.contains(key);
+        }
+
+        /**
+         * add keeps that the art was found saved when the forgets were counted, unless one came
+         * since, which could have removed it.
+         */
+        void add(String key, long forgotten) {
+            if (forgotten > this.forgotten) {
+                keys.clear();
+                this.forgotten = forgotten;
+            }
+            if (forgotten == this.forgotten) {
+                keys.add(key);
+            }
+        }
     }
 
     /**
-     * knownSaved returns whether art is saved from its URI, by what was found of it before, or
-     * by reading it, which found keeps.  What isn't saved is read again the next time, as a load
-     * can save it, and all is read again once the images' version changed, as when a token's
-     * were forgotten.
+     * forgotten counts the forgets of tokens' images.
      */
-    static boolean knownSaved(SavedChecks found, long version, String key,
-                              java.util.function.BooleanSupplier read) {
-        if (found.version != version) {
-            found.keys.clear();
-            found.version = version;
-        }
-        if (found.keys.contains(key)) {
-            return true;
-        }
-        if (read.getAsBoolean()) {
-            found.keys.add(key);
-            return true;
-        }
-        return false;
+    static long forgotten() {
+        return FORGOTTEN.get();
     }
 
     /**
@@ -652,6 +666,7 @@ public final class TokenIcons {
         for (String category : categories) {
             forgetDrawn(category);
         }
+        FORGOTTEN.incrementAndGet();
         VERSION.incrementAndGet();
     }
 
