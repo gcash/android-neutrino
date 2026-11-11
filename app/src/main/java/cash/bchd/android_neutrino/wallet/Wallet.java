@@ -69,7 +69,7 @@ public class Wallet implements Serializable {
 
     public final static String DEFAULT_PASSPHRASE = "LETMEIN";
 
-    private HashMap<String, AddressListener> addressListeners = new HashMap<String, AddressListener>();
+    private final AddressPayments addressPayments = new AddressPayments();
     // The memos of the transactions the app sent, which the wallet doesn't have, by transaction ID.
     private HashMap<String, String> memos = new HashMap<String, String>();
     // The listeners told of each new block, from any thread.
@@ -479,39 +479,18 @@ public class Wallet implements Serializable {
         if (!blocks.isEmpty() || value.getDetachedBlocksCount() > 0) {
             tellTip();
         }
-        boolean hasMinedTransactions = false;
+        boolean hasTransactions = value.getUnminedTransactionsCount() > 0;
         for (Api.BlockDetails block : blocks) {
-            if (block.getTransactionsCount() > 0) {
-                hasMinedTransactions = true;
-                for (Api.TransactionDetails tx : block.getTransactionsList()) {
-                    for (Api.TransactionDetails.Output output : tx.getCreditsList()) {
-                        AddressListener addrListener = (AddressListener) addressListeners.get(output.getAddress());
-                        if (addrListener != null) {
-                            addrListener.onPaymentReceived(output.getAmount());
-                        }
-                    }
-                }
-            }
+            hasTransactions |= block.getTransactionsCount() > 0;
+            addressPayments.tell(block.getTransactionsList());
         }
-
-        boolean hasUnMinedTransactions = false;
-        if (value.getUnminedTransactionsCount() > 0 || hasMinedTransactions) {
-            hasUnMinedTransactions = true;
-            for (Api.TransactionDetails tx : value.getUnminedTransactionsList()) {
-                for (Api.TransactionDetails.Output output : tx.getCreditsList()) {
-                    AddressListener addrListener = (AddressListener) addressListeners.get(output.getAddress());
-                    if (addrListener != null) {
-                        addrListener.onPaymentReceived(output.getAmount());
-                    }
-                }
-            }
-        }
+        addressPayments.tell(value.getUnminedTransactionsList());
 
         WalletEventListener listener = mainListener;
         if (listener == null) {
             return;
         }
-        if (hasMinedTransactions || hasUnMinedTransactions) {
+        if (hasTransactions) {
             try {
                 tellBalances(listener);
             } catch (Exception e) {
@@ -582,7 +561,7 @@ public class Wallet implements Serializable {
     }
 
     public void listenAddress(String address, AddressListener listener) {
-        addressListeners.put(address, listener);
+        addressPayments.listen(address, listener);
     }
 
     public void listenBlockchain(WalletEventListener listener) {
