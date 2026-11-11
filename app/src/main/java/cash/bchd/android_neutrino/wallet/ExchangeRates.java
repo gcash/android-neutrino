@@ -24,7 +24,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * ExchangeRates fetches the price of BCH in fiat currencies from BitPay, or from Coinbase when
- * BitPay is unavailable, and refreshes it every five minutes.
+ * BitPay is unavailable, and refreshes it every five minutes, or every 30 seconds until it has
+ * any, as amounts can't be in the fiat currency until then.
  */
 public class ExchangeRates {
     private static ExchangeRates instance;
@@ -54,22 +55,33 @@ public class ExchangeRates {
         return instance;
     }
 
-    private void startExchangeRateService() {
-        Runnable service = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    rates = fetchRates();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        };
+    // How long it waits to fetch the rates again, once it has some, and until it has any.
+    static final long REFRESH_MILLIS = TimeUnit.MINUTES.toMillis(5);
+    static final long RETRY_MILLIS = TimeUnit.SECONDS.toMillis(30);
 
-        // A fixed delay, since at a fixed rate the fetches that a cached process missed would all
-        // run at once when it runs again.
-        final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleWithFixedDelay(service, 5, 5, TimeUnit.MINUTES);
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
+    // Each fetch is timed from the end of the one before, as at a fixed rate the fetches that a
+    // cached process missed would all run at once when it runs again.
+    private void startExchangeRateService() {
+        scheduler.schedule(this::fetchAndSchedule, RETRY_MILLIS, TimeUnit.MILLISECONDS);
+    }
+
+    private void fetchAndSchedule() {
+        try {
+            rates = fetchRates();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        scheduler.schedule(this::fetchAndSchedule, nextFetchMillis(rates != null), TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * nextFetchMillis returns how long to wait to fetch the rates again: soon until there are
+     * any, and then only to keep them fresh.
+     */
+    static long nextFetchMillis(boolean haveRates) {
+        return haveRates ? REFRESH_MILLIS : RETRY_MILLIS;
     }
 
     /**

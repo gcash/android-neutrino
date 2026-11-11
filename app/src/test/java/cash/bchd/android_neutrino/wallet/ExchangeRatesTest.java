@@ -39,4 +39,10 @@ public class ExchangeRatesTest {
         // In plain notation, where String.valueOf would write 1.0E7.
         InLocale.run("en-US", () -> assertEquals("10000000.00", ExchangeRates.fiat(500, new Amount(2000000000000L))));
     }
+
+    @Test
+    public void fetchesSoonUntilItHasRates() {
+        assertEquals(30_000, ExchangeRates.nextFetchMillis(false));
+        assertEquals(300_000, ExchangeRates.nextFetchMillis(true));
+    }
 }
