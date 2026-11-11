@@ -49,6 +49,8 @@ final class AmountField {
         this.showingFiat = showingFiat && hasFiat && hasRate();
         showSymbol();
         showToggle();
+        // What it's worth in the other unit, rather than what the layout has until it changes.
+        updateConversion();
     }
 
     /**
