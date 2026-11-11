@@ -14,7 +14,6 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
 
 import java.io.File;
-import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -50,7 +49,7 @@ import walletrpc.WalletServiceGrpc;
  * Wallet represents an instance of a bchwallet. It will load and start the
  * bchwallet daemon and provide convience methods to the wallet's API calls.
  */
-public class Wallet implements Serializable {
+public class Wallet {
 
     private static Wallet instance;
 
@@ -257,10 +256,6 @@ public class Wallet implements Serializable {
         lifecycle.execute(task);
     }
 
-    public static void resetInstance() {
-        instance = null;
-    }
-
     /**
      * loadWallet waits in the background for the daemon to start, creates the wallet from the
      * mnemonic, or a new one if it is empty, when it does not exist yet, and starts listening for
@@ -399,10 +394,6 @@ public class Wallet implements Serializable {
 
     public boolean isRunning() {
         return running;
-    }
-
-    public String uriPrefix() {
-        return config.getNetwork().uriPrefix();
     }
 
     public Network getNetwork() {
@@ -681,24 +672,6 @@ public class Wallet implements Serializable {
         return stub.postPayment(request);
     }
 
-    public byte[] signTransaction(byte[] serializedTx, List<Long> inputValues, String passphrase) throws Exception {
-        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
-        Api.SignTransactionRequest.Builder builder = Api.SignTransactionRequest.newBuilder();
-        builder.setSerializedTransaction(ByteString.copyFrom(serializedTx));
-        for (Long val : inputValues) {
-            builder.addInputValues(val);
-        }
-        ByteString pw = ByteString.copyFromUtf8(passphrase);
-        builder.setPassphrase(pw);
-        Api.SignTransactionRequest request = builder.build();
-
-        Api.SignTransactionResponse reply = stub.signTransaction(request);
-        if (reply.getUnsignedInputIndexesList().size() > 0) {
-            throw new Exception("Error signing transaction");
-        }
-        return reply.getTransaction().toByteArray();
-    }
-
     public ListenableFuture<Api.SignTransactionResponse> signTransactionAsync(byte[] serializedTx, List<Long> inputValues, String passphrase) {
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
         Api.SignTransactionRequest.Builder builder = Api.SignTransactionRequest.newBuilder();
@@ -711,14 +684,6 @@ public class Wallet implements Serializable {
         Api.SignTransactionRequest request = builder.build();
 
         return stub.signTransaction(request);
-    }
-
-    public void publishTransaction(byte[] serializedTransaction, String memo) throws Exception {
-        ByteString bs = ByteString.copyFrom(serializedTransaction);
-        this.memos.put(txidOf(serializedTransaction), memo);
-        WalletServiceGrpc.WalletServiceBlockingStub stub = WalletServiceGrpc.newBlockingStub(this.channel).withCallCredentials(this.creds);
-        Api.PublishTransactionRequest request = Api.PublishTransactionRequest.newBuilder().setSignedTransaction(bs).build();
-        Api.PublishTransactionResponse reply = stub.publishTransaction(request);
     }
 
     public ListenableFuture<Api.PublishTransactionResponse> publishTransactionAsync(byte[] serializedTransaction, String memo) {
