@@ -76,6 +76,7 @@ public class HiddenTokensActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        WalletStarter.restartIfGone(this);
         TokenIcons.configure(settings.getTokenImages(), settings.getLoadedIcons());
         Wallet.addReadyListener(walletReady);
         peekLabels();

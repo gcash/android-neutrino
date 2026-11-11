@@ -567,11 +567,8 @@ public class TokenActivity extends AppCompatActivity {
     // attach has the wallet tell this screen what changes while it's in front, and tell it again
     // now what it may have missed. A wallet that's still loading does so once it's ready.
     private void attach() {
+        WalletStarter.restartIfGone(this);
         Wallet wallet = Wallet.getInstance();
-        if (wallet == null && settings.getWalletInitialized()) {
-            // Android brought this screen back without the main screen that starts the wallet.
-            WalletStarter.restart(this);
-        }
         if (wallet != null && wallet.isRunning()) {
             wallet.setMainListener(listener);
             new Thread(() -> {

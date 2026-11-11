@@ -262,6 +262,12 @@ public class SendActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        WalletStarter.restartIfGone(this);
+    }
+
     // showBalance shows the balance in the unit the amount is in, or that the wallet is still asked.
     private void showBalance() {
         if (balance == null) {

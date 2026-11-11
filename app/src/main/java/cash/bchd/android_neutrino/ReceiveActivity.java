@@ -156,6 +156,12 @@ public class ReceiveActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        WalletStarter.restartIfGone(this);
+    }
+
+    @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean(STATE_SHOWING_FIAT, showingFiat);

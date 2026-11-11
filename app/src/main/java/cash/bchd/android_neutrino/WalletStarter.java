@@ -99,6 +99,17 @@ final class WalletStarter {
     }
 
     /**
+     * restartIfGone starts the wallet again if there is none though one was created, as when
+     * Android brought back a screen that uses it without the main screen, which starts it, after
+     * it ended the app. Each such screen calls it when it starts.
+     */
+    static void restartIfGone(Context context) {
+        if (Wallet.getInstance() == null && Settings.get(context).getWalletInitialized()) {
+            restart(context);
+        }
+    }
+
+    /**
      * localNodesWithoutPermission returns the nodes the wallet is set to that are on the local
      * network, when the app may not reach them: Android 17 and newer let it only with the user's
      * permission.

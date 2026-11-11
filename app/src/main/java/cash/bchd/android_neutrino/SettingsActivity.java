@@ -44,6 +44,12 @@ public class SettingsActivity extends AppCompatActivity implements PreferenceFra
         getSupportActionBar().setDisplayShowHomeEnabled(true);
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        WalletStarter.restartIfGone(this);
+    }
+
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:

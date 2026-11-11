@@ -214,11 +214,24 @@ public class ConfirmationActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        WalletStarter.restartIfGone(this);
+    }
+
     // unlockAndSign gets the wallet's private passphrase the way the wallet keeps it: after the
     // screen lock, or from the PIN or fingerprint of earlier versions, which it then replaces.
     private void unlockAndSign() {
         Settings settings = Settings.getInstance();
         CoordinatorLayout layout = findViewById(R.id.confirmationMainLayout);
+        // Android can bring this screen back without the wallet, which starts again meanwhile.
+        Wallet wallet = Wallet.getInstance();
+        if (wallet == null || !wallet.isRunning()) {
+            Snackbar.make(layout, R.string.wallet_is_not_loaded_yet, Snackbar.LENGTH_LONG).show();
+            swipeButton.reset();
+            return;
+        }
         switch (settings.getEncryptionType()) {
             case PIN:
                 if (settings.pinLockedOut()) {
@@ -332,7 +345,13 @@ public class ConfirmationActivity extends AppCompatActivity {
         if (!payment.sending.compareAndSet(false, true)) {
             return;
         }
+        // The wallet that runs now, which may have stopped since the payment was confirmed.
         Wallet wallet = Wallet.getInstance();
+        if (wallet == null || !wallet.isRunning()) {
+            payment.sending.set(false);
+            payment.failure.setValue(new Failure(getString(R.string.wallet_is_not_loaded_yet), true));
+            return;
+        }
         ListenableFuture<Api.SignTransactionResponse> res = wallet.signTransactionAsync(serializedTx, inputVals, password);
         Futures.addCallback(res, new FutureCallback<Api.SignTransactionResponse>() {
             @Override
