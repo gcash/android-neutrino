@@ -33,6 +33,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import io.grpc.ManagedChannel;
@@ -921,46 +922,64 @@ public class Wallet implements Serializable {
             try {
                 bestHeight = network().getBestHeight();
                 txs = readPages(bestHeight);
-            } catch (Exception e) {
+            } catch (Exception | OutOfMemoryError e) {
                 e.printStackTrace();
                 readFailed(replies.keySet());
                 return;
             }
-            // Its own copies, as the listeners set the fiat amounts of theirs, brought up to date
-            // with the notifications that came meanwhile, which a listener that didn't ask for
-            // the read is told of too.
-            List<TransactionData> kept = copiesOf(txs);
-            WalletEventListener alsoTell = null;
-            synchronized (historyLock) {
-                history.replace(kept);
-                if (pending.applyTo(history, this::extractTransactionData)) {
-                    txs = history.copies();
-                    if (pendingFor != null && !replies.containsKey(pendingFor)) {
-                        alsoTell = pendingFor;
+            // Whatever a listener does with what it's told, the read asked for meanwhile is made,
+            // as the reads would otherwise wait for one that never ends.
+            try {
+                // Its own copies, as the listeners set the fiat amounts of theirs, brought up to
+                // date with the notifications that came meanwhile, which a listener that didn't
+                // ask for the read is told of too.
+                List<TransactionData> kept = copiesOf(txs);
+                WalletEventListener alsoTell = null;
+                synchronized (historyLock) {
+                    history.replace(kept);
+                    if (pending.applyTo(history, this::extractTransactionData)) {
+                        txs = history.copies();
+                        if (pendingFor != null && !replies.containsKey(pendingFor)) {
+                            alsoTell = pendingFor;
+                        }
                     }
+                    pendingFor = null;
+                    historyRead = true;
+                    failedReads = 0;
                 }
-                pendingFor = null;
-                historyRead = true;
-                failedReads = 0;
+                tellEach(replies, txs, bestHeight, () -> stopped);
+                if (alsoTell != null) {
+                    tellHistory(alsoTell);
+                }
+            } finally {
+                readAllAgain();
             }
-            List<TransactionData> read = txs;
-            boolean first = true;
-            for (Map.Entry<WalletEventListener, Long> replyTo : replies.entrySet()) {
-                WalletEventListener listener = replyTo.getKey();
-                // Each listener has its own, as it sets their fiat amounts.
-                List<TransactionData> told = first ? read : copiesOf(read);
-                first = false;
-                listener.transactionReplies.deliver(replyTo.getValue(), () -> {
-                    if (!stopped) {
-                        listener.onGetTransactions(told, bestHeight);
-                    }
-                });
-            }
-            if (alsoTell != null) {
-                tellHistory(alsoTell);
-            }
-            readAllAgain();
         });
+    }
+
+    /**
+     * tellEach tells each listener of a read the transactions, each its own copy, as each sets
+     * their fiat amounts, unless the wallet stopped or the listener was told of a later read. A
+     * listener that throws is no reason for the others not to be told.
+     */
+    static void tellEach(Map<WalletEventListener, Long> replies, List<TransactionData> read, int bestHeight,
+                         BooleanSupplier stopped) {
+        boolean first = true;
+        for (Map.Entry<WalletEventListener, Long> replyTo : replies.entrySet()) {
+            WalletEventListener listener = replyTo.getKey();
+            List<TransactionData> told = first ? read : copiesOf(read);
+            first = false;
+            listener.transactionReplies.deliver(replyTo.getValue(), () -> {
+                if (stopped.getAsBoolean()) {
+                    return;
+                }
+                try {
+                    listener.onGetTransactions(told, bestHeight);
+                } catch (RuntimeException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
     }
 
     // readPages reads the wallet's transactions through the tip and the unmined ones, oldest
