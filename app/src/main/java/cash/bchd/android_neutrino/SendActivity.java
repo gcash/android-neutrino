@@ -95,14 +95,12 @@ public class SendActivity extends AppCompatActivity {
     TextView balanceTxtView;
     Amount balance;
     String fiatCurrency;
-    boolean showingFiat = true;
     TextInputEditText inputAmount;
-    TextView conversionRate;
+    AmountField amountField;
     boolean sendAll;
     LinearLayout sendLayout;
     TextInputEditText address;
     TextInputEditText memo;
-    TextView symbolLabel;
     String label;
     int satPerByte;
 
@@ -133,12 +131,12 @@ public class SendActivity extends AppCompatActivity {
 
         balanceTxtView = findViewById(R.id.sendBalance);
 
-        symbolLabel = findViewById(R.id.symbolLabel);
-
-        symbolLabel.setText(Currency.getInstance(fiatCurrency).getSymbol());
-
         inputAmount = findViewById(R.id.amountInput);
-        conversionRate = findViewById(R.id.conversionRate);
+        ImageView toggle = findViewById(R.id.toggleImage);
+        amountField = new AmountField(this, inputAmount, findViewById(R.id.symbolLabel), toggle,
+                findViewById(R.id.conversionRate), network, fiatCurrency,
+                savedInstanceState == null || savedInstanceState.getBoolean(STATE_SHOWING_FIAT, true));
+        toggle.setOnClickListener(v -> toggleBchFiat());
         inputAmount.addTextChangedListener(new TextWatcher() {
 
             @Override
@@ -152,7 +150,7 @@ public class SendActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                updateAlternateAmount();
+                amountField.updateConversion();
                 if (inputAmount.getText() != null && !inputAmount.getText().toString().equals("")) {
                     TextInputEditText etAmount = findViewById(R.id.amountInput);
                     etAmount.setError(null);
@@ -160,21 +158,8 @@ public class SendActivity extends AppCompatActivity {
             }
         });
 
-        ImageView toggle = findViewById(R.id.toggleImage);
-        toggle.setOnClickListener(v -> toggleBchFiat());
-        if (!network.hasFiat) {
-            // Test coins have no price, so amounts are entered in BCH only.
-            showingFiat = false;
-            symbolLabel.setText("₿");
-            toggle.setVisibility(View.GONE);
-            conversionRate.setVisibility(View.GONE);
-        }
         if (savedInstanceState != null) {
             label = savedInstanceState.getString(STATE_LABEL);
-            if (network.hasFiat && !savedInstanceState.getBoolean(STATE_SHOWING_FIAT, true)) {
-                showingFiat = false;
-                symbolLabel.setText("₿");
-            }
         }
         showBalance();
 
@@ -212,18 +197,17 @@ public class SendActivity extends AppCompatActivity {
         sendAllBtn = findViewById(R.id.sendAllBtn);
         sendAllBtn.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
-                if (showingFiat) {
-                    toggleBchFiat();
-                }
+                amountField.showBch();
+                showBalance();
                 // Until the balance comes, as on a restored screen, which fills it in then.
                 inputAmount.setText(balance != null ? balance.toString() : "");
                 inputAmount.setEnabled(false);
-                updateAlternateAmount();
+                amountField.updateConversion();
                 sendAll = true;
                 warnOfTokens();
             } else {
                 inputAmount.setText("");
-                updateAlternateAmount();
+                amountField.updateConversion();
                 sendAll = false;
                 inputAmount.setEnabled(true);
             }
@@ -274,7 +258,7 @@ public class SendActivity extends AppCompatActivity {
             balanceTxtView.setText(R.string.balance_loading);
             return;
         }
-        if (showingFiat && network.hasFiat) {
+        if (amountField.showingFiat()) {
             try {
                 balanceTxtView.setText(getString(R.string.balance_fiat_amount, ExchangeRates.getInstance().getFormattedAmountInFiat(balance, Currency.getInstance(fiatCurrency))));
                 return;
@@ -302,7 +286,7 @@ public class SendActivity extends AppCompatActivity {
                 showBalance();
                 if (sendAll) {
                     inputAmount.setText(balance.toString());
-                    updateAlternateAmount();
+                    amountField.updateConversion();
                 }
                 updateSendable();
             }
@@ -348,7 +332,7 @@ public class SendActivity extends AppCompatActivity {
         Amount toSpend = null;
         try {
             if (inputAmount.getText() != null && !inputAmount.getText().toString().equals("")) {
-                if (showingFiat) {
+                if (amountField.showingFiat()) {
                     double fiatAmount = Double.valueOf(inputAmount.getText().toString().replace(",", "."));
                     toSpend = new Amount(ExchangeRates.getInstance().convertToBCH(fiatAmount, Currency.getInstance(fiatCurrency)));
                 } else {
@@ -452,80 +436,10 @@ public class SendActivity extends AppCompatActivity {
         }, ContextCompat.getMainExecutor(this));
     }
 
-    public void toggleBchFiat() {
-        if (showingFiat) {
-            symbolLabel.setText("₿");
-
-            String amt = inputAmount.getText().toString().replace(",", ".");
-            if (!amt.equals("")) {
-                try {
-                    Amount bchRate = new Amount(ExchangeRates.getInstance().convertToBCH(Double.valueOf(amt), Currency.getInstance(fiatCurrency)));
-                    inputAmount.setText(bchRate.toString());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-
-            showingFiat = false;
-            showBalance();
-            updateAlternateAmount();
-        } else {
-            try {
-                symbolLabel.setText(Currency.getInstance(fiatCurrency).getSymbol());
-
-                if (inputAmount.getText() != null) {
-                    String amt = inputAmount.getText().toString().replace(",", ".");
-                    if (!amt.equals("")) {
-                        try {
-                            Amount bchRate = new Amount(Double.valueOf(amt));
-                            inputAmount.setText(ExchangeRates.getInstance().getAmountInFiat(bchRate, Currency.getInstance(fiatCurrency)));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            showingFiat = true;
-            showBalance();
-            updateAlternateAmount();
-        }
-    }
-
-    public void updateAlternateAmount() {
-        Editable inputAmountText = inputAmount.getText();
-        if (inputAmountText == null || !network.hasFiat) {
-            return;
-        }
-        if (showingFiat) {
-            if (considerAmountTextZero(inputAmountText)) {
-                conversionRate.setText(getString(R.string.bch_amount, "0"));
-                return;
-            }
-            double fiatAmount = Double.valueOf(inputAmountText.toString().replace(",", "."));
-            try {
-                Amount bchRate = new Amount(ExchangeRates.getInstance().convertToBCH(fiatAmount, Currency.getInstance(fiatCurrency)));
-                conversionRate.setText(getString(R.string.bch_amount, bchRate.toString()));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            if (considerAmountTextZero(inputAmountText)) {
-                String zeroFiat = Currency.getInstance(fiatCurrency).getSymbol() + "0";
-                conversionRate.setText(zeroFiat);
-                return;
-            }
-            double bchAmount = Double.valueOf(inputAmountText.toString().replace(",", "."));
-            try {
-                Amount bchRate = new Amount(bchAmount);
-                String formatted = ExchangeRates.getInstance().getFormattedAmountInFiat(bchRate, Currency.getInstance(fiatCurrency));
-                conversionRate.setText(formatted);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+    // toggleBchFiat switches the amount to the other unit, and the balance with it.
+    private void toggleBchFiat() {
+        amountField.toggle();
+        showBalance();
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -560,9 +474,8 @@ public class SendActivity extends AppCompatActivity {
 
             address.setText(uri.getAddress());
             if (uri.getAmount() != null) {
-                if (showingFiat) {
-                    toggleBchFiat();
-                }
+                amountField.showBch();
+                showBalance();
                 Amount uriAmt = new Amount(uri.getAmount());
                 inputAmount.setText(uriAmt.toString());
             }
@@ -581,7 +494,7 @@ public class SendActivity extends AppCompatActivity {
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putBoolean(STATE_SHOWING_FIAT, showingFiat);
+        outState.putBoolean(STATE_SHOWING_FIAT, amountField.showingFiat());
         outState.putString(STATE_LABEL, label);
     }
 
