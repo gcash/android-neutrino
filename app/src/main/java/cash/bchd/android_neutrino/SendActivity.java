@@ -367,11 +367,16 @@ public class SendActivity extends AppCompatActivity {
             byte[] serializedTx;
             long txFee;
             List<Long> inputVals;
+            // What the payment sends: for Send All, what the wallet holds when it builds it, less
+            // the fee, rather than the balance asked when the screen opened, which a payment that
+            // came since, or the fee, makes another amount.
+            Amount sent = spend;
             if (all) {
                 Api.SweepAccountResponse tx = wallet.sweepAccount(to, satPerByte);
                 serializedTx = tx.getSerializedTransaction().toByteArray();
                 txFee = tx.getFee();
                 inputVals = tx.getInputValuesList();
+                sent = new Amount(tx.getTotalAmount());
             } else {
                 Api.CreateTransactionResponse tx = wallet.createTransaction(to, spend.getSatoshis(), satPerByte);
                 serializedTx = tx.getSerializedTransaction().toByteArray();
@@ -379,7 +384,7 @@ public class SendActivity extends AppCompatActivity {
                 inputVals = tx.getInputValuesList();
             }
             // Its fiat value only goes with it, so a payment in BCH needs no rate.
-            String fiatFormatted = network.hasFiat ? ExchangeRates.formattedOrEmpty(spend, Currency.getInstance(fiatCurrency)) : "";
+            String fiatFormatted = network.hasFiat ? ExchangeRates.formattedOrEmpty(sent, Currency.getInstance(fiatCurrency)) : "";
             ArrayList<String> inputStrings = new ArrayList<>();
             for (Long val : inputVals) {
                 inputStrings.add(String.valueOf(val));
@@ -387,7 +392,7 @@ public class SendActivity extends AppCompatActivity {
 
             Intent confirm = new Intent(getApplicationContext(), ConfirmationActivity.class);
             confirm.putExtra("paymentAddress", to);
-            confirm.putExtra("amountBCH", spend.toString());
+            confirm.putExtra("amountBCH", sent.toString());
             confirm.putExtra("amountFiat", fiatFormatted);
             confirm.putExtra("fee", txFee);
             confirm.putExtra("serializedTransaction", serializedTx);
