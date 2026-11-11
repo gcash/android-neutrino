@@ -86,6 +86,8 @@ public final class TokenIcons {
             Bitmap::getByteCount);
     // Draws the images off the main thread.
     private static final ExecutorService DRAWER = Executors.newFixedThreadPool(2);
+    // Removes the images of tokens the user hid, one after another.
+    private static final ExecutorService FORGETTER = Executors.newSingleThreadExecutor();
 
     /**
      * Drawing draws an image, off the main thread.
@@ -630,18 +632,19 @@ public final class TokenIcons {
     }
 
     /**
-     * forget removes all that was kept of a token's images, its icon and its NFTs' art, as for one
-     * the user hid, or a restore. Each of its files' names starts with its token ID.
+     * forgetLater removes all that was kept of the tokens' images, as for ones the user hid, off
+     * the main thread, as listing the folders takes a while when they hold many NFTs' art.
      */
-    public static void forget(Context context, String category) {
-        forget(category, new File(context.getFilesDir(), ICON_DIR), new File(context.getCacheDir(), MOTION_DIR));
-        forgetDrawn(category);
-        VERSION.incrementAndGet();
+    public static void forgetLater(Context context, java.util.Collection<String> categories) {
+        Context app = context.getApplicationContext();
+        Set<String> forgotten = new java.util.HashSet<>(categories);
+        FORGETTER.execute(() -> forgetAll(app, forgotten));
     }
 
     /**
-     * forgetAll removes all that was kept of the tokens' images, as a restore does, listing each
-     * folder once, however many tokens there are.
+     * forgetAll removes all that was kept of the tokens' images, their icons and their NFTs' art,
+     * as a restore does, listing each folder once, however many tokens there are. Each of a
+     * token's files' names starts with its token ID.
      */
     public static void forgetAll(Context context, java.util.Collection<String> categories) {
         forget(new java.util.HashSet<>(categories), new File(context.getFilesDir(), ICON_DIR),
@@ -650,10 +653,6 @@ public final class TokenIcons {
             forgetDrawn(category);
         }
         VERSION.incrementAndGet();
-    }
-
-    static void forget(String category, File... dirs) {
-        forget(java.util.Collections.singleton(category), dirs);
     }
 
     // forget removes the files of the tokens from the folders, whose names start with a token ID.

@@ -926,47 +926,56 @@ public class MainActivity extends CloseActivity {
                     undoable = null;
                 }
                 if (event != DISMISS_EVENT_ACTION && settings.getHiddenTokens().contains(category)) {
-                    forgetToken(category);
+                    forgetTokens(Collections.singletonList(category));
                 }
             }
         }).show();
     }
 
-    // forgetToken drops all that the wallet and the app keep of a hidden token, a collection's NFT
-    // types and art can be large, but its label, so that Hidden Tokens can name it. Shown again,
-    // it's found as if new. Until the wallet has, it's tried again each time the wallet starts.
-    private void forgetToken(String category) {
-        TokenIcons.forget(this, category);
-        settings.removeLoadedIcon(category);
-        Wallet wallet = Wallet.getInstance();
-        if (wallet == null || !wallet.isRunning()) {
+    // forgetTokens drops all that the wallet and the app keep of hidden tokens, a collection's NFT
+    // types and art can be large, but their labels, so that Hidden Tokens can name them. Shown
+    // again, one is found as if new. Until the wallet has, it's tried again each time the wallet
+    // starts. Their images go off the main thread, all of them in one pass over their folders.
+    private void forgetTokens(List<String> categories) {
+        if (categories.isEmpty()) {
             return;
         }
-        Futures.addCallback(wallet.forgetTokenAsync(category), new FutureCallback<Api.ForgetTokenResponse>() {
-            @Override
-            public void onSuccess(Api.ForgetTokenResponse reply) {
-                // On the main thread, as hiding and showing change the same list there.
-                runOnUiThread(() -> settings.forgotToken(category));
+        TokenIcons.forgetLater(this, categories);
+        Wallet wallet = Wallet.getInstance();
+        boolean running = wallet != null && wallet.isRunning();
+        for (String category : categories) {
+            settings.removeLoadedIcon(category);
+            if (!running) {
+                continue;
             }
+            Futures.addCallback(wallet.forgetTokenAsync(category), new FutureCallback<Api.ForgetTokenResponse>() {
+                @Override
+                public void onSuccess(Api.ForgetTokenResponse reply) {
+                    // On the main thread, as hiding and showing change the same list there.
+                    runOnUiThread(() -> settings.forgotToken(category));
+                }
 
-            @Override
-            public void onFailure(Throwable t) {
-                t.printStackTrace();
-            }
-        }, MoreExecutors.directExecutor());
+                @Override
+                public void onFailure(Throwable t) {
+                    t.printStackTrace();
+                }
+            }, MoreExecutors.directExecutor());
+        }
     }
 
     // forgetHiddenTokens forgets the hidden tokens that weren't forgotten when they were hidden,
     // but one whose hiding can still be undone.
     private void forgetHiddenTokens() {
         Set<String> hidden = settings.getHiddenTokens();
+        List<String> forget = new ArrayList<>();
         for (String category : settings.getTokensToForget()) {
             if (!hidden.contains(category)) {
                 settings.forgotToken(category);
             } else if (!category.equals(undoable)) {
-                forgetToken(category);
+                forget.add(category);
             }
         }
+        forgetTokens(forget);
     }
 
     // openLaunchPayment opens the payment link or payment request file that started the app,

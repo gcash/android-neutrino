@@ -96,7 +96,7 @@ public class TokenIconsTest {
         assertTrue(new File(art, token + "-01-1f").createNewFile());
         assertTrue(new File(icons, other).createNewFile());
         assertTrue(new File(art, other + "-01-1f").createNewFile());
-        TokenIcons.forget(token, icons, art);
+        TokenIcons.forget(java.util.Collections.singleton(token), icons, art);
         assertEquals(Arrays.asList(other), Arrays.asList(icons.list()));
         assertEquals(Arrays.asList(other + "-01-1f"), Arrays.asList(art.list()));
     }
