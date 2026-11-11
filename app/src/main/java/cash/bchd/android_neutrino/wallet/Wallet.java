@@ -91,6 +91,10 @@ public class Wallet implements Serializable {
     private final TransactionHistory history = new TransactionHistory();
     private boolean historyRead;
     private final ReadQueue<WalletEventListener> reads = new ReadQueue<>();
+    // The notifications that came while a read of them all was under way, or waited to be made
+    // again, which bring what it gives up to date, and the listener to tell of them.
+    private final PendingNotifications pending = new PendingNotifications();
+    private WalletEventListener pendingFor;
     // How many reads of them all failed in a row, which the next waits longer for.
     private int failedReads;
     private static final long FIRST_RETRY_MILLIS = 15_000;
@@ -503,18 +507,23 @@ public class Wallet implements Serializable {
             }
         }
         // The listener rebuilds its list from all of the wallet's transactions, which the
-        // notification brings up to date. A reorg has them all read again, as it moved the
+        // notification brings up to date. One that comes while they're all read is applied to
+        // what the read gives, once it's done. A reorg has them all read again, as it moved the
         // transactions of the blocks it detached, and so does a notification that comes before
-        // they were read, or as they're read.
-        boolean readAgain = value.getDetachedBlocksCount() > 0;
+        // they were read.
+        boolean readAgain = false;
         boolean changed = false;
-        if (!readAgain) {
-            synchronized (historyLock) {
-                if (historyRead && !reads.reading()) {
-                    changed = history.apply(value, this::extractTransactionData);
+        synchronized (historyLock) {
+            if (reads.reading()) {
+                if (pending.add(value)) {
+                    pendingFor = listener;
                 } else {
                     readAgain = true;
                 }
+            } else if (value.getDetachedBlocksCount() > 0 || !historyRead) {
+                readAgain = true;
+            } else {
+                changed = history.apply(value, this::extractTransactionData);
             }
         }
         try {
@@ -926,24 +935,38 @@ public class Wallet implements Serializable {
                 readFailed(replies.keySet());
                 return;
             }
-            // Its own copies, as the listeners set the fiat amounts of theirs.
+            // Its own copies, as the listeners set the fiat amounts of theirs, brought up to date
+            // with the notifications that came meanwhile, which a listener that didn't ask for
+            // the read is told of too.
             List<TransactionData> kept = copiesOf(txs);
+            WalletEventListener alsoTell = null;
             synchronized (historyLock) {
                 history.replace(kept);
+                if (pending.applyTo(history, this::extractTransactionData)) {
+                    txs = history.copies();
+                    if (pendingFor != null && !replies.containsKey(pendingFor)) {
+                        alsoTell = pendingFor;
+                    }
+                }
+                pendingFor = null;
                 historyRead = true;
                 failedReads = 0;
             }
+            List<TransactionData> read = txs;
             boolean first = true;
             for (Map.Entry<WalletEventListener, Long> replyTo : replies.entrySet()) {
                 WalletEventListener listener = replyTo.getKey();
                 // Each listener has its own, as it sets their fiat amounts.
-                List<TransactionData> told = first ? txs : copiesOf(txs);
+                List<TransactionData> told = first ? read : copiesOf(read);
                 first = false;
                 listener.transactionReplies.deliver(replyTo.getValue(), () -> {
                     if (!stopped) {
                         listener.onGetTransactions(told, bestHeight);
                     }
                 });
+            }
+            if (alsoTell != null) {
+                tellHistory(alsoTell);
             }
             readAllAgain();
         });
@@ -1001,6 +1024,7 @@ public class Wallet implements Serializable {
             historyRead = false;
             if (stopped) {
                 reads.stop();
+                pending.clear();
                 return;
             }
             failedReads++;
@@ -1028,6 +1052,7 @@ public class Wallet implements Serializable {
         synchronized (historyLock) {
             if (stopped) {
                 reads.stop();
+                pending.clear();
                 return;
             }
             Set<WalletEventListener> next = reads.done();
