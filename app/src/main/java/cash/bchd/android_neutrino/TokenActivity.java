@@ -72,9 +72,10 @@ public class TokenActivity extends AppCompatActivity {
     private CoordinatorLayout layout;
     private TokenHistoryAdapter history;
     private NftAdapter nfts;
-    // The transactions the main screen saved, which keep the fiat values and memos that the
-    // wallet doesn't have, with what the wallet told since.
-    private List<TransactionData> transactions;
+    // Those of the transactions the main screen saved that changed the token, as they keep the
+    // fiat values and memos that the wallet doesn't have, with what the wallet told since, or null
+    // until the screen has them.
+    private List<TokenHistoryAdapter.Change> changes;
     private int blockHeight;
     private PopupWindow detailsPopup;
     private final WalletEventListener listener = new Listener(this);
@@ -205,7 +206,7 @@ public class TokenActivity extends AppCompatActivity {
             list.setItemAnimator(null);
             nftsReady = TokenLabels.hasNftTypes(category);
         } else {
-            history = new TokenHistoryAdapter(this, category, tx ->
+            history = new TokenHistoryAdapter(this, tx ->
                     detailsPopup = TransactionDetailsPopup.show(this, layout, tx, blockHeight, network));
             list.setAdapter(history);
             // As the main screen's lists, rows that change just update.
@@ -213,33 +214,44 @@ public class TokenActivity extends AppCompatActivity {
                 ((SimpleItemAnimator) list.getItemAnimator()).setSupportsChangeAnimations(false);
             }
             blockHeight = settings.getLastBlockHeight();
+            // Until the rows are ready, as finding them takes a while in a long history.
+            findViewById(R.id.tokenHistoryLoading).setVisibility(View.VISIBLE);
             readTransactions();
         }
         showToken(tokens);
         askWallet();
     }
 
-    // readTransactions shows the transactions the main screen saved, read off the main thread, as
-    // a wallet with many takes a while to, unless the wallet told newer ones meanwhile.
+    // readTransactions shows those of the transactions the main screen saved that changed the
+    // token, read and found off the main thread, as a wallet with many takes a while to, unless the
+    // wallet told newer ones meanwhile.
     private void readTransactions() {
         Context app = getApplicationContext();
         Network network = this.network;
+        String category = this.category;
         WeakReference<TokenActivity> ref = new WeakReference<>(this);
         STORE_READER.execute(() -> {
             List<TransactionData> saved = new TransactionStore(app, network).getData();
             Collections.sort(saved, Collections.reverseOrder());
+            List<TokenHistoryAdapter.Change> found = TokenHistoryAdapter.changes(saved, category);
             TokenActivity screen = ref.get();
             if (screen == null) {
                 return;
             }
             screen.runOnUiThread(() -> {
-                if (screen.isDestroyed() || screen.transactions != null) {
+                if (screen.isDestroyed() || screen.changes != null) {
                     return;
                 }
-                screen.transactions = saved;
-                screen.history.setTransactions(saved, screen.blockHeight);
+                screen.showChanges(found);
             });
         });
+    }
+
+    // showChanges shows the token's changes, in place of the spinner.
+    private void showChanges(List<TokenHistoryAdapter.Change> found) {
+        changes = found;
+        history.setChanges(found, blockHeight);
+        findViewById(R.id.tokenHistoryLoading).setVisibility(View.GONE);
     }
 
     // showIcon shows the token's icon, which is its identicon until one is loaded.
@@ -711,10 +723,10 @@ public class TokenActivity extends AppCompatActivity {
             // The main screen saves them while it listens, which it isn't now, and an NFT's screen
             // reads them.
             List<TransactionData> saved = TransactionStore.merge(screen, screen.network, txs).getData();
+            List<TokenHistoryAdapter.Change> found = TokenHistoryAdapter.changes(saved, screen.category);
             update(activity -> {
                 if (activity.history != null) {
-                    activity.transactions = saved;
-                    activity.history.setTransactions(activity.transactions, activity.blockHeight);
+                    activity.showChanges(found);
                 }
             });
         }

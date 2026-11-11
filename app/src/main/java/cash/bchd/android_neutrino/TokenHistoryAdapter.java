@@ -31,15 +31,28 @@ final class TokenHistoryAdapter extends RecyclerView.Adapter<TransactionAdapter.
         void onClick(TransactionData tx);
     }
 
+    /**
+     * Change is a transaction that changed the token, and how.
+     */
+    static final class Change {
+        final TransactionData tx;
+        final TokenChange change;
+
+        Change(TransactionData tx, TokenChange change) {
+            this.tx = tx;
+            this.change = change;
+        }
+    }
+
     // A row: a transaction, how it changed the token, and the confirmations the row shows.
     private static final class Row {
         final TransactionData tx;
         final TokenChange change;
         final int confirmations;
 
-        Row(TransactionData tx, TokenChange change, int confirmations) {
-            this.tx = tx;
-            this.change = change;
+        Row(Change change, int confirmations) {
+            this.tx = change.tx;
+            this.change = change.change;
             this.confirmations = confirmations;
         }
 
@@ -50,24 +63,38 @@ final class TokenHistoryAdapter extends RecyclerView.Adapter<TransactionAdapter.
     }
 
     private final Context ctx;
-    private final String category;
     private final OnClick onClick;
-    private List<TransactionData> transactions = Collections.emptyList();
+    private List<Change> changes = Collections.emptyList();
     private List<Row> rows = Collections.emptyList();
     private int blockHeight;
 
-    TokenHistoryAdapter(Context ctx, String category, OnClick onClick) {
+    TokenHistoryAdapter(Context ctx, OnClick onClick) {
         this.ctx = ctx;
-        this.category = category;
         this.onClick = onClick;
     }
 
     /**
-     * setTransactions shows those of the transactions that changed the token, with their
-     * confirmations at the block height, redrawing only the rows that changed.
+     * changes returns those of the transactions that changed the category's token, in their
+     * order. It looks through every transaction, which takes a while for a long history, so it's
+     * for use off the main thread.
      */
-    void setTransactions(List<TransactionData> txs, int blockHeight) {
-        this.transactions = txs;
+    static List<Change> changes(List<TransactionData> txs, String category) {
+        List<Change> found = new ArrayList<>();
+        for (TransactionData tx : txs) {
+            TokenChange change = TokenChange.find(tx.getTokens(), category);
+            if (change != null) {
+                found.add(new Change(tx, change));
+            }
+        }
+        return found;
+    }
+
+    /**
+     * setChanges shows the changes, with their confirmations at the block height, redrawing only
+     * the rows that changed.
+     */
+    void setChanges(List<Change> changes, int blockHeight) {
+        this.changes = changes;
         this.blockHeight = blockHeight;
         show();
     }
@@ -80,11 +107,8 @@ final class TokenHistoryAdapter extends RecyclerView.Adapter<TransactionAdapter.
     private void show() {
         List<Row> shown = rows;
         List<Row> next = new ArrayList<>();
-        for (TransactionData tx : transactions) {
-            TokenChange change = TokenChange.find(tx.getTokens(), category);
-            if (change != null) {
-                next.add(new Row(tx, change, TransactionRows.confirmations(tx, blockHeight)));
-            }
+        for (Change change : changes) {
+            next.add(new Row(change, TransactionRows.confirmations(change.tx, blockHeight)));
         }
         DiffUtil.DiffResult diff = DiffUtil.calculateDiff(new DiffUtil.Callback() {
             @Override
