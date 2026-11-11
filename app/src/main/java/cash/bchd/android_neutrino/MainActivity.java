@@ -214,7 +214,7 @@ public class MainActivity extends CloseActivity {
         // Test coins have no price, so a test network's wallet shows no fiat amounts.
         if (network.hasFiat) {
             this.exchangeRates = ExchangeRates.start();
-            new Thread(new ExchangeRateFetcher(this, lastBal)).start();
+            fetchRates();
         }
         createWallet();
         fab = findViewById(R.id.fab);
@@ -1290,38 +1290,24 @@ public class MainActivity extends CloseActivity {
         }, "wallet-refresh").start();
     }
 
-    private static class ExchangeRateFetcher implements Runnable {
-        private final WeakReference<MainActivity> mainActivityRef;
-        private final Amount lastBal;
-
-        ExchangeRateFetcher(MainActivity mainActivity, Amount lastBal) {
-            mainActivityRef = new WeakReference<>(mainActivity);
-            this.lastBal = lastBal;
-        }
-
-        @Override
-        public void run() {
-            MainActivity mainActivity = mainActivityRef.get();
-            if (mainActivity == null) {
-                return;
-            }
-            String fiatCurrency = mainActivity.settings.getFiatCurrency();
+    // fetchRates fetches the exchange rates off the main thread, as the screen opens, and shows
+    // what the balance is worth once they come, on the main thread, if the screen is still there,
+    // which it doesn't hold meanwhile.
+    private void fetchRates() {
+        ExchangeRates rates = exchangeRates;
+        WeakReference<MainActivity> ref = new WeakReference<>(this);
+        new Thread(() -> {
             try {
-                mainActivity.exchangeRates.fetchFormattedAmountInFiat(lastBal, Currency.getInstance(fiatCurrency), new ExchangeRates.Callback() {
-                    @Override
-                    public void onRateFetched(String formatted) {
-                        MainActivity mainActivity2 = mainActivityRef.get();
-                        if (mainActivity2 == null) {
-                            return;
-                        }
-                        TextView fiatBalanceView = mainActivity2.findViewById(R.id.fiatBalanceView);
-                        fiatBalanceView.setText(formatted);
-                    }
-                });
+                rates.fetch();
             } catch (Exception e) {
                 e.printStackTrace();
+                return;
             }
-        }
+            MainActivity screen = ref.get();
+            if (screen != null) {
+                screen.runOnUiThread(() -> screen.showBalance(screen.settings.getLastBalance()));
+            }
+        }, "exchange-rates").start();
     }
 
     private void maybeSendBackupReminder() {

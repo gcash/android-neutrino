@@ -221,9 +221,12 @@ public class ExchangeRates {
         return round(amount / rate(currencyCode), 8);
     }
 
-    public void fetchFormattedAmountInFiat(Amount bchAmount, Currency currencyCode, Callback cb) throws Exception {
+    /**
+     * fetch fetches the rates now, as when the main screen opens. It blocks, so it's not for the
+     * main thread.
+     */
+    public void fetch() throws IOException, JSONException {
         rates = fetchRates();
-        cb.onRateFetched(getFormattedAmountInFiat(bchAmount, currencyCode));
     }
 
     private static double round(double value, int places) {
@@ -233,9 +236,5 @@ public class ExchangeRates {
         value = value * factor;
         long tmp = Math.round(value);
         return (double) tmp / factor;
-    }
-
-    public static class Callback {
-        public void onRateFetched(String formatted) {}
     }
 }
