@@ -28,6 +28,44 @@ public class TransactionData implements Serializable, Comparable<TransactionData
     private ArrayList<TokenChange> tokens;
     // How much it changed the spendable balance by: amount, less the BCH of outputs with tokens.
     private long spendableAmount;
+    // What a CashFusion it took part in was like, or null for any other transaction, or one saved
+    // before the app told fusions.
+    private Fusion fusion;
+
+    /**
+     * Fusion is the size of a CashFusion that the wallet took part in: the inputs and outputs of
+     * the whole transaction, and how many of each are the wallet's.
+     */
+    public static final class Fusion implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        public final int inputs;
+        public final int outputs;
+        public final int yourInputs;
+        public final int yourOutputs;
+
+        public Fusion(int inputs, int outputs, int yourInputs, int yourOutputs) {
+            this.inputs = inputs;
+            this.outputs = outputs;
+            this.yourInputs = yourInputs;
+            this.yourOutputs = yourOutputs;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof Fusion)) {
+                return false;
+            }
+            Fusion f = (Fusion) o;
+            return inputs == f.inputs && outputs == f.outputs && yourInputs == f.yourInputs
+                    && yourOutputs == f.yourOutputs;
+        }
+
+        @Override
+        public int hashCode() {
+            return ((inputs * 31 + outputs) * 31 + yourInputs) * 31 + yourOutputs;
+        }
+    }
 
     /**
      * SentTo is whom the transaction list says a sent transaction paid.
@@ -65,6 +103,7 @@ public class TransactionData implements Serializable, Comparable<TransactionData
         copy.toYourself = toYourself;
         copy.tokens = tokens == null ? null : new ArrayList<>(tokens);
         copy.spendableAmount = spendableAmount;
+        copy.fusion = fusion;
         return copy;
     }
 
@@ -122,6 +161,17 @@ public class TransactionData implements Serializable, Comparable<TransactionData
      */
     public List<TokenChange> getTokens() {
         return this.tokens != null ? Collections.unmodifiableList(this.tokens) : Collections.emptyList();
+    }
+
+    /**
+     * getFusion returns what the CashFusion the transaction is was like, or null if it's none.
+     */
+    public Fusion getFusion() {
+        return fusion;
+    }
+
+    public void setFusion(Fusion fusion) {
+        this.fusion = fusion;
     }
 
     public void setTokens(List<TokenChange> tokens) {

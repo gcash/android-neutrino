@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A CashFusion in the transaction list: two arrows that cross, one over the other, as coins
+     mixed with others', in the strokes of the list's arrows and the purple of what it cost. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="256"
+    android:viewportHeight="256">
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M40,216 L216,40 M152,40 L216,40 L216,104 M40,40 L104,104 M152,152 L216,216 M216,152 L216,216 L152,216"
+        android:strokeWidth="16"
+        android:strokeColor="@color/neonPurple"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

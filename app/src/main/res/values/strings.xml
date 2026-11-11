@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Neutrino</string>
     <string name="bch_amount">%1$s BCH</string>
     <string name="balance_bch_amount">Balance: %1$s BCH</string>
@@ -261,6 +261,12 @@
     <string name="received_bitcoin_cash">Received Bitcoin Cash</string>
     <string name="from_bitcoin_cash_address">From Bitcoin Cash Address</string>
     <string name="sent_bitcoin_cash">Sent Bitcoin Cash</string>
+    <!-- A CashFusion the wallet took part in, and how many inputs and outputs it had, and how many
+         of them were the wallet's. "in" and "out" don't change with the number. -->
+    <string name="cash_fusion">Cash Fusion</string>
+    <string name="cash_fusion_size">In: %1$d · Out: %2$d</string>
+    <string name="tx_details_fusion">Fusion</string>
+    <string name="cash_fusion_yours" tools:ignore="PluralsCandidate">Yours: %1$d in, %2$d out</string>
     <plurals name="confirmations">
         <item quantity="one">%1$d Confirmation</item>
         <item quantity="other">%1$d Confirmations</item>

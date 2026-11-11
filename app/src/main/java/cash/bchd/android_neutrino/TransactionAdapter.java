@@ -146,7 +146,17 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         TransactionRows.showStatus(holder.fiatAmount, TransactionRows.confirmations(tx, blockHeight), tx.getFiatAmount());
 
         holder.txMemo.setEllipsize(TextUtils.TruncateAt.END);
-        if (tx.getIncoming()) {
+        TransactionData.Fusion fusion = tx.getFusion();
+        if (fusion != null) {
+            // Not a payment to anyone, whose outputs pay strangers mixing with the wallet: what it
+            // cost, and how large it was, unless the user wrote a memo.
+            TokenIcons.clear(holder.arrowImage);
+            holder.arrowImage.setImageResource(R.drawable.cash_fusion);
+            holder.txDescription.setText(R.string.cash_fusion);
+            holder.bchAmount.setTextColor(ContextCompat.getColor(ctx, R.color.neonPurple));
+            holder.txMemo.setText(tx.getMemo() == null || tx.getMemo().isEmpty()
+                    ? ctx.getString(R.string.cash_fusion_size, fusion.inputs, fusion.outputs) : tx.getMemo());
+        } else if (tx.getIncoming()) {
             holder.txDescription.setText(R.string.received_bitcoin_cash);
             TokenIcons.clear(holder.arrowImage);
             holder.arrowImage.setImageResource(R.drawable.receive_arrow);

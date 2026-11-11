@@ -134,6 +134,7 @@
 
 
             <TextView
+                android:id="@+id/txDetailsToLabel"
                 android:layout_width="@dimen/tx_details_label"
                 android:layout_height="wrap_content"
                 android:text="@string/tx_details_to" />

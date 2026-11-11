@@ -141,4 +141,48 @@ public class WalletTest {
         org.junit.Assert.assertFalse(Wallet.gatewaysBusy(io.grpc.Status.UNAVAILABLE.asRuntimeException()));
         org.junit.Assert.assertFalse(Wallet.gatewaysBusy(new RuntimeException("not gRPC")));
     }
+
+    // fusionOf returns a transaction of the inputs and outputs of others besides two inputs and
+    // three outputs of the wallet's, with the OP_RETURN output, of the value, that opens with the
+    // bytes, which a fusion's does with OP_RETURN, a push of 4, "FUZ\0" and the session hash.
+    private static Api.TransactionDetails fusionOf(int yourInputs, byte[] opReturn, long value) {
+        Api.TransactionDetails.Builder tx = Api.TransactionDetails.newBuilder().setInputCount(42);
+        for (int i = 0; i < yourInputs; i++) {
+            tx.addDebits(Api.TransactionDetails.Input.newBuilder().setPreviousAmount(100000));
+        }
+        for (int i = 0; i < 3; i++) {
+            tx.addCredits(Api.TransactionDetails.Output.newBuilder().setAmount(66000));
+        }
+        tx.addOtherOutputs(Api.TransactionDetails.OtherOutput.newBuilder().setAmount(value)
+                .setOpReturn(com.google.protobuf.ByteString.copyFrom(opReturn)));
+        for (int i = 0; i < 34; i++) {
+            tx.addOtherOutputs(Api.TransactionDetails.OtherOutput.newBuilder().setAddress(PAYEE).setAmount(70000));
+        }
+        return tx.build();
+    }
+
+    private static byte[] script(int... bytes) {
+        byte[] script = new byte[bytes.length + 32];
+        for (int i = 0; i < bytes.length; i++) {
+            script[i] = (byte) bytes[i];
+        }
+        return script;
+    }
+
+    @Test
+    public void tellsACashFusion() {
+        byte[] fuz = script(0x6a, 0x04, 'F', 'U', 'Z', 0x00, 0x20);
+        TransactionData.Fusion fusion = Wallet.fusion(fusionOf(2, fuz, 0));
+        assertEquals(new TransactionData.Fusion(42, 38, 2, 3), fusion);
+        assertEquals(fusion, Wallet.transactionData(fusionOf(2, fuz, 0), 0, 0, "").getFusion());
+
+        // None of the wallet's inputs: anyone can write the marker.
+        org.junit.Assert.assertNull(Wallet.fusion(fusionOf(0, fuz, 0)));
+        // An OP_RETURN of another protocol, one cut short, and one of value.
+        org.junit.Assert.assertNull(Wallet.fusion(fusionOf(2, script(0x6a, 0x04, 'S', 'L', 'P', 0x00), 0)));
+        org.junit.Assert.assertNull(Wallet.fusion(fusionOf(2, new byte[]{0x6a, 0x04, 'F', 'U', 'Z'}, 0)));
+        org.junit.Assert.assertNull(Wallet.fusion(fusionOf(2, fuz, 546)));
+        // A payment.
+        org.junit.Assert.assertNull(Wallet.transactionData(sent(PAYEE), 0, 0, "").getFusion());
+    }
 }

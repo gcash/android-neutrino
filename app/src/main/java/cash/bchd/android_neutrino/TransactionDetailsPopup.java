@@ -137,13 +137,22 @@ final class TransactionDetailsPopup {
             circle.setImageResource(R.drawable.green_circle);
         }
 
-        String to = tx.getIncoming() ? null : recipients(ctx, tx);
+        // A fusion's outputs pay strangers mixing with the wallet, so its row says how large it was
+        // and how much of it was the wallet's, in place of whom it paid.
+        TransactionData.Fusion fusion = tx.getFusion();
+        String to = fusion != null ? ctx.getString(R.string.cash_fusion_size, fusion.inputs, fusion.outputs)
+                + "\n" + ctx.getString(R.string.cash_fusion_yours, fusion.yourInputs, fusion.yourOutputs)
+                : tx.getIncoming() ? null : recipients(ctx, tx);
         if (to == null) {
             customView.findViewById(R.id.txDetailsToDivider).setVisibility(View.GONE);
             customView.findViewById(R.id.txDetailsToRow).setVisibility(View.GONE);
         } else {
             TextView toView = customView.findViewById(R.id.txDetailsTo);
             toView.setText(to);
+            if (fusion != null) {
+                TextView label = customView.findViewById(R.id.txDetailsToLabel);
+                label.setText(R.string.tx_details_fusion);
+            }
         }
 
         TextView memo = customView.findViewById(R.id.txDetailsMemo);

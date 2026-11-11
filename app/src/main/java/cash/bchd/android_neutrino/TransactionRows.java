@@ -31,7 +31,7 @@ final class TransactionRows {
             txid = tx.getTxid();
             contents = Arrays.asList(tx.getAmount(), tx.getIncoming(), tx.getMemo(), confirmations(tx, blockHeight),
                     tx.getFiatAmount(), tx.getSentTo(), tx.getToAddress(), tx.getMoreRecipients(), tx.getTokens(),
-                    tx.getSpendableAmount());
+                    tx.getSpendableAmount(), tx.getFusion());
         }
     }
 

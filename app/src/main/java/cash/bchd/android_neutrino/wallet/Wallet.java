@@ -1249,6 +1249,7 @@ public class Wallet {
         TransactionData txData = new TransactionData(txid, (total > 0), memo, total, "", "", timestamp, "", height);
         txData.setTokens(TokenChange.of(tx));
         txData.setSpendableAmount(spendable);
+        txData.setFusion(fusion(tx));
         if (total <= 0) {
             // An output that pays no single address, such as OP_RETURN data, has none.
             Set<String> addresses = new LinkedHashSet<>();
@@ -1261,6 +1262,36 @@ public class Wallet {
             txData.setRecipients(first, Math.max(addresses.size() - 1, 0), tx.getOtherOutputsCount() == 0);
         }
         return txData;
+    }
+
+    // The start of a CashFusion's OP_RETURN output, as Electron Cash makes and tells them: OP_RETURN,
+    // a push of 4 bytes, and the lokad ID "FUZ\0". The 32 byte session hash follows.
+    private static final byte[] FUSION_PREFIX = {0x6a, 0x04, 'F', 'U', 'Z', 0x00};
+
+    /**
+     * fusion returns what the CashFusion the transaction is was like, or null if it's none: one
+     * with an OP_RETURN output, of no value, that starts as a fusion's does, and an input of the
+     * wallet's, as Electron Cash tells the fusions a wallet took part in. Anyone can write the
+     * marker, but only the wallet's keys spend its coins, so it can't mislabel a payment to it.
+     */
+    static TransactionData.Fusion fusion(Api.TransactionDetails tx) {
+        if (tx.getDebitsCount() == 0) {
+            return null;
+        }
+        boolean marked = false;
+        for (Api.TransactionDetails.OtherOutput output : tx.getOtherOutputsList()) {
+            ByteString script = output.getOpReturn();
+            if (output.getAmount() == 0 && script.size() >= FUSION_PREFIX.length
+                    && script.substring(0, FUSION_PREFIX.length).equals(ByteString.copyFrom(FUSION_PREFIX))) {
+                marked = true;
+                break;
+            }
+        }
+        if (!marked) {
+            return null;
+        }
+        return new TransactionData.Fusion(tx.getInputCount(), tx.getCreditsCount() + tx.getOtherOutputsCount(),
+                tx.getDebitsCount(), tx.getCreditsCount());
     }
 
     // txidToString writes a transaction hash, in the byte order of the wire, as a transaction ID.

@@ -154,4 +154,15 @@ public class TransactionListTest {
         assertEquals("rent", list.get(0).getMemo());
         assertEquals(-10_226, list.get(0).getAmount());
     }
+
+    @Test
+    public void tellsASavedEntryItWasAFusion() {
+        // Saved before the app told fusions.
+        TransactionData saved = tx("fused", -1200, 300, 10);
+        TransactionData told = tx("fused", -1200, 300, 10);
+        told.setFusion(new TransactionData.Fusion(42, 38, 2, 3));
+        List<TransactionData> list = TransactionList.rebuild(Collections.singletonList(saved),
+                Collections.singletonList(told));
+        assertEquals(new TransactionData.Fusion(42, 38, 2, 3), list.get(0).getFusion());
+    }
 }

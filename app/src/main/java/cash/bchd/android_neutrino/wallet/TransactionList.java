@@ -51,6 +51,7 @@ public final class TransactionList {
             old.setRecipients(tx.getToAddress(), tx.getMoreRecipients(), tx.getToYourself());
             old.setTokens(tx.getTokens());
             old.setSpendableAmount(tx.getSpendableAmount());
+            old.setFusion(tx.getFusion());
             if (old.getFiatAmount().isEmpty()) {
                 old.setFiatAmount(tx.getFiatAmount());
                 old.setFiatCurrency(tx.getFiatCurrency());
