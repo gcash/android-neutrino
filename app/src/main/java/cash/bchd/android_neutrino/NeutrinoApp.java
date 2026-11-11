@@ -15,6 +15,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import cash.bchd.android_neutrino.tokens.TokenIcons;
 import cash.bchd.android_neutrino.wallet.TokenLabelFile;
 import cash.bchd.android_neutrino.wallet.Wallet;
 import walletrpc.Api;
@@ -34,6 +35,7 @@ public class NeutrinoApp extends Application {
         }
         // Before any screen, as Android can bring back any of them after it ended the app.
         TokenLabelFile.open(this, Settings.get(this).getNetwork());
+        TokenIcons.removeStrayTemps(this);
         Handler main = new Handler(Looper.getMainLooper());
         WalletCloser closer = new WalletCloser(new WalletCloser.Wallets() {
             @Override

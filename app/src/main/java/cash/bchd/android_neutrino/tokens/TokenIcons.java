@@ -719,6 +719,35 @@ public final class TokenIcons {
         }
     }
 
+    // How old a temporary file is before it's taken as left by a save the app ended in, as a save
+    // under way writes its own in moments.
+    static final long STRAY_TEMP_MILLIS = java.util.concurrent.TimeUnit.HOURS.toMillis(1);
+
+    /**
+     * removeStrayTemps removes the temporary files of saves that the app ended in, before each
+     * renames its file into place, off the main thread. Nothing else removes them, and one of
+     * full art can be megabytes.
+     */
+    public static void removeStrayTemps(Context context) {
+        Context app = context.getApplicationContext();
+        FORGETTER.execute(() -> removeStrayTemps(System.currentTimeMillis(),
+                new File(app.getFilesDir(), ICON_DIR), new File(app.getCacheDir(), MOTION_DIR)));
+    }
+
+    static void removeStrayTemps(long now, File... dirs) {
+        for (File dir : dirs) {
+            File[] stray = dir.listFiles((d, name) -> name.endsWith(".tmp"));
+            if (stray == null) {
+                continue;
+            }
+            for (File file : stray) {
+                if (now - file.lastModified() > STRAY_TEMP_MILLIS) {
+                    file.delete();
+                }
+            }
+        }
+    }
+
     // The length of a token ID in hex, which each of its files' names starts with.
     private static final int TOKEN_ID_LENGTH = 64;
 

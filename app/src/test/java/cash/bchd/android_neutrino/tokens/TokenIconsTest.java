@@ -225,4 +225,24 @@ public class TokenIconsTest {
         found.add("aa-01 ipfs://one", 2);
         assertTrue(found.has("aa-01 ipfs://one", 2));
     }
+
+    @Test
+    public void removesOnlyTempFilesLeftByAnEndedSave() throws IOException {
+        File dir = folder.newFolder("stray");
+        long now = 10 * TokenIcons.STRAY_TEMP_MILLIS;
+        File stray = new File(dir, "icon123.tmp");
+        File writing = new File(dir, "motion456.tmp");
+        File kept = new File(dir, "aa".repeat(32));
+        for (File file : new File[]{stray, writing, kept}) {
+            assertTrue(file.createNewFile());
+            assertTrue(file.setLastModified(now - 2 * TokenIcons.STRAY_TEMP_MILLIS));
+        }
+        assertTrue(writing.setLastModified(now - 1000));
+
+        TokenIcons.removeStrayTemps(now, dir, new File(dir, "missing"));
+
+        assertFalse(stray.exists());
+        assertTrue(writing.exists());
+        assertTrue(kept.exists());
+    }
 }
