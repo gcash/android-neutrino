@@ -20,12 +20,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -73,7 +73,8 @@ public class Wallet implements Serializable {
 
     private final AddressPayments addressPayments = new AddressPayments();
     // The memos of the transactions the app sent, which the wallet doesn't have, by transaction ID.
-    private HashMap<String, String> memos = new HashMap<String, String>();
+    // The screens put them, and the threads that read the history and the notifications read them.
+    private final Map<String, String> memos = new ConcurrentHashMap<>();
     // The listeners told of each new block, from any thread.
     private final List<WalletEventListener> blockchainListeners = new CopyOnWriteArrayList<>();
     // The listener of the screen that shows the wallet, which the notification streams tell of
