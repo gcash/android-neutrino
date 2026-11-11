@@ -310,8 +310,12 @@ public class Wallet implements Serializable {
                 running = true;
                 listener.onWalletReady();
                 tellBalances(listener);
-                getTransactions(listener);
+                // The notifications first, so that a payment that comes as the history is read is
+                // in one or the other, but for one in the moment the wallet takes to begin the
+                // streams asked for: one that comes before the read is in it, and one during it
+                // waits for it. Read first, one that came before the streams began was in neither.
                 listenTransactions(listener);
+                readFirst(listener);
                 tellReady();
             } catch (Exception e) {
                 if (!stopped) {
@@ -913,6 +917,19 @@ public class Wallet implements Serializable {
         Map<WalletEventListener, Long> replies;
         synchronized (historyLock) {
             if (!reads.start(listener)) {
+                return;
+            }
+            replies = replyNumbers(Collections.singleton(listener));
+        }
+        readAll(replies);
+    }
+
+    // readFirst reads the history as the wallet loads, unless a notification that came since the
+    // streams began has it read already, which tells the listener too.
+    private void readFirst(WalletEventListener listener) {
+        Map<WalletEventListener, Long> replies;
+        synchronized (historyLock) {
+            if (reads.reading() || !reads.start(listener)) {
                 return;
             }
             replies = replyNumbers(Collections.singleton(listener));
