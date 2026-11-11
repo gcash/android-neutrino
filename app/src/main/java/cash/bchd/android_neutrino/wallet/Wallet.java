@@ -274,7 +274,7 @@ public class Wallet implements Serializable {
      * wallet loads once, with the listener its load began with, so it returns whether this call
      * began it, which a main screen recreated meanwhile doesn't.
      */
-    public boolean loadWallet(WalletEventListener listener, String mnemonic) {
+    public boolean loadWallet(WalletEventListener listener, Supplier<String> mnemonic) {
         if (!loading.compareAndSet(false, true)) {
             return false;
         }
@@ -288,7 +288,9 @@ public class Wallet implements Serializable {
                 // The loader service answers once the daemon's RPC server is up.
                 boolean exists = waitForDaemon(this::walletExists);
                 if (!exists) {
-                    String mnemonicToSet = mnemonic;
+                    // Read only now, on this thread, as reading it opens the phone's keystore, and
+                    // only a wallet that's created needs it.
+                    String mnemonicToSet = mnemonic.get();
                     if (mnemonicToSet.equals("")) {
                         mnemonicToSet = generateMnemonic();
                     }

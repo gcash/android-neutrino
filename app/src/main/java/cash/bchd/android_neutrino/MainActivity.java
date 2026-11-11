@@ -382,7 +382,7 @@ public class MainActivity extends CloseActivity {
             wallet = current;
             eventListener = MainListener.of(current, this);
             MainListener.show(this);
-            if (current.loadWallet(eventListener, settings.getMnemonic())) {
+            if (current.loadWallet(eventListener, settings::getMnemonic)) {
                 return;
             }
         }
@@ -1311,7 +1311,7 @@ public class MainActivity extends CloseActivity {
     }
 
     private void maybeSendBackupReminder() {
-        if (!settings.getBackupReminder() && !settings.getMnemonic().equals("")) {
+        if (!settings.getBackupReminder() && settings.hasMnemonic()) {
             Intent intent = new Intent(getApplicationContext(), BackupActivity.class);
             postNotification(5678, intent, getString(R.string.backup_your_wallet),
                     getString(R.string.backup_recovery_phrase_suggestion));

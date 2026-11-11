@@ -40,6 +40,7 @@ final class WalletStarter {
      * runs, and that the wallet may reach the nodes it's set to.
      */
     static Wallet start(Context context, Settings settings) {
+        settings.sealPlainMnemonicLater();
         String[] peers = settings.getPeerList();
         String[] none = new String[0];
         boolean peersOnly = settings.getPeersOnly() && peers.length > 0;
@@ -95,7 +96,7 @@ final class WalletStarter {
             public void onWalletCreated() {
                 settings.setWalletInitialized(true);
             }
-        }, settings.getMnemonic());
+        }, settings::getMnemonic);
     }
 
     /**

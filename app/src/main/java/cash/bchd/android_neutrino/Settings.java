@@ -176,6 +176,32 @@ public class Settings {
         }
     }
 
+    /**
+     * sealPlainMnemonicLater seals, off the main thread, the recovery phrase that an earlier
+     * version kept in plain text, as reading it did, which only creating a wallet does now.
+     */
+    void sealPlainMnemonicLater() {
+        String plain = prefs.getString(MNEMONIC_KEY, "");
+        if (plain.isEmpty()) {
+            return;
+        }
+        new Thread(() -> {
+            // Unless it was backed up, which forgets it, meanwhile.
+            if (plain.equals(prefs.getString(MNEMONIC_KEY, ""))) {
+                setMnemonic(plain);
+            }
+        }, "seal-phrase").start();
+    }
+
+    /**
+     * hasMnemonic returns whether the recovery phrase is kept, as it is until it was backed up,
+     * without reading it, which opens the phone's keystore. One whose key is gone is kept but
+     * can't be read, which the backup's screens say.
+     */
+    public boolean hasMnemonic() {
+        return !prefs.getString(MNEMONIC_KEY, "").isEmpty() || !prefs.getString(SEALED_MNEMONIC_KEY, "").isEmpty();
+    }
+
     // getMnemonic returns the recovery phrase, or "" once it was backed up, and seals the plain
     // text phrase of an earlier version.
     public String getMnemonic() {

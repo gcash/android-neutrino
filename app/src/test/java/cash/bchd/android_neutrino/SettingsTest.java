@@ -15,6 +15,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 public class SettingsTest {
 
@@ -184,5 +185,18 @@ public class SettingsTest {
         settings.forgotToken("bb");
         assertEquals(Collections.singleton("cc"), settings.getTokensToForget());
         assertEquals(new java.util.HashSet<>(Arrays.asList("bb", "cc")), settings.getHiddenTokens());
+    }
+
+    @Test
+    public void tellsAPhraseIsKeptWithoutReadingIt() {
+        InMemoryPreferences prefs = new InMemoryPreferences();
+        Settings settings = new Settings(prefs, prefs, Network.MAINNET);
+        assertFalse(settings.hasMnemonic());
+        // Kept plain here, as tests have no keystore to seal it with.
+        settings.setMnemonic("abandon ability able");
+        assertTrue(settings.hasMnemonic());
+        // Backed up, it's no longer kept.
+        settings.setMnemonic("");
+        assertFalse(settings.hasMnemonic());
     }
 }

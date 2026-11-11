@@ -21,6 +21,10 @@ public class BackupTwo extends Fragment {
 
         Settings settings = Settings.getInstance();
         String mnemonic = settings.getMnemonic();
+        // A phrase whose key is gone can't be read, and there's nothing to write down.
+        if (mnemonic.isEmpty()) {
+            return keyMissing(inflater, container);
+        }
         String[] words = mnemonic.split("\\ ");
 
         // A box for each word: a restored wallet's phrase has 12 to 24 of them.
@@ -35,4 +39,13 @@ public class BackupTwo extends Fragment {
         return root;
     }
 
+    /**
+     * keyMissing returns what the backup's screens show when the phrase can't be read, as its
+     * key is gone: that the wallet is to be restored from its phrase.
+     */
+    static View keyMissing(LayoutInflater inflater, ViewGroup container) {
+        TextView missing = (TextView) inflater.inflate(R.layout.backup_word, container, false);
+        missing.setText(R.string.wallet_key_missing);
+        return missing;
+    }
 }

@@ -37,6 +37,10 @@ public class BackupThree extends Fragment {
 
         Settings settings = Settings.getInstance();
         String mnemonic = settings.getMnemonic();
+        // A phrase whose key is gone can't be read, and has no words to ask for.
+        if (mnemonic.isEmpty()) {
+            return BackupTwo.keyMissing(inflater, container);
+        }
         String[] words = mnemonic.split("\\ ");
 
         int[] ns = quizIndexes(words.length, new Random());

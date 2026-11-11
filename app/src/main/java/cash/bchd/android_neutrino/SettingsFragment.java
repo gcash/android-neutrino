@@ -137,7 +137,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
             Preference backupPref = (Preference) findPreference("backup");
             PreferenceScreen prefScreen = (PreferenceScreen) findPreference("preferenceScreen");
-            if (settings.getMnemonic().equals("")) {
+            if (!settings.hasMnemonic()) {
                 prefScreen.removePreference(backupPref);
             }
 
