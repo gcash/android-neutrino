@@ -1,5 +1,6 @@
 package cash.bchd.android_neutrino;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -157,17 +158,21 @@ public class Settings {
     // The recovery phrase, kept until the user backed it up, sealed with WalletSecret. Without the
     // Keystore it stays plain text, as earlier versions kept it, rather than be lost; an empty
     // phrase forgets it.
+    // setMnemonic keeps the recovery phrase, or forgets it once it was backed up. It's written to
+    // the file before it returns, as a new wallet is created from it right after, and the wallet
+    // can't give it back, should the app end before a later write would have.
+    @SuppressLint("ApplySharedPref")
     public void setMnemonic(String mnemonic) {
         if (mnemonic.isEmpty()) {
-            prefs.edit().remove(MNEMONIC_KEY).remove(SEALED_MNEMONIC_KEY).apply();
+            prefs.edit().remove(MNEMONIC_KEY).remove(SEALED_MNEMONIC_KEY).commit();
             return;
         }
         try {
             String sealed = WalletSecret.seal(mnemonic);
-            prefs.edit().putString(SEALED_MNEMONIC_KEY, sealed).remove(MNEMONIC_KEY).apply();
+            prefs.edit().putString(SEALED_MNEMONIC_KEY, sealed).remove(MNEMONIC_KEY).commit();
         } catch (Exception e) {
             e.printStackTrace();
-            prefs.edit().putString(MNEMONIC_KEY, mnemonic).remove(SEALED_MNEMONIC_KEY).apply();
+            prefs.edit().putString(MNEMONIC_KEY, mnemonic).remove(SEALED_MNEMONIC_KEY).commit();
         }
     }
 

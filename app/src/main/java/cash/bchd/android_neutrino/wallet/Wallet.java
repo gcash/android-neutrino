@@ -286,8 +286,9 @@ public class Wallet implements Serializable {
                             .setMnemonicSeed(mnemonicToSet)
                             .setWalletBirthday(this.config.getBirthday())
                             .build();
+                    listener.onCreatingWallet(mnemonicToSet);
                     stub.createWallet(request);
-                    listener.onWalletCreated(mnemonicToSet);
+                    listener.onWalletCreated();
                 }
 
                 // The wallet service answers once the wallet is loaded.

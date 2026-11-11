@@ -83,13 +83,17 @@ final class WalletStarter {
             return;
         }
         Wallet wallet = start(context, settings);
+        // The wallet existed when it stopped, but should it be created, its recovery phrase is
+        // kept, as the main screen keeps it.
         wallet.loadWallet(new WalletEventListener() {
             @Override
-            public void onWalletCreated(String seed) {
-                // The wallet existed when it stopped, but should it have been created, its
-                // recovery phrase is kept, as the main screen keeps it.
-                settings.setWalletInitialized(true);
+            public void onCreatingWallet(String seed) {
                 settings.setMnemonic(seed);
+            }
+
+            @Override
+            public void onWalletCreated() {
+                settings.setWalletInitialized(true);
             }
         }, settings.getMnemonic());
     }

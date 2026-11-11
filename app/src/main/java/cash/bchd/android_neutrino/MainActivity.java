@@ -1307,9 +1307,12 @@ public class MainActivity extends CloseActivity {
     // the UI thread.
     private static class StartWalletTask {
         private final WeakReference<MainActivity> mainActivityRef;
+        // The wallet's settings, which outlive the screen.
+        private final Settings settings;
 
         StartWalletTask(MainActivity mainActivity) {
             mainActivityRef = new WeakReference<>(mainActivity);
+            settings = mainActivity.settings;
         }
 
         void execute(Wallet wallet) {
@@ -1383,14 +1386,16 @@ public class MainActivity extends CloseActivity {
                         mainActivity.runOnUiThread(() -> mainActivity.showTokens(tokens));
                     }
 
+                    // A new wallet's recovery phrase is kept before the wallet is created, and
+                    // whether the screen is still there or not, as it can't be had again.
                     @Override
-                    public void onWalletCreated(String seed) {
-                        MainActivity mainActivity = mainActivityRef.get();
-                        if (mainActivity == null) {
-                            return;
-                        }
-                        mainActivity.settings.setWalletInitialized(true);
-                        mainActivity.settings.setMnemonic(seed);
+                    public void onCreatingWallet(String seed) {
+                        settings.setMnemonic(seed);
+                    }
+
+                    @Override
+                    public void onWalletCreated() {
+                        settings.setWalletInitialized(true);
                     }
 
                     @Override

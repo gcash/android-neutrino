@@ -19,7 +19,17 @@ public class WalletEventListener {
      */
     public void onTokenBalances(List<TokenBalance> tokens) {}
 
-    public void onWalletCreated(String seed){}
+    /**
+     * Called with the recovery phrase a new wallet is about to be created from, before it is, on
+     * the thread that creates it, which waits. The phrase is to be kept by then, as the wallet
+     * can't give it back, and the app could end before onWalletCreated.
+     */
+    public void onCreatingWallet(String seed) {}
+
+    /**
+     * Called once a new wallet was created, from the phrase onCreatingWallet was told.
+     */
+    public void onWalletCreated() {}
 
     /**
      * Called with all of the wallet's transactions, when it loads and whenever they change.
