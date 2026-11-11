@@ -646,27 +646,13 @@ public final class TokenIcons {
                 : usableMotion(bounds.outWidth, bounds.outHeight))) {
             return false;
         }
-        File tmp;
-        try {
-            tmp = File.createTempFile("motion", ".tmp", dir);
-        } catch (IOException e) {
-            return false;
-        }
-        boolean saved = false;
-        try (FileOutputStream out = new FileOutputStream(tmp)) {
+        boolean saved = writeKept(category, file, dir, "motion", out -> {
             if (!image || Math.max(bounds.outWidth, bounds.outHeight) <= maxSide) {
                 out.write(data);
-            } else if (!shrink(data, bounds, maxSide, out)) {
-                return false;
+                return true;
             }
-            saved = keep(category, tmp, file, null);
-        } catch (IOException e) {
-            return false;
-        } finally {
-            if (!saved) {
-                tmp.delete();
-            }
-        }
+            return shrink(data, bounds, maxSide, out);
+        }, null);
         if (saved) {
             trimMotion(dir, file);
         }
@@ -783,22 +769,8 @@ public final class TokenIcons {
 
     // saveDrawn keeps an image drawn for full art as a PNG, as saveFull keeps the others.
     private static boolean saveDrawn(String category, File file, File dir, Bitmap drawn, int maxSide) {
-        File tmp;
-        try {
-            tmp = File.createTempFile("motion", ".tmp", dir);
-        } catch (IOException e) {
-            return false;
-        }
-        boolean saved = false;
-        try (FileOutputStream out = new FileOutputStream(tmp)) {
-            saved = write(drawn, maxSide, Bitmap.CompressFormat.PNG, out) && keep(category, tmp, file, null);
-        } catch (IOException e) {
-            return false;
-        } finally {
-            if (!saved) {
-                tmp.delete();
-            }
-        }
+        boolean saved = writeKept(category, file, dir, "motion",
+                out -> write(drawn, maxSide, Bitmap.CompressFormat.PNG, out), null);
         if (saved) {
             trimMotion(dir, file);
         }
@@ -929,34 +901,49 @@ public final class TokenIcons {
         if (dir == null || (!dir.isDirectory() && !dir.mkdirs())) {
             return false;
         }
-        // Its own file, as two screens can load the same image at once.
+        Bitmap drawn = frame;
+        Bitmap.CompressFormat drawnFormat = format;
+        boolean saved = writeKept(category, file, dir, "icon", out -> {
+            if (drawn != null) {
+                return write(drawn, maxSide, drawnFormat, out);
+            }
+            if (Math.max(bounds.outWidth, bounds.outHeight) <= maxSide && data.length <= MAX_KEPT_SIZE) {
+                out.write(data);
+                return true;
+            }
+            return shrink(data, bounds, maxSide, out);
+        }, with);
+        if (saved) {
+            VERSION.incrementAndGet();
+        }
+        return saved;
+    }
+
+    // Writer writes a file's contents, and returns false if it couldn't.
+    private interface Writer {
+        boolean write(FileOutputStream out) throws IOException;
+    }
+
+    // writeKept writes a file of the token's through a temporary file of its own in the folder,
+    // as two screens can load the same image at once, which keep renames into place once it's
+    // written. It removes the temporary file if it's not kept.
+    private static boolean writeKept(String category, File file, File dir, String prefix, Writer writer,
+                                     Runnable with) {
         File tmp;
         try {
-            tmp = File.createTempFile("icon", ".tmp", dir);
+            tmp = File.createTempFile(prefix, ".tmp", dir);
         } catch (IOException e) {
             return false;
         }
         boolean saved = false;
         try (FileOutputStream out = new FileOutputStream(tmp)) {
-            if (frame != null) {
-                if (!write(frame, maxSide, format, out)) {
-                    return false;
-                }
-            } else if (Math.max(bounds.outWidth, bounds.outHeight) <= maxSide && data.length <= MAX_KEPT_SIZE) {
-                out.write(data);
-            } else if (!shrink(data, bounds, maxSide, out)) {
-                return false;
-            }
-            saved = keep(category, tmp, file, with);
+            saved = writer.write(out) && keep(category, tmp, file, with);
         } catch (IOException e) {
             return false;
         } finally {
             if (!saved) {
                 tmp.delete();
             }
-        }
-        if (saved) {
-            VERSION.incrementAndGet();
         }
         return saved;
     }
