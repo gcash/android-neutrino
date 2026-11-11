@@ -12,6 +12,7 @@ import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -154,6 +155,50 @@ public class TransactionStore {
             }
             return store;
         }
+    }
+
+    /**
+     * keepSent saves a payment the app just sent, with its memo, which the wallet doesn't have, so
+     * that the memo isn't lost should the app end before the wallet tells of the payment, as it
+     * does in a moment, which keeps the memo. It reads and writes the whole file, so it's not for
+     * the UI thread.
+     */
+    static void keepSent(Context context, Network network, TransactionData sent) {
+        synchronized (LOCK) {
+            long deletes = DELETES.get();
+            TransactionStore store = new TransactionStore(context, network);
+            List<TransactionData> kept = withSent(store.getData(), sent);
+            if (kept == null) {
+                return;
+            }
+            store.setData(kept);
+            try {
+                store.save(context.getFileStreamPath(store.fileName), deletes);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * withSent returns the saved transactions with a payment just sent, newest first, or null if
+     * they have it, with a memo, already, as when the wallet told of it first. One the wallet told
+     * of without the memo takes it.
+     */
+    static List<TransactionData> withSent(List<TransactionData> saved, TransactionData sent) {
+        List<TransactionData> list = new ArrayList<>(saved);
+        for (TransactionData tx : list) {
+            if (tx.getTxid().equals(sent.getTxid())) {
+                if (!tx.getMemo().isEmpty() || sent.getMemo().isEmpty()) {
+                    return null;
+                }
+                tx.setMemo(sent.getMemo());
+                return list;
+            }
+        }
+        list.add(sent);
+        Collections.sort(list, Collections.reverseOrder());
+        return list;
     }
 
     /**

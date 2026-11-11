@@ -1,5 +1,6 @@
 package cash.bchd.android_neutrino;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -23,9 +24,13 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import cash.bchd.android_neutrino.wallet.Amount;
+import cash.bchd.android_neutrino.wallet.Network;
+import cash.bchd.android_neutrino.wallet.TransactionData;
 import cash.bchd.android_neutrino.wallet.Wallet;
 import cash.bchd.android_neutrino.wallet.WalletSecret;
 import cash.bchd.android_neutrino.widget.CheckView;
@@ -40,6 +45,10 @@ public class ConfirmationActivity extends AppCompatActivity {
     List<Long> inputVals;
     String paymentAddr;
     String memo;
+    // What the payment takes from the wallet, the amount sent and the fee, which the list shows.
+    private long spent;
+    // Saves a payment that was sent, off the main thread.
+    private static final ExecutorService STORE_WRITER = Executors.newSingleThreadExecutor();
     SlideToConfirmView swipeButton;
     ScreenLock.Prompt screenLock;
     // The PIN of earlier versions, which unlocks the wallet to sign the payment.
@@ -131,6 +140,7 @@ public class ConfirmationActivity extends AppCompatActivity {
         String bchAmount = intent.getStringExtra("amountBCH");
         String formattedFiat = intent.getStringExtra("amountFiat");
         long txFee = intent.getLongExtra("fee", 0);
+        spent = Amount.fromBCH(bchAmount).getSatoshis() + txFee;
         serializedTx = intent.getByteArrayExtra("serializedTransaction");
         ArrayList<String> inputStrings = intent.getStringArrayListExtra("inputVals");
 
@@ -392,8 +402,8 @@ public class ConfirmationActivity extends AppCompatActivity {
         ListenableFuture<Api.PublishTransactionResponse> resp = wallet.publishTransactionAsync(result.getTransaction().toByteArray(), memo);
         Futures.addCallback(resp, new FutureCallback<Api.PublishTransactionResponse>() {
             @Override
-            public void onSuccess(Api.PublishTransactionResponse result) {
-                payment.sent.setValue("");
+            public void onSuccess(Api.PublishTransactionResponse reply) {
+                keepSent(result, payment, "");
             }
 
             @Override
@@ -404,12 +414,27 @@ public class ConfirmationActivity extends AppCompatActivity {
         }, ContextCompat.getMainExecutor(ConfirmationActivity.this));
     }
 
+    // keepSent saves the payment, with its memo, off the main thread, before it shows as sent, as
+    // the memo is the app's alone until the wallet tells of the payment, a moment later.
+    private void keepSent(Api.SignTransactionResponse signed, Payment payment, String merchantMemo) {
+        byte[] tx = signed.getTransaction().toByteArray();
+        TransactionData sent = new TransactionData(Wallet.txidOf(tx), false, memo == null ? "" : memo,
+                -spent, "", "", System.currentTimeMillis() / 1000, "", 0);
+        sent.setRecipients(paymentAddr, 0, false);
+        Context app = getApplicationContext();
+        Network network = Settings.getInstance().getNetwork();
+        STORE_WRITER.execute(() -> {
+            TransactionStore.keepSent(app, network, sent);
+            payment.sent.postValue(merchantMemo);
+        });
+    }
+
     private void postPaymentToMerchant(Wallet wallet, Api.SignTransactionResponse result, Payment payment) {
         ListenableFuture<Api.PostPaymentResponse> resp = wallet.postPaymentAsync(refundAddress, refundAmount, result.getTransaction().toByteArray(), paymentURL, paymentProtocol, merchantData, memo);
         Futures.addCallback(resp, new FutureCallback<Api.PostPaymentResponse>() {
             @Override
-            public void onSuccess(Api.PostPaymentResponse result) {
-                payment.sent.setValue(result.getMemo());
+            public void onSuccess(Api.PostPaymentResponse reply) {
+                keepSent(result, payment, reply.getMemo());
             }
 
             @Override

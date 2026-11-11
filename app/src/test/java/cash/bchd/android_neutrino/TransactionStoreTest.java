@@ -103,4 +103,33 @@ public class TransactionStoreTest {
         assertTrue(storeOf("new wallet's").save(file, TransactionStore.deletes()));
         assertTrue(file.exists());
     }
+
+    private static cash.bchd.android_neutrino.wallet.TransactionData entry(String txid, String memo, long timestamp) {
+        cash.bchd.android_neutrino.wallet.TransactionData tx = new cash.bchd.android_neutrino.wallet.TransactionData(
+                txid, false, memo, -1000, "", "", timestamp, "", 0);
+        return tx;
+    }
+
+    @Test
+    public void keepsASentPaymentWithItsMemo() {
+        java.util.List<cash.bchd.android_neutrino.wallet.TransactionData> saved = java.util.Arrays.asList(
+                entry("old", "", 100));
+        // Not told of yet: it goes first, as the newest.
+        java.util.List<cash.bchd.android_neutrino.wallet.TransactionData> kept =
+                TransactionStore.withSent(saved, entry("sent", "rent", 200));
+        assertEquals("sent", kept.get(0).getTxid());
+        assertEquals("rent", kept.get(0).getMemo());
+        assertEquals(2, kept.size());
+
+        // Told of first, without the memo: it takes the memo.
+        kept = TransactionStore.withSent(java.util.Arrays.asList(entry("sent", "", 200)), entry("sent", "rent", 200));
+        assertEquals(1, kept.size());
+        assertEquals("rent", kept.get(0).getMemo());
+
+        // Told of with it, or sent without one: nothing to save.
+        org.junit.Assert.assertNull(TransactionStore.withSent(java.util.Arrays.asList(entry("sent", "rent", 200)),
+                entry("sent", "rent", 200)));
+        org.junit.Assert.assertNull(TransactionStore.withSent(java.util.Arrays.asList(entry("sent", "", 200)),
+                entry("sent", "", 200)));
+    }
 }

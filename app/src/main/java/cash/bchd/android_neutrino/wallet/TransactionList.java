@@ -23,7 +23,7 @@ public final class TransactionList {
      * wallet lists them oldest first, in block order, which decides between transactions of the
      * same time, such as a payment and its spending in one block. A transaction that was shown
      * already keeps its entry, with the fiat value of when it was first shown and the memo of a
-     * payment the app sent, which the wallet doesn't have, and takes the wallet's height,
+     * payment the app sent, which the wallet doesn't have, and takes the wallet's amount, height,
      * recipients, tokens and change of the spendable balance for it, which corrects the recipient
      * of an entry saved before the wallet named recipients, and gives tokens to one saved before
      * the app read them.
@@ -45,6 +45,8 @@ public final class TransactionList {
                 list.add(tx);
                 continue;
             }
+            // The wallet's amount, as an entry the app kept of a payment it sent has its own.
+            old.setAmount(tx.getAmount());
             old.setHeight(tx.getHeight());
             old.setRecipients(tx.getToAddress(), tx.getMoreRecipients(), tx.getToYourself());
             old.setTokens(tx.getTokens());

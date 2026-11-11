@@ -1274,7 +1274,7 @@ public class Wallet {
      * txidOf returns the ID of a serialized transaction, its double SHA-256 as txidToString writes
      * it, which keys the memos of the transactions the app sends.
      */
-    static String txidOf(byte[] serializedTransaction) {
+    public static String txidOf(byte[] serializedTransaction) {
         try {
             MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
             byte[] hash = sha256.digest(sha256.digest(serializedTransaction));

@@ -140,4 +140,18 @@ public class TransactionListTest {
         assertEquals(new java.util.HashSet<>(Arrays.asList("aa", "bb")),
                 TransactionList.tokens(Arrays.asList(one, two, plain)));
     }
+
+    @Test
+    public void keepsTheMemoOfASentPaymentAndTakesTheWalletsAmount() {
+        // As the app kept it when it sent it: the amount sent and the fee, and the memo.
+        TransactionData kept = tx("sent", -10_250, 300, 0);
+        kept.setMemo("rent");
+        // As the wallet tells of it, without the memo.
+        TransactionData told = tx("sent", -10_226, 299, 0);
+        List<TransactionData> list = TransactionList.rebuild(Collections.singletonList(kept),
+                Collections.singletonList(told));
+        assertEquals(1, list.size());
+        assertEquals("rent", list.get(0).getMemo());
+        assertEquals(-10_226, list.get(0).getAmount());
+    }
 }
