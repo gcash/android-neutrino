@@ -364,6 +364,8 @@ public class SendActivity extends AppCompatActivity {
             }
             byte[] serializedTx;
             long txFee;
+            // What Send All leaves for another send, as more coins than fit in one transaction.
+            long left = 0;
             List<Long> inputVals;
             // What the payment sends: for Send All, what the wallet holds when it builds it, less
             // the fee, rather than the balance asked when the screen opened, which a payment that
@@ -375,6 +377,7 @@ public class SendActivity extends AppCompatActivity {
                 txFee = tx.getFee();
                 inputVals = tx.getInputValuesList();
                 sent = new Amount(tx.getTotalAmount());
+                left = tx.getLeftAmount();
             } else {
                 Api.CreateTransactionResponse tx = wallet.createTransaction(to, spend.getSatoshis(), satPerByte);
                 serializedTx = tx.getSerializedTransaction().toByteArray();
@@ -393,6 +396,7 @@ public class SendActivity extends AppCompatActivity {
             confirm.putExtra("amountBCH", sent.toString());
             confirm.putExtra("amountFiat", fiatFormatted);
             confirm.putExtra("fee", txFee);
+            confirm.putExtra("leftAmount", left);
             confirm.putExtra("serializedTransaction", serializedTx);
             confirm.putStringArrayListExtra("inputVals", inputStrings);
             if (!memoText.equals("")) {

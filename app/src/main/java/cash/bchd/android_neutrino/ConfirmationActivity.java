@@ -166,6 +166,15 @@ public class ConfirmationActivity extends AppCompatActivity {
         TextView fiatAmountTxtView = findViewById(R.id.confirmFiatAmount);
         fiatAmountTxtView.setText(formattedFiat);
 
+        // Send All, when not all the coins fit in one transaction: what this one sends is the
+        // amount above, and the rest stays for another send.
+        long left = intent.getLongExtra("leftAmount", 0);
+        if (left > 0) {
+            TextView note = findViewById(R.id.sweepLeftNote);
+            note.setText(getString(R.string.sweep_left, new Amount(left).toString()));
+            note.setVisibility(View.VISIBLE);
+        }
+
         TextView payTo = findViewById(R.id.payTo);
         if (label != null && !label.equals("")) {
             payTo.setText(label);

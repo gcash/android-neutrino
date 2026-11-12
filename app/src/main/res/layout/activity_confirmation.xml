@@ -62,11 +62,26 @@
                     android:textSize="20sp"
                     app:layout_anchorGravity="center_horizontal" />
 
+                <!-- Shown for a Send All that left coins for another send, as they didn't all fit
+                     in one transaction. -->
+                <TextView
+                    android:id="@+id/sweepLeftNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/confirmFiatAmount"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginEnd="20dp"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
+
                 <androidx.cardview.widget.CardView
                     android:id="@+id/detailsCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_below="@+id/confirmFiatAmount"
+                    android:layout_below="@+id/sweepLeftNote"
                     android:layout_marginLeft="15dp"
                     android:layout_marginTop="30dp"
                     android:layout_marginRight="15dp"
