@@ -667,9 +667,19 @@ public class Wallet {
                 .addTransactions(bs)
                 .build();
 
-        this.memos.put(txidOf(serializedTransaction), memo);
+        keepMemo(memos, txidOf(serializedTransaction), memo);
 
         return stub.postPayment(request);
+    }
+
+    /**
+     * keepMemo keeps the memo of a transaction the app sends, by its ID, unless it has none, as
+     * the map can't hold a null, and a transaction without one reads as having "" anyway.
+     */
+    static void keepMemo(Map<String, String> memos, String txid, String memo) {
+        if (memo != null && !memo.isEmpty()) {
+            memos.put(txid, memo);
+        }
     }
 
     public ListenableFuture<Api.SignTransactionResponse> signTransactionAsync(byte[] serializedTx, List<Long> inputValues, String passphrase) {
@@ -688,7 +698,7 @@ public class Wallet {
 
     public ListenableFuture<Api.PublishTransactionResponse> publishTransactionAsync(byte[] serializedTransaction, String memo) {
         ByteString bs = ByteString.copyFrom(serializedTransaction);
-        this.memos.put(txidOf(serializedTransaction), memo);
+        keepMemo(memos, txidOf(serializedTransaction), memo);
         WalletServiceGrpc.WalletServiceFutureStub stub = WalletServiceGrpc.newFutureStub(this.channel).withCallCredentials(this.creds);
         Api.PublishTransactionRequest request = Api.PublishTransactionRequest.newBuilder().setSignedTransaction(bs).build();
         return stub.publishTransaction(request);

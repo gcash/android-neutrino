@@ -2,6 +2,9 @@ package cash.bchd.android_neutrino.wallet;
 
 import org.junit.Test;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import io.grpc.Status;
 import walletrpc.Api;
 
@@ -184,5 +187,17 @@ public class WalletTest {
         org.junit.Assert.assertNull(Wallet.fusion(fusionOf(2, fuz, 546)));
         // A payment.
         org.junit.Assert.assertNull(Wallet.transactionData(sent(PAYEE), 0, 0, "").getFusion());
+    }
+
+    @Test
+    public void keepsOnlyAMemoThereIs() {
+        // A payment sent without a memo has none, which the map of memos can't hold.
+        Map<String, String> memos = new ConcurrentHashMap<>();
+        Wallet.keepMemo(memos, "a", null);
+        Wallet.keepMemo(memos, "b", "");
+        Wallet.keepMemo(memos, "c", "rent");
+        assertFalse(memos.containsKey("a"));
+        assertFalse(memos.containsKey("b"));
+        assertEquals("rent", memos.get("c"));
     }
 }
